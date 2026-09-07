@@ -5,7 +5,7 @@
  * analysis worker required ../chunks/score-*.js that only existed inside app.asar.
  *   node scripts/check-package.mjs [dist/win-unpacked]
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const root = resolve(process.argv[2] ?? 'dist/win-unpacked');
@@ -14,15 +14,9 @@ if (!existsSync(unpacked)) {
   console.error(`no unpacked main bundle at ${unpacked}`);
   process.exit(1);
 }
-const files = [];
-const walk = (dir) => {
-  for (const f of readdirSync(dir)) {
-    const p = join(dir, f);
-    if (statSync(p).isDirectory()) walk(p);
-    else if (p.endsWith('.js')) files.push(p);
-  }
-};
-walk(unpacked);
+const files = readdirSync(unpacked, { recursive: true })
+  .filter((f) => String(f).endsWith('.js'))
+  .map((f) => join(unpacked, String(f)));
 let missing = 0;
 for (const file of files) {
   const src = readFileSync(file, 'utf8');

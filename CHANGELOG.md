@@ -3,7 +3,9 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
-## 0.4.11
+## 0.4.12
+
+(0.4.11 was tagged but never built.)
 
 - Fixed: scanning failed in the installed app (“Something went wrong” right after adding videos) — the
   scan worker could not load part of its code from the package. Dev builds were unaffected, which is
