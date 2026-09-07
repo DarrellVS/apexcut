@@ -1,11 +1,16 @@
 <script setup lang="ts">
-/** Right panel with three tabs: Parts (list + amount slider), Movie (export), Settings. */
+/** Right panel with three tabs: Parts (list + amount slider), Movie (export), This video. */
 import { computed, ref } from 'vue';
 import PartsTab from './PartsTab.vue';
 import MovieTab from './MovieTab.vue';
-import SettingsTab from './SettingsTab.vue';
+import ThisVideoTab from './ThisVideoTab.vue';
 
-type Tab = 'parts' | 'movie' | 'settings';
+type Tab = 'parts' | 'movie' | 'video';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'parts', label: 'Parts' },
+  { id: 'movie', label: 'Movie' },
+  { id: 'video', label: 'This video' },
+];
 const emit = defineEmits<{ seek: [t: number]; play: [t: number]; watch: [url: string] }>();
 const tab = ref<Tab>('parts');
 const scope = ref<'all' | 'current'>('all');
@@ -24,15 +29,17 @@ defineExpose({ openMovie, framingActive });
 
 <template>
   <aside class="glass flex min-h-0 flex-col">
-    <div class="flex gap-0.5 border-b border-line p-1.5">
+    <div class="flex gap-0.5 border-b border-line p-1.5" role="tablist">
       <button
-        v-for="t in ['parts', 'movie', 'settings'] as Tab[]"
-        :key="t"
-        class="flex-1 rounded-lg py-1.5 text-[13px] font-semibold capitalize transition-colors"
-        :class="tab === t ? 'bg-s2 text-fg' : 'text-muted hover:text-fg'"
-        @click="tab = t"
+        v-for="t in TABS"
+        :key="t.id"
+        class="flex-1 rounded-lg py-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors"
+        :class="tab === t.id ? 'bg-s2 text-fg' : 'text-muted hover:text-fg'"
+        role="tab"
+        :aria-selected="tab === t.id"
+        @click="tab = t.id"
       >
-        {{ t }}
+        {{ t.label }}
       </button>
     </div>
     <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto p-3">
@@ -47,7 +54,7 @@ defineExpose({ openMovie, framingActive });
         v-model:scope="scope"
         @watch="emit('watch', $event)"
       />
-      <SettingsTab v-show="tab === 'settings'" />
+      <ThisVideoTab v-show="tab === 'video'" />
     </div>
   </aside>
 </template>

@@ -9,7 +9,9 @@ import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
+import { useUiStore } from '@renderer/stores/ui';
 import EmptyState from '@renderer/components/EmptyState.vue';
+import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
 import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
@@ -24,6 +26,7 @@ const projects = useProjectsStore();
 const jobs = useJobsStore();
 const editor = useEditorStore();
 const settings = useSettingsStore();
+const ui = useUiStore();
 
 const everAnalyzed = ref(false);
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
@@ -129,8 +132,13 @@ watch(
 );
 
 function onKey(e: KeyboardEvent): void {
-  if (phase.value !== 'editor') return;
   const mod = e.ctrlKey || e.metaKey;
+  if (mod && e.key === ',') {
+    e.preventDefault();
+    ui.toggleSettings();
+    return;
+  }
+  if (phase.value !== 'editor' || ui.settingsOpen) return;
   if (mod && (e.key === 'z' || e.key === 'Z')) {
     e.preventDefault();
     e.shiftKey ? editor.redo() : editor.undo();
@@ -216,6 +224,7 @@ function onKey(e: KeyboardEvent): void {
       </main>
       <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />
     </template>
+    <SettingsModal />
     <ToastHost />
   </div>
 </template>

@@ -6,6 +6,7 @@ import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
+import pkg from '../../package.json';
 import { edl } from '@core/edl';
 import type { Part, ScoreConfig } from '@core/types';
 import { exportRequestSchema, partSchema, settingsSchema, type JobState } from '@shared/ipc';
@@ -252,5 +253,6 @@ export function registerIpc(s: Services): void {
     if (statSync(path).isDirectory()) shell.openPath(path);
     else shell.showItemInFolder(path);
   });
-  ipcMain.handle('app:version', () => app.getVersion());
+  // unpackaged runs report Electron's own version; the package version is what the UI should show
+  ipcMain.handle('app:version', () => (app.isPackaged ? app.getVersion() : pkg.version));
 }

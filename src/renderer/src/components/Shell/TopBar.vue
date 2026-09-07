@@ -9,6 +9,7 @@ import {
   PhArrowClockwise,
   PhCaretDown,
   PhExport,
+  PhGearSix,
   PhPencilSimple,
   PhSquaresFour,
 } from '@phosphor-icons/vue';
@@ -17,6 +18,7 @@ import type { Part } from '@core/types';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
+import { useUiStore } from '@renderer/stores/ui';
 import { fmtDuration, fmtTime, shortName } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
@@ -24,6 +26,7 @@ const emit = defineEmits<{ make: [scope: 'all' | 'current']; home: [] }>();
 const editor = useEditorStore();
 const library = useLibraryStore();
 const projects = useProjectsStore();
+const ui = useUiStore();
 const menuOpen = ref(false);
 const projectMenu = ref(false);
 const renaming = ref(false);
@@ -188,6 +191,14 @@ async function exportProject(): Promise<void> {
       @click="editor.redo()"
     >
       <PhArrowClockwise :size="18" />
+    </button>
+    <button
+      class="btn btn-ghost px-2"
+      title="Settings (Ctrl+,)"
+      aria-label="Settings"
+      @click="ui.openSettings()"
+    >
+      <PhGearSix :size="18" />
     </button>
     <div class="relative flex">
       <button class="btn btn-pri rounded-r-none" :disabled="!canMake" @click="choose('all')">

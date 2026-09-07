@@ -19,6 +19,9 @@
   --both: #8b5cf6;
   --manual: #8d8d98;
   --pop: #ffffff;
+  /* theme swatches in Settings → Appearance: fixed, whatever theme is active */
+  --swatch-light: #eef0f6;
+  --swatch-dark: #0d0d14;
   --shadow: 0 10px 40px rgba(40, 40, 80, 0.14);
   --r: 14px;
   --rs: 10px;
@@ -47,6 +50,8 @@
   --color-bg2: var(--bg2);
   --color-glass: var(--glass);
   --color-pop: var(--pop);
+  --color-swatch-light: var(--swatch-light);
+  --color-swatch-dark: var(--swatch-dark);
   --color-s2: var(--s2);
   --color-s3: var(--s3);
   --color-line: var(--line);

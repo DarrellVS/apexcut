@@ -9,12 +9,15 @@ understands in one look, in light and dark.
 ```
 ┌ top bar (glass) ─────────────────────────────────────────────────────────────┐
 │ ◆ ApexCut  my-ride · Saved     [selected part: reason · time · why]   ↶ ↷  [Make my movie ▾] │
-├ Videos (300) ┬ stage (video, floating transport) ┬ inspector (300): Parts | Movie | Settings ┤
+├ Videos (300) ┬ stage (video, floating transport) ┬ inspector (300): Parts | Movie | This video ┤
 ├ timeline (glass): ruler · Score lane · Parts lane (filmstrip bg, blocks, join bars, floating toolbar) · legend ┤
 ```
 
 - Panels are floating glass cards with 10 px gaps on a soft two-tone radial gradient backdrop.
-- Sidebars are equal width (300 px). Left = videos. Right = tabs Parts / Movie / Settings.
+- Sidebars are equal width (300 px). Left = videos. Right = tabs Parts / Movie / This video.
+- Settings open as a near-fullscreen rounded modal (gear in the top bar, `Ctrl+,`, Esc closes): left nav
+  grouped App / Editing / Advanced, one section at a time on the right, 680 px reading width. Nothing
+  global lives in the sidebar any more.
 - Top bar centre shows the active part (hover, selection or playing): `Corners · 7:28 – 7:38 · 11 sec · up to 27° lean`.
 - Actions on a part live in the floating toolbar above the block (Play · Leave out / Put back · Join /
   Join with next · Delete). It must stay on one line and shift horizontally to remain inside the lane.
