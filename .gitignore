@@ -1,0 +1,11 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+coverage
+.vite
+*.local
+# local analysis output / caches
+.apexcut-cache

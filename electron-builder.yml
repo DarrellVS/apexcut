@@ -1,0 +1,43 @@
+appId: app.apexcut
+productName: ApexCut
+copyright: Copyright © 2026 Darrell van Swinderen
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!tests/*'
+  - '!docs/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!vitest.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc,commitlint.config.cjs,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'
+  - '!{.env,.env.*,.npmrc,.nvmrc,.editorconfig,.husky}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+# ffmpeg/ffprobe are spawned as child processes and must live outside the asar archive
+asarUnpack:
+  - resources/**
+  - node_modules/ffmpeg-static/**
+  - node_modules/ffprobe-static/**
+win:
+  executableName: ApexCut
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  artifactName: ${productName}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+npmRebuild: false
+publish:
+  provider: github
+  owner: darrellvs
+  repo: apexcut
+  releaseType: release

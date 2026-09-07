@@ -1,0 +1,87 @@
+{
+  "name": "apexcut",
+  "version": "0.1.0",
+  "description": "Finds the fun parts of DJI helmet-cam motorcycle footage (corners, acceleration, braking) and turns them into one movie.",
+  "main": "./out/main/index.js",
+  "author": {
+    "name": "Darrell van Swinderen"
+  },
+  "homepage": "https://github.com/darrellvs/apexcut",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "npm run typecheck && electron-vite build",
+    "build:win": "npm run build && electron-builder --win",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "lint": "eslint --cache .",
+    "lint:fix": "eslint --cache --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "postinstall": "electron-builder install-app-deps",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@phosphor-icons/vue": "^2.2.1",
+    "@vueuse/core": "^14.4.0",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
+    "pinia": "^4.0.3",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@electron-toolkit/eslint-config-prettier": "3.0.0",
+    "@electron-toolkit/eslint-config-ts": "^3.1.0",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.19.1",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vitest/coverage-v8": "^5.0.0",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.6.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.6",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6",
+    "vitest": "^5.0.0",
+    "vue": "^3.5.25",
+    "vue-eslint-parser": "^10.2.0",
+    "vue-tsc": "^3.1.6"
+  },
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/darrellvs/apexcut.git"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "lint-staged": {
+    "*.{ts,vue,mts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  }
+}
