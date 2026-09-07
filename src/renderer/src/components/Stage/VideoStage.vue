@@ -35,6 +35,17 @@ watch(src, async (s) => {
   await nextTick();
   if (wasPlaying) v.play().catch(() => undefined);
 });
+// a relinked video keeps its URL: reload the element once its file is back
+watch(
+  () => library.currentClip?.exists,
+  (ok, was) => {
+    const v = video.value;
+    if (ok && was === false && v && src.value) {
+      v.src = src.value;
+      v.load();
+    }
+  },
+);
 
 function onTime(): void {
   const v = video.value;

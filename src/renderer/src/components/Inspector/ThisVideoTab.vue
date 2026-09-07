@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Actions on the open video: scan again, EDL for other editors, remove from the project. */
+import { useRelink } from '@renderer/composables/useRelink';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useUiStore } from '@renderer/stores/ui';
@@ -9,6 +10,7 @@ import { toast } from '@renderer/components/Base/ToastHost.vue';
 const editor = useEditorStore();
 const library = useLibraryStore();
 const ui = useUiStore();
+const { relink } = useRelink();
 
 async function rescan(): Promise<void> {
   if (!editor.stem) return;
@@ -24,6 +26,19 @@ async function exportEdl(): Promise<void> {
 
 <template>
   <div v-if="library.currentClip" class="flex flex-col gap-2.5">
+    <div v-if="!library.currentClip.exists" class="card border-play/40">
+      <b class="block text-sm text-play">File not found</b>
+      <p class="m-0 mt-1 text-xs text-muted">
+        The recording moved or the card is not plugged in. Your parts and the scan are safe; point
+        ApexCut at the file again.
+      </p>
+      <div class="mt-2 flex gap-1.5">
+        <button class="btn btn-mini" @click="relink('file', library.currentClip.stem)">
+          Find video…
+        </button>
+        <button class="btn btn-mini" @click="relink('dir')">Find the folder…</button>
+      </div>
+    </div>
     <div class="card text-xs text-muted">
       <b class="block text-sm text-fg">{{ shortName(library.currentClip.stem) }}</b>
       <span class="break-all">{{ library.currentClip.stem }}</span>

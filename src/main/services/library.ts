@@ -105,6 +105,39 @@ export class Library {
     return this.clips.has(stem);
   }
 
+  /** Point a known video at files that moved (same stem); the scan and all picks stay valid. */
+  setPaths(stem: string, rec: Pick<ClipRecord, 'mp4' | 'lrf'>): void {
+    const cur = this.get(stem);
+    cur.mp4 = rec.mp4 ?? cur.mp4;
+    cur.lrf = rec.lrf ?? cur.lrf;
+    this.save();
+  }
+
+  /** Does every recorded file of this video still exist? */
+  isPresent(stem: string): boolean {
+    const c = this.get(stem);
+    const files = [c.mp4, c.lrf].filter((p): p is string => !!p);
+    return files.length > 0 && files.every((p) => existsSync(p));
+  }
+
+  /**
+   * Relink missing videos from picked files/folders: anything discovered whose stem is a known
+   * video that is missing gets the new paths. Returns the stems fixed and, when a single file was
+   * picked for a specific video but belongs to another stem, that other stem.
+   */
+  relink(inputs: string[], only?: string): { relinked: string[]; mismatch?: string } {
+    const found = Library.discover(inputs);
+    const relinked: string[] = [];
+    for (const rec of found) {
+      if (only && rec.stem !== only) continue;
+      if (!this.clips.has(rec.stem) || this.isPresent(rec.stem)) continue;
+      this.setPaths(rec.stem, rec);
+      relinked.push(rec.stem);
+    }
+    const mismatch = only && !relinked.length && found.length === 1 ? found[0].stem : undefined;
+    return { relinked, mismatch };
+  }
+
   get(stem: string): ClipRecord {
     const c = this.clips.get(stem);
     if (!c) throw new Error(`unknown clip ${stem}`);

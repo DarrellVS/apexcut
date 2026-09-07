@@ -168,6 +168,14 @@ export interface ApexcutApi {
     remove(stem: string): Promise<void>;
     /** new order of all videos (also the order in the movie) */
     reorder(stems: string[]): Promise<void>;
+    /**
+     * Video files moved: pick one file for `stem`, or a folder to fix every missing video found in it.
+     * `relinked` = stems fixed; `mismatch` = the picked file belongs to another video; null = cancelled.
+     */
+    relink(
+      kind: 'file' | 'dir',
+      stem?: string,
+    ): Promise<{ relinked: string[]; mismatch?: string } | null>;
   };
   files: {
     /** absolute path of a File dropped from Explorer (Electron webUtils) */

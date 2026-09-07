@@ -21,6 +21,7 @@ const api: ApexcutApi = {
     add: (paths) => invoke('library:add', paths),
     remove: (stem) => invoke('library:remove', stem),
     reorder: (stems) => invoke('library:reorder', stems),
+    relink: (kind, stem) => invoke('library:relink', kind, stem),
   },
   files: {
     pathOf: (file) => webUtils.getPathForFile(file),

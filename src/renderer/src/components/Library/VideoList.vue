@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /** Left panel: the user's videos with status; click to open, drag to change the order in the movie. */
-import { ref } from 'vue';
-import { PhDotsSixVertical, PhPlus } from '@phosphor-icons/vue';
+import { computed, ref } from 'vue';
+import { PhDotsSixVertical, PhMagnifyingGlass, PhPlus } from '@phosphor-icons/vue';
+import { useRelink } from '@renderer/composables/useRelink';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { fmtDuration, fmtTime, shortName } from '@renderer/utils/format';
@@ -9,6 +10,8 @@ import { fmtDuration, fmtTime, shortName } from '@renderer/utils/format';
 defineEmits<{ pick: [kind: 'files' | 'dir'] }>();
 const library = useLibraryStore();
 const jobs = useJobsStore();
+const { relink } = useRelink();
+const missing = computed(() => library.clips.filter((c) => !c.exists).length);
 
 const dragging = ref<string | null>(null);
 const over = ref<string | null | 'end'>(null);
@@ -76,8 +79,20 @@ function onDrop(target: string | 'end'): void {
           <template v-else-if="jobs.analyzeJob">scanning…</template>
           <template v-else>not scanned yet</template>
         </span>
-        <span v-if="!c.mp4" class="block text-xs text-play">original MP4 missing</span>
-        <span v-if="!c.exists" class="block text-xs text-play">file not found</span>
+        <span v-if="!c.mp4 && c.exists" class="block text-xs text-play">original MP4 missing</span>
+        <span
+          v-if="!c.exists"
+          class="mt-0.5 flex items-center gap-1.5 text-xs whitespace-nowrap text-play"
+        >
+          File not found
+          <button
+            class="btn btn-mini flex items-center gap-1 text-fg"
+            title="Point ApexCut at the moved file; parts and scan are kept"
+            @click.stop="relink('file', c.stem)"
+          >
+            <PhMagnifyingGlass :size="12" /> Find video…
+          </button>
+        </span>
       </div>
     </div>
     <div
@@ -86,7 +101,15 @@ function onDrop(target: string | 'end'): void {
       @dragover.prevent="over = 'end'"
       @drop.prevent="onDrop('end')"
     />
-    <div class="mt-auto flex gap-1.5 pt-2">
+    <button
+      v-if="missing > 1"
+      class="mt-auto flex items-center justify-center gap-1.5 rounded-ctl border border-play/40 px-3 py-1.5 text-xs text-play hover:bg-s2"
+      title="Pick the folder the files moved to; every missing video found there is fixed"
+      @click="relink('dir')"
+    >
+      <PhMagnifyingGlass :size="13" /> {{ missing }} videos not found · Find their folder…
+    </button>
+    <div class="flex gap-1.5 pt-2" :class="{ 'mt-auto': missing <= 1 }">
       <button
         class="btn flex flex-1 items-center justify-center gap-1"
         @click="$emit('pick', 'files')"

@@ -6,6 +6,7 @@ import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
+import log from 'electron-log/main';
 import pkg from '../../package.json';
 import { edl } from '@core/edl';
 import type { Part, ScoreConfig } from '@core/types';
@@ -109,6 +110,27 @@ export function registerIpc(s: Services): void {
   ipcMain.handle('library:reorder', (_e, stems: unknown) =>
     s.projects.reorder(z.array(z.string()).parse(stems)),
   );
+  ipcMain.handle('library:relink', async (e, kindRaw: unknown, stemRaw: unknown) => {
+    const kind = z.enum(['file', 'dir']).parse(kindRaw);
+    const stem = z
+      .string()
+      .optional()
+      .parse(stemRaw ?? undefined);
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+    const res = await dialog.showOpenDialog(win as BrowserWindow, {
+      title:
+        kind === 'file'
+          ? `Where is ${stem ?? 'the video'} now?`
+          : 'Choose the folder your videos moved to',
+      properties: kind === 'file' ? ['openFile'] : ['openDirectory'],
+      filters:
+        kind === 'file' ? [{ name: 'DJI video', extensions: ['MP4', 'mp4', 'LRF', 'lrf'] }] : [],
+    });
+    if (res.canceled || !res.filePaths.length) return null;
+    const out = s.library.relink(res.filePaths, kind === 'file' ? stem : undefined);
+    log.info('relink:', out);
+    return out;
+  });
   ipcMain.handle('library:pick', async (e, kind: unknown) => {
     const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
     const k = z.enum(['files', 'dir']).parse(kind);
