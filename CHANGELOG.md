@@ -3,6 +3,11 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.2
+
+- The telemetry overlay no longer prints a label (“Joined”, “Corners”) under the gauge — just the
+  meter and the angle.
+
 ## 0.4.1
 
 - Removed: the target-length picker (“How long should it be?”). Stars and the Parts list stay the way

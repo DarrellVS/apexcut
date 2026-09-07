@@ -26,7 +26,6 @@ import {
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
 import type { OverlayJob, OverlaySprites } from './actions/overlay';
 import { resample } from '@core/overlay';
-import { REASON_LABEL, reasonOf } from '@core/selection';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { probeDuration } from './services/media';
@@ -332,9 +331,6 @@ export function registerIpc(s: Services): void {
           sprites,
           fps,
           samples: resample(sig.imuT, sig.imu.leanDeg, sig.imu.aLonG, it.startS, it.endS, fps),
-          label: it.reden
-            ? (REASON_LABEL[reasonOf({ reden: it.reden } as never)] ?? 'lean')
-            : 'lean',
         };
       };
     }

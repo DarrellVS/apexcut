@@ -40,10 +40,8 @@ export interface OverlayLayout {
   /** side of the (square, padded) rotating sprite */
   sprite: number;
   numPx: number;
-  labelPx: number;
-  /** baseline y of the number and of the label */
+  /** baseline y of the number */
   numY: number;
-  labelY: number;
   /** braking/acceleration bar (dashboard) */
   bar: { x: number; y: number; w: number; h: number } | null;
 }
@@ -74,9 +72,7 @@ export function overlayLayout(spec: OverlaySpec, w: number, h: number): OverlayL
     r: box * 0.42,
     sprite: Math.round(box * (dash ? 0.6 : 0.7)),
     numPx: Math.round(box * 0.24),
-    labelPx: Math.round(box * 0.085),
     numY: Math.round(y + box * 0.93),
-    labelY: Math.round(y + box * 1.02 + box * 0.085),
     bar: dash ? { x: x + box + gap, y: y + box * 0.12, w: barW, h: Math.round(box * 0.76) } : null,
   };
 }
@@ -197,7 +193,6 @@ export function drawOverlayFrame(
   spec: OverlaySpec,
   layout: OverlayLayout,
   sample: Sample | null,
-  label = 'LEAN',
 ): void {
   const lean = sample?.leanDeg ?? 0;
   const aLon = sample?.aLonG ?? 0;
@@ -221,10 +216,6 @@ export function drawOverlayFrame(
   ctx.textBaseline = 'alphabetic';
   ctx.font = `700 ${L.numPx}px ${FONT}`;
   ctx.fillText(`${Math.round(Math.abs(lean))}°`, L.cx, L.numY);
-  ctx.font = `600 ${L.labelPx}px ${FONT}`;
-  ctx.globalAlpha = 0.75;
-  ctx.fillText(label.toUpperCase(), L.cx, L.labelY);
-  ctx.globalAlpha = 1;
   if (L.bar) {
     const b = L.bar;
     ctx.fillStyle = OVERLAY_COLORS.dim;

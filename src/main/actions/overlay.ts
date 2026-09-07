@@ -28,8 +28,6 @@ export interface OverlayJob {
   /** per-frame data of this part at the export fps */
   samples: Sample[];
   fps: number;
-  /** what the small label says, e.g. the reason of the part */
-  label: string;
 }
 
 const optPath = (p: string): string => p.replace(/\\/g, '/').replace(/:/g, '\\:');
@@ -89,7 +87,6 @@ export function overlayGraph(
     cur = out;
   };
   text('num', '0°', L.numPx, L.numY, 0.92);
-  text('lbl', job.label.toUpperCase().replace(/[':]/g, ''), L.labelPx, L.labelY, 0.75);
   if (L.bar) {
     const b = L.bar;
     const box = (name: string, x: number, y: number, w: number, h: number, color: string): void => {

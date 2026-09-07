@@ -65,7 +65,7 @@ describe('overlay layout', () => {
           expect(L.x + L.box + (L.bar ? L.bar.w + L.bar.x - (L.x + L.box) : 0)).toBeLessThanOrEqual(
             w,
           );
-          expect(L.labelY).toBeLessThanOrEqual(h);
+          expect(L.numY).toBeLessThanOrEqual(h);
         }
       }
     }

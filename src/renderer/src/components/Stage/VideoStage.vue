@@ -7,7 +7,6 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
 import { FORMAT_SPEC } from '@shared/ipc';
 import { drawOverlayFrame, overlayLayout, type Ctx2D, type Sample } from '@core/overlay';
-import { REASON_LABEL, reasonOf } from '@core/selection';
 import { musicUrl, useMovieTime } from '@renderer/composables/useMovieTime';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
@@ -272,14 +271,7 @@ function drawGauge(): void {
   const L = overlayLayout(spec, cropW, cropH);
   ctx.save();
   ctx.translate(ox, oy);
-  const part = editor.activePart;
-  drawOverlayFrame(
-    ctx as unknown as Ctx2D,
-    spec,
-    L,
-    sampleAt(editor.time),
-    part ? REASON_LABEL[reasonOf(part)] : 'lean',
-  );
+  drawOverlayFrame(ctx as unknown as Ctx2D, spec, L, sampleAt(editor.time));
   ctx.restore();
 }
 watch(
