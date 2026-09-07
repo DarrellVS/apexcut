@@ -24,6 +24,8 @@ export interface ProjectRecord {
   clips: string[];
   /** sensitivity preset of the project (Sporty when absent) */
   preset?: PresetId;
+  /** out of the way on the projects screen; never the open project */
+  archived?: boolean;
 }
 
 interface ProjectsFile {
@@ -81,12 +83,25 @@ export class Projects {
     }
   }
 
+  /** The open project must exist and not be archived; fall back to the most recently edited one. */
   private ensureActive(): void {
-    if (!this.state.projects.length) this.state.projects.push(this.blank(DEFAULT_PROJECT_NAME));
-    if (!this.state.projects.some((p) => p.id === this.state.active)) {
-      this.state.active = this.state.projects[0].id;
+    const open = this.state.projects.filter((p) => !p.archived);
+    if (!open.length) {
+      const p = this.blank(DEFAULT_PROJECT_NAME);
+      this.state.projects.push(p);
+      open.push(p);
+    }
+    if (!open.some((p) => p.id === this.state.active)) {
+      this.state.active = [...open].sort((a, b) => b.updatedAt - a.updatedAt)[0].id;
     }
     this.save();
+  }
+
+  setArchived(id: string, archived: boolean): void {
+    const p = this.find(id);
+    p.archived = archived;
+    this.touch(p);
+    this.ensureActive();
   }
 
   private save(): void {
@@ -153,6 +168,7 @@ export class Projects {
       highlightS: Math.round(highlightS),
       thumbStem,
       preset: p.preset ?? 'sporty',
+      archived: !!p.archived,
     };
   }
 

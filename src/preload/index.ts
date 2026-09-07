@@ -16,6 +16,7 @@ const api: ApexcutApi = {
     importFile: () => invoke('projects:importFile'),
     setPreset: (preset) => invoke('projects:setPreset', preset),
     addGroups: (groups) => invoke('projects:addGroups', groups),
+    archive: (id, archived) => invoke('projects:archive', id, archived),
   },
   library: {
     list: () => invoke('library:list'),

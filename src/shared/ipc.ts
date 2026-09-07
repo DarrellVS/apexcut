@@ -60,6 +60,7 @@ export interface ProjectInfo {
   thumbStem: string | null;
   /** sensitivity preset (see core/presets.ts) */
   preset: PresetId;
+  archived: boolean;
 }
 
 export interface TimelinePayload {
@@ -193,6 +194,8 @@ export interface ApexcutApi {
     importFile(): Promise<{ id: string; missing: string[] } | null>;
     /** sensitivity preset of the open project; rescoring every scanned video of it */
     setPreset(preset: PresetId): Promise<void>;
+    /** move a project to / out of the Archived section; an archived open project closes */
+    archive(id: string, archived: boolean): Promise<void>;
     /**
      * Add videos in groups: `name` null = into the open project, otherwise a new project with that
      * name. Returns the stems added, which of them still need a scan, and the first project created.

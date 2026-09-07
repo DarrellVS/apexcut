@@ -107,6 +107,9 @@ export function registerIpc(s: Services): void {
     return s.projects.importFrom(res.filePaths[0]);
   });
 
+  ipcMain.handle('projects:archive', (_e, id: unknown, archived: unknown) =>
+    s.projects.setArchived(z.string().parse(id), z.boolean().parse(archived)),
+  );
   ipcMain.handle('projects:setPreset', (_e, presetRaw: unknown) => {
     const preset = z.enum(PRESET_IDS).parse(presetRaw);
     s.projects.setPreset(preset);
