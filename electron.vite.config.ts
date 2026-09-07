@@ -12,6 +12,15 @@ export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     resolve: { alias: { ...alias, '@main': resolve('src/main') } },
+    build: {
+      rollupOptions: {
+        // the analysis worker is its own entry: out/main/workers/analyze.js
+        input: {
+          index: resolve('src/main/index.ts'),
+          'workers/analyze': resolve('src/main/workers/analyze.ts'),
+        },
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

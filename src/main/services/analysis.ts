@@ -6,9 +6,10 @@
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseDjmd } from '@core/dji/djmd';
-import { derive, type ImuSignals } from '@core/imu';
-import { compute, type ScoreSignals } from '@core/score';
+import { Worker } from 'node:worker_threads';
+import type { DjmdHeader } from '@core/dji/djmd';
+import type { ImuSignals } from '@core/imu';
+import { compute, type ScoreResult, type ScoreSignals } from '@core/score';
 import { autoToParts, mergeSelection } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
@@ -52,6 +53,36 @@ interface StoredHighlights {
   signals: Record<string, (number | null)[]>;
 }
 
+/** Parse + IMU + scoring in a worker thread so the main process stays responsive. */
+function runAnalysisWorker(
+  raw: Uint8Array,
+  cfg: Partial<ScoreConfig> | undefined,
+  signal: AbortSignal,
+): Promise<{ header: DjmdHeader; imu: ImuSignals; result: ScoreResult }> {
+  return new Promise((resolve, reject) => {
+    // bundled next to this file by electron-vite; unpacked from the asar in the packaged app
+    const script = join(__dirname, 'workers', 'analyze.js').replace(
+      'app.asar',
+      'app.asar.unpacked',
+    );
+    const worker = new Worker(script, { workerData: { raw, cfg } });
+    const stop = (): void => {
+      worker.terminate().catch(() => undefined);
+      reject(new Error('cancelled'));
+    };
+    signal.addEventListener('abort', stop, { once: true });
+    worker.once('message', (m: { error?: string } & Record<string, unknown>) => {
+      signal.removeEventListener('abort', stop);
+      if (m.error) reject(new Error(m.error));
+      else resolve(m as unknown as { header: DjmdHeader; imu: ImuSignals; result: ScoreResult });
+    });
+    worker.once('error', (e) => {
+      signal.removeEventListener('abort', stop);
+      reject(e);
+    });
+  });
+}
+
 const round = (v: number, d: number): number | null =>
   Number.isFinite(v) ? Math.round(v * 10 ** d) / 10 ** d : null;
 
@@ -87,15 +118,8 @@ export class Analysis {
     const [raw, info] = await Promise.all([extractDataTrack(source, 'djmd'), probe(source)]);
     if (ctx.signal.aborted) throw new Error('cancelled');
     prog(0.6, 'Reading your camera’s motion sensor');
-    const { header, frames } = parseDjmd(raw);
-    if (frames.quaternionCoverage < 0.9) {
-      throw new Error(
-        'This video has no motion data (attitude quaternion missing in the djmd track).',
-      );
-    }
-    const imu = derive(frames);
+    const { header, imu, result } = await runAnalysisWorker(raw, cfg, ctx.signal);
     prog(0.8, 'Scoring');
-    const result = compute(imu, cfg);
     const dir = this.dir(stem);
 
     // full-res dimensions come from the MP4; the proxy is what we analysed
@@ -150,7 +174,7 @@ export class Analysis {
     this.writeSelection(stem, { parts, frozen: true });
   }
 
-  private storeHighlights(dir: string, result: ReturnType<typeof compute>): void {
+  private storeHighlights(dir: string, result: ScoreResult): void {
     const signals: Record<string, (number | null)[]> = {};
     for (const c of SIGNAL_COLUMNS) signals[c] = Array.from(result.signals[c], (v) => round(v, 3));
     const hl: StoredHighlights = {

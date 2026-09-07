@@ -16,6 +16,7 @@ files:
 # ffmpeg/ffprobe are spawned as child processes and must live outside the asar archive
 asarUnpack:
   - resources/**
+  - out/main/workers/**
   - node_modules/ffmpeg-static/**
   - node_modules/ffprobe-static/**
 win:
