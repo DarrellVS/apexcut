@@ -9,11 +9,13 @@ import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useTimelineView } from '@renderer/composables/useTimelineView';
 import { useEditorStore } from '@renderer/stores/editor';
+import { useSettingsStore } from '@renderer/stores/settings';
 import { fmtDuration, fmtTime } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
 const editor = useEditorStore();
+const settings = useSettingsStore();
 const duration = computed(() => editor.duration);
 const view = useTimelineView(duration);
 
@@ -254,16 +256,60 @@ function blockKey(e: KeyboardEvent, p: Part): void {
       break;
   }
 }
+// ---- snapping (Settings → Editing, off by default; Alt inverts while dragging)
+const SNAP_PX = 8;
+/** the time the dragged edge snapped to, for the guide line; null when free */
+const snapT = ref<number | null>(null);
+/** candidate times: auto segment boundaries, score valleys under the threshold, other parts' edges */
+const snapTargets = computed<number[]>(() => {
+  const out: number[] = [];
+  for (const a of editor.auto) out.push(a.start_s, a.end_s);
+  for (const p of editor.parts) out.push(p.start_s, p.end_s);
+  const t = editor.data.t as number[] | undefined;
+  const score = editor.data.score as (number | null)[] | undefined;
+  if (t && score) {
+    for (let i = 1; i < score.length - 1; i++) {
+      const s = score[i];
+      if (s === null || s >= editor.threshold) continue;
+      if (s <= (score[i - 1] ?? Infinity) && s < (score[i + 1] ?? Infinity)) out.push(t[i]);
+    }
+  }
+  return out;
+});
+function snap(t: number, ev: MouseEvent, exclude: Part): number {
+  const on = (settings.settings?.snapping ?? false) !== ev.altKey;
+  if (!on || !lane.value) {
+    snapT.value = null;
+    return t;
+  }
+  const secPerPx = view.span.value / lane.value.clientWidth;
+  const tol = SNAP_PX * secPerPx;
+  let best = t;
+  let bestD = tol;
+  const consider = (c: number): void => {
+    const d = Math.abs(c - t);
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  };
+  for (const c of snapTargets.value) if (c !== exclude.start_s && c !== exclude.end_s) consider(c);
+  consider(Math.round(t));
+  snapT.value = best === t ? null : best;
+  return best;
+}
 function dragEdge(_e: MouseEvent, p: Part, edge: 'start_s' | 'end_s'): void {
   editor.select(p.id);
   editor.snapshot();
   dragging.value = true;
   const el = lane.value!;
-  const move = (ev: MouseEvent): void => editor.setEdge(p, edge, view.tOfEvent(ev, el));
+  const move = (ev: MouseEvent): void =>
+    editor.setEdge(p, edge, snap(view.tOfEvent(ev, el), ev, p));
   const up = (): void => {
     window.removeEventListener('mousemove', move);
     window.removeEventListener('mouseup', up);
     dragging.value = false;
+    snapT.value = null;
     editor.save();
   };
   window.addEventListener('mousemove', move);
@@ -425,6 +471,12 @@ const zoomInput = computed({
       <div
         class="pointer-events-none absolute inset-y-0 z-[3] w-0.5 bg-play shadow-[0_0_8px_var(--play)]"
         :style="{ left: `${view.xPct(editor.time)}%` }"
+      />
+      <!-- snap guide: where the dragged edge clicked into place -->
+      <div
+        v-if="snapT !== null"
+        class="pointer-events-none absolute inset-y-0 z-[3] w-px bg-sel shadow-[0_0_6px_var(--sel)]"
+        :style="{ left: `${view.xPct(snapT)}%` }"
       />
       <div
         v-if="sel.length && !dragging"

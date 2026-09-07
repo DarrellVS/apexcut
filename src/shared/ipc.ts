@@ -153,6 +153,8 @@ export const settingsSchema = z.object({
   lastName: z.string().default('my-ride'),
   /** the three-step tour has been shown (or skipped) */
   tourSeen: z.boolean().default(false),
+  /** part edges snap to auto boundaries, score valleys, other parts and whole seconds while dragging */
+  snapping: z.boolean().default(false),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 

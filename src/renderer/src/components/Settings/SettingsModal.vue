@@ -12,6 +12,7 @@ import OutputSection from './OutputSection.vue';
 import StorageSection from './StorageSection.vue';
 import OnboardingSection from './OnboardingSection.vue';
 import ShortcutsSection from './ShortcutsSection.vue';
+import EditingSection from './EditingSection.vue';
 import AboutSection from './AboutSection.vue';
 import ScoringSection from './ScoringSection.vue';
 
@@ -38,6 +39,10 @@ const NAV: NavGroup[] = [
       { id: 'shortcuts', label: 'Shortcuts' },
       { id: 'about', label: 'Updates & about' },
     ],
+  },
+  {
+    title: 'Editing',
+    items: [{ id: 'editing', label: 'Timeline' }],
   },
   {
     title: 'Advanced',
@@ -141,6 +146,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             <StorageSection v-else-if="ui.settingsSection === 'storage'" />
             <OnboardingSection v-else-if="ui.settingsSection === 'onboarding'" />
             <ShortcutsSection v-else-if="ui.settingsSection === 'shortcuts'" />
+            <EditingSection v-else-if="ui.settingsSection === 'editing'" />
             <AboutSection v-else-if="ui.settingsSection === 'about'" />
             <ScoringSection v-else-if="ui.settingsSection === 'scoring'" />
           </div>
