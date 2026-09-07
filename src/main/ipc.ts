@@ -9,6 +9,7 @@ import { z } from 'zod';
 import log from 'electron-log/main';
 import pkg from '../../package.json';
 import { edl } from '@core/edl';
+import { PRESET_IDS, PRESETS } from '@core/presets';
 import type { Part, ScoreConfig } from '@core/types';
 import { exportRequestSchema, partSchema, settingsSchema, type JobState } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, type CutItem } from './actions/cut';
@@ -104,6 +105,16 @@ export function registerIpc(s: Services): void {
     });
     if (res.canceled || !res.filePaths[0]) return null;
     return s.projects.importFrom(res.filePaths[0]);
+  });
+
+  ipcMain.handle('projects:setPreset', (_e, presetRaw: unknown) => {
+    const preset = z.enum(PRESET_IDS).parse(presetRaw);
+    s.projects.setPreset(preset);
+    // cached signals only, so this is quick even for a dozen videos
+    for (const c of s.projects.clipInfos()) {
+      if (c.analyzed) s.analysis.rescore(c.stem, PRESETS[preset].config);
+    }
+    log.info(`preset ${preset} applied to project ${s.projects.activeId}`);
   });
 
   // ---- library (videos of the open project)

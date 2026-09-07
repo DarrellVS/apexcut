@@ -9,6 +9,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import log from 'electron-log/main';
+import type { PresetId } from '@core/presets';
 import { autoToParts } from '@core/selection';
 import type { Part, Segment } from '@core/types';
 import { projectFileSchema, type ClipInfo, type ProjectFile, type ProjectInfo } from '@shared/ipc';
@@ -21,6 +22,8 @@ export interface ProjectRecord {
   createdAt: number;
   updatedAt: number;
   clips: string[];
+  /** sensitivity preset of the project (Sporty when absent) */
+  preset?: PresetId;
 }
 
 interface ProjectsFile {
@@ -149,7 +152,14 @@ export class Projects {
       nParts,
       highlightS: Math.round(highlightS),
       thumbStem,
+      preset: p.preset ?? 'sporty',
     };
+  }
+
+  setPreset(preset: PresetId): void {
+    const p = this.active;
+    p.preset = preset;
+    this.touch(p);
   }
 
   create(name: string): ProjectInfo {

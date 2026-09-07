@@ -45,6 +45,27 @@ last end (the gap is included), `reden = samengeplakt`. Join suggestions: neighb
 is ≤ 4 s, or whose mean score in the gap ≥ 45 % of the threshold, or whose minimum ≥ 25 % with gap ≤ 12 s;
 consecutive suggestions form one chain.
 
+## Presets (`presets.ts`)
+
+Three ride types stored per project; Sporty equals the defaults above, so the parity fixture is the
+Sporty preset. Only these keys differ; weights and smoothing stay.
+
+| key                 | Relaxed | Sporty | Track |
+| ------------------- | ------- | ------ | ----- |
+| `threshold_pct`     | 65      | 75     | 85    |
+| `min_dur_s`         | 8       | 5      | 3     |
+| `merge_gap_s`       | 5       | 3      | 2     |
+| `pad_s`             | 2       | 1.5    | 1     |
+| `speed_gate_lo_mps` | 2       | 3      | 4     |
+| `speed_gate_hi_mps` | 5       | 6      | 8     |
+| `lean_yaw_lo_dps`   | 1.5     | 2      | 3     |
+| `lean_yaw_hi_dps`   | 5       | 6      | 10    |
+| `accel_near_lean_s` | 8       | 6      | 4     |
+
+`presetOf(config)` says which preset a config equals on those keys, or `custom` once a slider moved.
+Choosing a preset rescoring every scanned video of the project from cached signals (no ffmpeg);
+manual and joined parts survive through `mergeSelection`.
+
 ## Changing the rules
 
 Change `DEFAULT_CONFIG`/logic → regenerate the fixture from the Python oracle only if the change is

@@ -1,15 +1,37 @@
 <script setup lang="ts">
 /** Parts tab: amount slider, add part, scrollable list synced with the timeline selection, bring back. */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { PhPlus } from '@phosphor-icons/vue';
+import { PRESET_IDS, PRESETS, presetOf, type PresetId } from '@core/presets';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { AMOUNT_LEVELS, useEditorStore } from '@renderer/stores/editor';
+import { useLibraryStore } from '@renderer/stores/library';
+import { useProjectsStore } from '@renderer/stores/projects';
 import { fmtDuration, fmtTime } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
 const editor = useEditorStore();
+const library = useLibraryStore();
+const projects = useProjectsStore();
+
+/** the project's preset, or Custom once the open video's sliders moved away from it */
+const preset = computed<PresetId | 'custom'>(() => presetOf(editor.config));
+const applying = ref(false);
+async function choosePreset(id: PresetId): Promise<void> {
+  if (applying.value) return;
+  applying.value = true;
+  try {
+    const before = editor.parts.length;
+    await window.apexcut.projects.setPreset(id);
+    if (editor.stem) await editor.open(editor.stem);
+    await Promise.all([library.refresh(), projects.refresh()]);
+    toast(`${PRESETS[id].label}: ${editor.parts.length} parts in this video (was ${before})`);
+  } finally {
+    applying.value = false;
+  }
+}
 
 const sorted = computed(() => [...editor.parts].sort((a, b) => a.start_s - b.start_s));
 
@@ -88,6 +110,27 @@ function clickRow(p: Part, e: MouseEvent): void {
 <template>
   <div class="flex flex-col gap-2.5">
     <div class="card">
+      <div class="mb-1.5 flex items-center justify-between text-xs text-muted">
+        <span>How picky?</span>
+        <span v-if="preset === 'custom'" title="A slider was moved; pick a preset to go back">
+          Custom
+        </span>
+      </div>
+      <div class="mb-2.5 grid grid-cols-3 gap-1 rounded-ctl bg-s2 p-1" role="radiogroup">
+        <button
+          v-for="id in PRESET_IDS"
+          :key="id"
+          class="rounded-lg py-1 text-xs font-semibold transition-colors"
+          :class="preset === id ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+          role="radio"
+          :aria-checked="preset === id"
+          :title="PRESETS[id].hint"
+          :disabled="applying"
+          @click="choosePreset(id)"
+        >
+          {{ PRESETS[id].label }}
+        </button>
+      </div>
       <div class="flex justify-between text-xs text-muted">
         <span>Fewer parts</span><span>More parts</span>
       </div>

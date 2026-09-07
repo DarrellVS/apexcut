@@ -3,6 +3,7 @@
  * the bridge from the renderer; the inferred types are the single source of truth.
  */
 import { z } from 'zod';
+import type { PresetId } from '@core/presets';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 
 export const FORMATS = ['original', '16x9', '4x3', '9x16'] as const;
@@ -46,6 +47,8 @@ export interface ProjectInfo {
   highlightS: number;
   /** stem of the first analysed video (for the card thumbnail) */
   thumbStem: string | null;
+  /** sensitivity preset (see core/presets.ts) */
+  preset: PresetId;
 }
 
 export interface TimelinePayload {
@@ -177,6 +180,8 @@ export interface ApexcutApi {
     exportFile(id: string): Promise<{ file: string } | null>;
     /** open dialog + import `.apexcut` as a new project; null when cancelled */
     importFile(): Promise<{ id: string; missing: string[] } | null>;
+    /** sensitivity preset of the open project; rescoring every scanned video of it */
+    setPreset(preset: PresetId): Promise<void>;
   };
   library: {
     /** videos of the open project, in movie order */

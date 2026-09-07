@@ -14,6 +14,7 @@ const api: ApexcutApi = {
     remove: (id) => invoke('projects:remove', id),
     exportFile: (id) => invoke('projects:exportFile', id),
     importFile: () => invoke('projects:importFile'),
+    setPreset: (preset) => invoke('projects:setPreset', preset),
   },
   library: {
     list: () => invoke('library:list'),
