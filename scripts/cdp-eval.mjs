@@ -11,7 +11,10 @@ const expr = process.argv[2] ?? 'document.title';
 const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
 const page = targets.find((t) => t.type === 'page' && !t.url.startsWith('devtools://'));
 if (!page) {
-  console.error('no page target; targets:', targets.map((t) => `${t.type} ${t.url}`));
+  console.error(
+    'no page target; targets:',
+    targets.map((t) => `${t.type} ${t.url}`),
+  );
   process.exit(1);
 }
 const ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -29,5 +32,6 @@ ws.send(
 const msg = await new Promise((res) => (ws.onmessage = (e) => res(JSON.parse(e.data))));
 ws.close();
 const r = msg.result?.result;
-if (msg.result?.exceptionDetails) console.error('exception:', msg.result.exceptionDetails.text, r?.description);
+if (msg.result?.exceptionDetails)
+  console.error('exception:', msg.result.exceptionDetails.text, r?.description);
 else console.log(JSON.stringify(r?.value ?? r, null, 2));
