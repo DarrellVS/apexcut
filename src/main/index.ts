@@ -54,8 +54,23 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('app.apexcut');
   app.on('browser-window-created', (_, window) => optimizer.watchWindowShortcuts(window));
 
+  log.info(
+    'data root:',
+    paths.root,
+    '| exe:',
+    process.execPath,
+    '| argv:',
+    process.argv.slice(1).join(' '),
+  );
   installProtocol();
   const services = createServices();
+  log.info(
+    'library:',
+    services.library
+      .list()
+      .map((c) => `${c.stem} ${c.nEnabled ?? '-'}/${c.nParts ?? '-'}`)
+      .join(', '),
+  );
   registerIpc(services);
   createWindow();
 

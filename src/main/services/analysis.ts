@@ -15,6 +15,7 @@ import { ThumbnailAction } from '../actions/thumbs';
 import type { JobContext } from './jobs';
 import type { ClipMeta, Library } from './library';
 import { extractDataTrack, probe } from './media';
+import log from 'electron-log/main';
 import { ensureDir, paths, readJson, writeJson } from './store';
 
 /** 10 Hz columns kept on disk and sent to the renderer. */
@@ -128,6 +129,9 @@ export class Analysis {
       ? previous.parts
       : mergeSelection(previous.parts, result.segments);
     writeJson(join(dir, 'selection.json'), { parts });
+    log.info(
+      `analysis ${stem}: ${result.segments.length} auto, selection now ${parts.length} parts (${parts.filter((p) => p.manual).length} manual, frozen=${!!previous.frozen}, previous=${previous.parts.length})`,
+    );
     prog(1, 'Done');
   }
 
@@ -171,7 +175,11 @@ export class Analysis {
     const result = compute(imu, cfg);
     this.storeHighlights(dir, result);
     const previous = readJson<{ parts: Part[] }>(join(dir, 'selection.json'), { parts: [] }).parts;
-    writeJson(join(dir, 'selection.json'), { parts: mergeSelection(previous, result.segments) });
+    const merged = mergeSelection(previous, result.segments);
+    writeJson(join(dir, 'selection.json'), { parts: merged });
+    log.info(
+      `rescore ${stem}: ${result.segments.length} auto, selection now ${merged.length} parts (${merged.filter((p) => p.manual).length} manual, previous=${previous.length})`,
+    );
     return this.timeline(stem);
   }
 
@@ -195,6 +203,9 @@ export class Analysis {
   }
 
   saveParts(stem: string, parts: Part[]): void {
+    log.info(
+      `saveParts ${stem}: ${parts.length} parts (${parts.filter((p) => p.manual).length} manual)`,
+    );
     writeJson(join(this.dir(stem), 'selection.json'), {
       parts: [...parts].sort((a, b) => a.start_s - b.start_s),
     });
