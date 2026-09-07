@@ -123,7 +123,7 @@ export async function renderRideCard(
   const gap = Math.round(w * 0.02);
   const cols = Math.max(1, imgs.length);
   const tw = (w - 2 * pad - gap * (cols - 1)) / cols;
-  const th = variant === 'portrait' ? tw * 0.66 : Math.min(tw * 0.66, h * 0.3);
+  const th = variant === 'portrait' ? tw * 0.78 : Math.min(tw * 0.66, h * 0.3);
   imgs.forEach((img, i) => drawCover(ctx, img, pad + i * (tw + gap), thumbTop, tw, th, 22));
   const statsTop = thumbTop + (imgs.length ? th : 0) + gap * 1.5;
 
@@ -136,7 +136,7 @@ export async function renderRideCard(
   ];
   const tcols = variant === 'portrait' ? 2 : 4;
   const tileW = (w - 2 * pad - gap * (tcols - 1)) / tcols;
-  const tileH = variant === 'portrait' ? Math.round(h * 0.135) : Math.round(h * 0.26);
+  const tileH = variant === 'portrait' ? Math.round(h * 0.17) : Math.round(h * 0.26);
   tiles.forEach(([big, small], i) => {
     const x = pad + (i % tcols) * (tileW + gap);
     const y = statsTop + Math.floor(i / tcols) * (tileH + gap);

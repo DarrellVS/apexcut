@@ -451,7 +451,7 @@ export function registerIpc(s: Services): void {
     let nParts = 0;
     let nCorners = 0;
     let movieS = 0;
-    const top: RideStats['top'] = [];
+    const ranked: (RideStats['top'][number] & { score: number })[] = [];
     for (const c of clips) {
       const tl = s.analysis.timeline(c.stem);
       const lean = tl.data.leanDeg ?? [];
@@ -469,23 +469,23 @@ export function registerIpc(s: Services): void {
         if (run > best) {
           best = run;
           twistyStem = c.stem;
-          twistyT = Math.max(0, t[i] - 60);
+          twistyT = Math.max(0, (t[i] ?? 0) - 60);
         }
       }
       for (const p of tl.parts.filter((p) => p.enabled)) {
         nParts++;
         if (p.reden !== 'accel/rem') nCorners++;
         movieS += p.end_s - p.start_s;
-        top.push({
+        ranked.push({
           stem: c.stem,
           tS: p.core_start_s ?? (p.start_s + p.end_s) / 2,
           reden: p.reden,
           maxLeanDeg: p.max_lean_deg ?? 0,
           score: p.score ?? 0,
-        } as RideStats['top'][number] & { score: number });
+        });
       }
     }
-    top.sort((a, b) => (b as { score: number }).score - (a as { score: number }).score);
+    ranked.sort((a, b) => b.score - a.score);
     const first = [...clips].sort((a, b) => a.stem.localeCompare(b.stem))[0];
     const m = first && /_(\d{4})(\d{2})(\d{2})\d{6}_/.exec(first.stem);
     return {
@@ -500,7 +500,7 @@ export function registerIpc(s: Services): void {
       twistyStem,
       twistyT,
       twistyPct: Math.round((best / 600) * 100),
-      top: top
+      top: ranked
         .slice(0, 3)
         .map(({ stem, tS, reden, maxLeanDeg }) => ({ stem, tS, reden, maxLeanDeg })),
     };
