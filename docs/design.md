@@ -76,6 +76,13 @@ into a collapsed “Archived · n” section at the bottom.
 - **Movie tab**: target length slider with “Pick the best parts” (stars and own parts always stay),
   per-video distribution, transition segment (Crossfade / Cut / Dip to black) with a plain-words hint,
   title card and end card toggles, “Only the starred parts”.
+- **Telemetry overlay**: white bike silhouette and angle number (Lean angle) or dial + orange needle +
+  teal/orange g-bar (Dashboard) in a chosen corner, sizes S/M/L as a share of the frame height; drawn
+  live on the stage inside the export crop so it lands where it will be. Colours are fixed (white,
+  `#ff7a3d`, `#4dd0d0`) because they sit on video, not on the app theme.
+- **Ride card**: 1080×1350 and 1200×630 PNG — dark or light ground (follows the theme) with the brand
+  glow, mark + project name + date, three thumbnails of the best parts, four stat tiles, footer with the
+  twistiest minute and “Made with ApexCut”.
 - **Focus**: every interactive element shows a 2 px `--sel` ring for keyboard focus only; timeline blocks
   are focusable (arrows move, Enter plays, Space toggles, Delete removes). `prefers-reduced-motion` turns
   transitions off.

@@ -3,6 +3,15 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.0 — Telemetry
+
+- **Riding data on the picture**: a lean gauge on the exported movie — “Lean angle” (a leaning bike
+  with the angle) or “Dashboard” (dial with needle plus a braking / acceleration bar). Pick the corner
+  and the size; it shows live on the video while you edit and is drawn at full resolution on export.
+- **Ride card**: one click makes a picture with the numbers of the ride (sharpest lean, hardest braking,
+  corners, riding time) and its three best moments — portrait for Instagram, wide for chats. Saved next
+  to your movies and copied to the clipboard.
+
 ## 0.3.0 — Better movies
 
 - **Target length**: “How long should it be?” — pick the best parts across all videos for a 2-, 3- or

@@ -53,6 +53,13 @@ src/
    parts, concatenated around the movie) and the music mix (`MusicMixAction`: songs trimmed, faded and
    concatenated, cut at the movie end, laid over the original audio with `amix`; video stream copied).
    Songs are referenced by path and served to the player through `apexcut://media/music/<base64url>`.
+   Telemetry overlay: `core/overlay.ts` owns layout, drawing (a minimal 2D-context interface, so it is
+   pure and unit-tested) and the `sendcmd` command stream; the renderer draws the same thing live on a
+   canvas over the video and, at export, renders three sprites (bike, dial, needle) as PNGs; ffmpeg
+   composes them inside each part's encode (`actions/overlay.ts`: `rotate@bike`, `rotate@needle`,
+   `drawtext@num`, `drawbox@bar`, all driven per frame from the 30 Hz signals). Ride card:
+   `projects:rideStats` sums the project, `analysis:frame` grabs frames of the best parts, the renderer
+   draws the PNG (`utils/rideCard.ts`) and `app:saveImage` stores it next to the movies + clipboard.
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 
