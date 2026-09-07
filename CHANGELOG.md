@@ -3,6 +3,17 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.15
+
+- Ride card: “corners” now counts actual corners (lean past 20°) inside the parts of the movie — it used
+  to count parts, so a long joined part counted as one corner. Sharpest lean and hardest braking are
+  taken from the movie's parts too (braking used to look at the whole recording).
+- Export card: times read as a clock (“23:26”, “1:02:05”, “30 s”) instead of “(1406 s)” and “23 min
+  26 sec”.
+- “1 parts” reads “1 part” everywhere.
+- A part's lean / braking / acceleration figures follow its edges when you trim or drag them (they
+  stayed at the values of the original pick); joined parts keep their pieces inside the new edges.
+
 ## 0.4.14
 
 - Fixed: “Make my movie” / “Make clips” failed with “Something went wrong” (the same “could not be

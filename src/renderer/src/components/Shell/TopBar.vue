@@ -20,7 +20,7 @@ import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useUiStore } from '@renderer/stores/ui';
-import { fmtDuration, fmtTime, shortName } from '@renderer/utils/format';
+import { fmtDuration, fmtTime, shortName, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const emit = defineEmits<{ make: [scope: 'all' | 'current']; home: [] }>();
@@ -49,7 +49,7 @@ const summary = computed(() => {
   const n = all.reduce((a, c) => a + (c.nEnabled ?? 0), 0);
   const s = all.reduce((a, c) => a + (c.highlightS ?? 0), 0);
   if (!n) return 'No parts selected yet';
-  return `${n} parts${all.length > 1 ? ` from ${all.length} videos` : ''} · ${fmtDuration(s)}`;
+  return `${plural(n, 'part')}${all.length > 1 ? ` from ${plural(all.length, 'video')}` : ''} · ${fmtDuration(s)}`;
 });
 const canMake = computed(() => library.analyzed.some((c) => (c.nEnabled ?? 0) > 0));
 
@@ -243,7 +243,8 @@ async function exportProject(): Promise<void> {
         >
           <b class="block text-sm">Only this video</b>
           <span class="text-xs text-muted">
-            {{ shortName(library.currentClip.stem) }} · {{ editor.enabledParts.length }} parts ·
+            {{ shortName(library.currentClip.stem) }} ·
+            {{ plural(editor.enabledParts.length, 'part') }} ·
             {{ fmtDuration(editor.movieLength) }}
           </span>
         </div>

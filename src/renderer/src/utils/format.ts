@@ -49,3 +49,8 @@ export function shortName(stem: string): string {
   const m = /_(\d{4})_/.exec(stem);
   return m ? `Video ${parseInt(m[1], 10)}` : stem;
 }
+
+/** "1 part", "6 parts" */
+export function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}

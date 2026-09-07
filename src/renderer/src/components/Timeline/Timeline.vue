@@ -10,7 +10,7 @@ import type { Part } from '@core/types';
 import { useTimelineView } from '@renderer/composables/useTimelineView';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useSettingsStore } from '@renderer/stores/settings';
-import { fmtDuration, fmtTime } from '@renderer/utils/format';
+import { fmtDuration, fmtTime, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import MusicLane from './MusicLane.vue';
 
@@ -562,7 +562,8 @@ const zoomInput = computed({
       >
       <span class="flex-1" />
       <b class="num text-fg"
-        >{{ editor.enabledParts.length }} parts · movie {{ fmtDuration(editor.movieLength) }}</b
+        >{{ plural(editor.enabledParts.length, 'part') }} · movie
+        {{ fmtDuration(editor.movieLength) }}</b
       >
       <span>zoom</span>
       <input

@@ -9,7 +9,7 @@ import type { Part } from '@core/types';
 import { AMOUNT_LEVELS, useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
-import { fmtDuration, fmtTime } from '@renderer/utils/format';
+import { fmtDuration, fmtTime, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
@@ -191,7 +191,8 @@ function clickRow(p: Part, e: MouseEvent): void {
     </details>
     <div class="flex items-center justify-between">
       <h4 class="label-caps m-0">
-        {{ editor.enabledParts.length }} parts · movie {{ fmtDuration(editor.movieLength) }}
+        {{ plural(editor.enabledParts.length, 'part') }} · movie
+        {{ fmtDuration(editor.movieLength) }}
       </h4>
       <button
         v-if="nStarred"
