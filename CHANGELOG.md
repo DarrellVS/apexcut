@@ -3,6 +3,12 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.6
+
+- New app icon: a twisty road with the camera lens at the end, in the brand gradient.
+- Ride card: both sizes lay out properly — thumbnails fill the space, tiles are capped, numbers are
+  centred; nothing overlaps the footer any more.
+
 ## 0.4.5
 
 - Exporting now takes over the window: a card with the percentage, the step and the time left. Closing
