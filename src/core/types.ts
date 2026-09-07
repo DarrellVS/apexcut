@@ -49,4 +49,6 @@ export interface Part extends Partial<Omit<Segment, 'start_s' | 'end_s' | 'reden
   manual: boolean;
   /** for joined parts: the original pieces */
   parts?: [number, number][];
+  /** a favourite: always kept by automatic picks, exportable on its own */
+  starred?: boolean;
 }

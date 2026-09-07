@@ -4,6 +4,7 @@
  * join-suggestion bars, floating toolbar clamped to the lane) · legend row with zoom.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { PhStar } from '@phosphor-icons/vue';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useTimelineView } from '@renderer/composables/useTimelineView';
@@ -400,6 +401,7 @@ const zoomInput = computed({
           class="absolute inset-y-0 left-0 w-3 cursor-ew-resize before:absolute before:top-[28%] before:bottom-[28%] before:left-1 before:w-0.5 before:rounded before:bg-white/60"
           @mousedown.stop="dragEdge($event, p, 'start_s')"
         />
+        <PhStar v-if="p.starred" :size="12" weight="fill" class="flex-none" />
         <b>{{ REASON_LABEL[reasonOf(p)] }}</b> · {{ fmtDuration(p.end_s - p.start_s) }}
         <div
           class="absolute inset-y-0 right-0 w-3 cursor-ew-resize before:absolute before:top-[28%] before:right-1 before:bottom-[28%] before:w-0.5 before:rounded before:bg-white/60"
@@ -448,6 +450,18 @@ const zoomInput = computed({
           @click="editor.setEnabled(sel, !allOn)"
         >
           {{ allOn ? 'Leave out' : 'Put back in' }}
+        </button>
+        <button
+          class="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs hover:bg-white/10"
+          :title="
+            sel.every((p) => p.starred)
+              ? 'Remove the star'
+              : 'Star it: kept by automatic picks, exportable on its own (F)'
+          "
+          @click="editor.toggleStar(sel)"
+        >
+          <PhStar :size="13" :weight="sel.every((p) => p.starred) ? 'fill' : 'regular'" />
+          {{ sel.every((p) => p.starred) ? 'Unstar' : 'Star' }}
         </button>
         <button
           v-if="sel.length > 1"

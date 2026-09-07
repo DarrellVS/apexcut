@@ -117,6 +117,7 @@ export const partSchema = z.object({
   enabled: z.boolean(),
   manual: z.boolean(),
   parts: z.array(z.tuple([z.number(), z.number()])).optional(),
+  starred: z.boolean().optional(),
   score: z.number().nullable().optional(),
   peak: z.number().optional(),
   core_start_s: z.number().optional(),

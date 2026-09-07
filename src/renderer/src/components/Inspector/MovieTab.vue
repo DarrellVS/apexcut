@@ -2,6 +2,7 @@
 /** Movie tab: what (one movie / separate clips), format 2×2, framing hint, name, go, progress, result. */
 import { computed, ref, watch } from 'vue';
 import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
+import type { Part } from '@core/types';
 import type { ExportFormat, ExportRequest } from '@shared/ipc';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
@@ -31,26 +32,38 @@ const TILES: { f: ExportFormat; label: string; sub: string; w: number; h: number
   { f: '9x16', label: 'Vertical 9:16', sub: 'phone, reels', w: 24, h: 42 },
 ];
 
+/** export only the starred parts */
+const onlyStarred = ref(false);
+type Item = ExportRequest['items'][number] & { starred?: boolean };
+const toItem = (stem: string, p: Part): Item => ({
+  stem,
+  startS: p.start_s,
+  endS: p.end_s,
+  reden: p.reden,
+  starred: p.starred,
+});
 const items = computed(() => {
-  const out: ExportRequest['items'] = [];
+  const out: Item[] = [];
   const clips = library.analyzed.filter((c) => scope.value === 'all' || c.stem === library.current);
   for (const c of clips) {
     if (c.stem === editor.stem) {
-      for (const p of editor.enabledParts)
-        out.push({ stem: c.stem, startS: p.start_s, endS: p.end_s, reden: p.reden });
+      for (const p of editor.enabledParts) out.push(toItem(c.stem, p));
     } else out.push(...(otherParts.value[c.stem] ?? []));
   }
-  return out;
+  return onlyStarred.value ? out.filter((i) => i.starred) : out;
+});
+const nStarred = computed(() => {
+  let n = editor.parts.filter((p) => p.enabled && p.starred).length;
+  for (const list of Object.values(otherParts.value)) n += list.filter((i) => i.starred).length;
+  return n;
 });
 /** parts of the videos that are not open; loaded lazily */
-const otherParts = ref<Record<string, ExportRequest['items']>>({});
+const otherParts = ref<Record<string, Item[]>>({});
 async function loadOthers(): Promise<void> {
   for (const c of library.analyzed) {
     if (c.stem === editor.stem || otherParts.value[c.stem]) continue;
     const tl = await window.apexcut.analysis.timeline(c.stem);
-    otherParts.value[c.stem] = tl.parts
-      .filter((p) => p.enabled)
-      .map((p) => ({ stem: c.stem, startS: p.start_s, endS: p.end_s, reden: p.reden }));
+    otherParts.value[c.stem] = tl.parts.filter((p) => p.enabled).map((p) => toItem(c.stem, p));
   }
 }
 watch(() => library.clips, loadOthers, { immediate: true });
@@ -105,6 +118,10 @@ defineExpose({ format });
         </a>
       </template>
     </div>
+    <label v-if="nStarred || onlyStarred" class="flex items-center gap-2 text-xs text-fg">
+      <input v-model="onlyStarred" type="checkbox" class="m-0" />
+      Only the starred parts ({{ nStarred }})
+    </label>
     <input
       v-model="name"
       class="rounded-ctl border border-line bg-s2 px-3 py-2 text-fg"

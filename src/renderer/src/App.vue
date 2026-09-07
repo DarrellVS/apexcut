@@ -224,6 +224,9 @@ function onKey(e: KeyboardEvent): void {
     case 'm':
       editor.join(editor.selectedParts);
       break;
+    case 'f':
+      editor.toggleStar(editor.selectedParts);
+      break;
     case 'n':
       editor.addAt(editor.time);
       toast('Part added — drag the edges to fit');

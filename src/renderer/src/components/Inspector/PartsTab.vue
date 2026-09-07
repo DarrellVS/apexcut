@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Parts tab: amount slider, add part, scrollable list synced with the timeline selection, bring back. */
 import { computed, ref } from 'vue';
-import { PhPlus } from '@phosphor-icons/vue';
+import { PhPlus, PhStar } from '@phosphor-icons/vue';
 import { PRESET_IDS, PRESETS, presetOf, type PresetId } from '@core/presets';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
@@ -33,7 +33,13 @@ async function choosePreset(id: PresetId): Promise<void> {
   }
 }
 
-const sorted = computed(() => [...editor.parts].sort((a, b) => a.start_s - b.start_s));
+const onlyStarred = ref(false);
+const nStarred = computed(() => editor.parts.filter((p) => p.starred).length);
+const sorted = computed(() =>
+  [...editor.parts]
+    .filter((p) => !onlyStarred.value || p.starred)
+    .sort((a, b) => a.start_s - b.start_s),
+);
 
 /** "Your ride in numbers": a few facts straight from the 10 Hz signals. */
 const ride = computed(() => {
@@ -182,9 +188,21 @@ function clickRow(p: Part, e: MouseEvent): void {
         </div>
       </div>
     </details>
-    <h4 class="label-caps m-0">
-      {{ editor.enabledParts.length }} parts · movie {{ fmtDuration(editor.movieLength) }}
-    </h4>
+    <div class="flex items-center justify-between">
+      <h4 class="label-caps m-0">
+        {{ editor.enabledParts.length }} parts · movie {{ fmtDuration(editor.movieLength) }}
+      </h4>
+      <button
+        v-if="nStarred"
+        class="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[11px] hover:bg-s2"
+        :class="onlyStarred ? 'bg-s3 text-fg' : 'text-muted'"
+        :aria-pressed="onlyStarred"
+        title="Show only starred parts"
+        @click="onlyStarred = !onlyStarred"
+      >
+        <PhStar :size="11" weight="fill" /> {{ nStarred }}
+      </button>
+    </div>
     <div class="flex flex-col gap-0.5">
       <div
         v-for="p in sorted"
@@ -211,6 +229,16 @@ function clickRow(p: Part, e: MouseEvent): void {
         <span class="num">{{ fmtTime(p.start_s) }}</span>
         <span class="flex-1 truncate">{{ REASON_LABEL[reasonOf(p)] }}</span>
         <span class="text-muted">{{ fmtDuration(p.end_s - p.start_s) }}</span>
+        <button
+          class="rounded p-0.5"
+          :class="p.starred ? 'text-corner' : 'text-muted/50 hover:text-fg'"
+          :title="p.starred ? 'Remove the star' : 'Star this part (F)'"
+          :aria-label="p.starred ? 'Unstar' : 'Star'"
+          :aria-pressed="!!p.starred"
+          @click.stop="editor.toggleStar([p])"
+        >
+          <PhStar :size="13" :weight="p.starred ? 'fill' : 'regular'" />
+        </button>
       </div>
     </div>
   </div>

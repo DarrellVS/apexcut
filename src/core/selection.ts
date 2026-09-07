@@ -42,6 +42,8 @@ export function joinParts(list: Part[], id = `m${Date.now()}`): Part {
     max_brake_g: max('max_brake_g'),
     max_accel_g: max('max_accel_g'),
     parts: list.map((p) => [p.start_s, p.end_s]),
+    // a favourite stays a favourite when joined with others
+    ...(list.some((p) => p.starred) ? { starred: true } : {}),
   };
 }
 
