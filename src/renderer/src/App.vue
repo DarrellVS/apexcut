@@ -37,14 +37,14 @@ const settings = useSettingsStore();
 const ui = useUiStore();
 const updater = useUpdaterStore();
 
-const everAnalyzed = ref(false);
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
 const inspector = ref<InstanceType<typeof InspectorPanel> | null>(null);
 
 const phase = computed<'projects' | 'empty' | 'scanning' | 'editor'>(() => {
   if (projects.showHome || !projects.activeId) return 'projects';
   if (!library.clips.length) return 'empty';
-  if (jobs.analyzeJob && !everAnalyzed.value) return 'scanning';
+  // a running scan takes the screen, also when videos are added to a project that has scanned ones
+  if (jobs.analyzeJob) return 'scanning';
   return 'editor';
 });
 
@@ -65,7 +65,6 @@ async function openProject(id: string): Promise<void> {
   await editor.close();
   await projects.open(id);
   await library.refresh();
-  everAnalyzed.value = library.analyzed.length > 0;
   const remembered = localStorage.getItem(videoKey());
   const first = library.analyzed.find((c) => c.stem === remembered) ?? library.analyzed[0];
   if (first) await openClip(first.stem, Number(localStorage.getItem(timeKey())) || 0);
@@ -158,7 +157,6 @@ onMounted(async () => {
     }
     await Promise.all([library.refresh(), projects.refresh()]);
     if (job.kind === 'analyze' && job.status === 'done') {
-      everAnalyzed.value = true;
       const target =
         library.analyzed.find((c) => c.stem === library.current) ?? library.analyzed[0];
       if (target && phase.value === 'editor') {

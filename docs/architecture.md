@@ -22,7 +22,9 @@ src/
                     paths, hardware encoder detection), Thumbnails/Filmstrip, Protocol (apexcut:// with Range)
     actions/        one class per ffmpeg operation: ExtractMetadataAction, CutSegmentAction, ConcatAction,
                     FilmstripAction, ThumbnailAction
-    workers/        analysis runs in a worker_thread so the UI never stalls
+    workers/        analysis runs in a worker_thread so the UI never stalls (the whole out/main is
+                    asarUnpack'ed: the worker requires ../chunks/* with plain Node resolution;
+                    scripts/check-package.mjs guards this in the release build)
   preload/     contextBridge → `window.apexcut` (typed, promise-based, plus event subscriptions)
   renderer/    Vue 3 + Pinia + Tailwind v4
     components/{Projects,Shell,Library,Stage,Inspector,Timeline,Base}/

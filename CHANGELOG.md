@@ -3,6 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.11
+
+- Fixed: scanning failed in the installed app (“Something went wrong” right after adding videos) — the
+  scan worker could not load part of its code from the package. Dev builds were unaffected, which is
+  why it slipped through; the release build now checks for this.
+- Adding videos to a project that already has scanned ones shows the scan screen too.
+
 ## 0.4.10
 
 - The update banner now shows up while a new version downloads (with the percentage and a progress
