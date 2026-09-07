@@ -53,7 +53,24 @@ last edit ("today 14:27", "yesterday", "Mon 7 Sep"). The open project has a `Ope
 ring. A `···` button on hover opens Rename / Export project… / Delete; delete confirms inline on the card
 ("Your videos and their scans stay; only this project's picks go."). New project = an inline card with a
 name field. The top bar reads `ApexCut / <project> ▾ · Video 34 · Saved`; the project menu offers All
-projects / Rename (inline) / Export project….
+projects / Rename (inline) / Export project…. With more than three projects a search field and a sort
+segment (Last edited / Name / Movie length) appear; the card menu also has Archive, which moves the card
+into a collapsed “Archived · n” section at the bottom.
+
+## Sheets, banners and the tour
+
+- **Import sheet**: a pick or drop that spans several recording days asks first — one row per day with a
+  checkbox and an editable name, and the choice One project per day (recommended) / All into this project.
+- **Update banner**: a slim glass bar above the top bar once a new version has downloaded: “ApexCut 0.3.0
+  is ready · What’s new · Restart to update · ×”.
+- **Error card**: a centred `popover` card for anything we could not recover from — plain title and hint
+  from `utils/errors.ts`, Details disclosure with the raw text, Restart ApexCut, Report a problem (zip in
+  Documents), Continue anyway.
+- **Quick tour**: three steps with a spotlight (a rounded hole in a 60 % black overlay) on the parts lane,
+  Preview and Make my movie; a 340 px card that clamps to the window. Shown once, replayable from Settings.
+- **Focus**: every interactive element shows a 2 px `--sel` ring for keyboard focus only; timeline blocks
+  are focusable (arrows move, Enter plays, Space toggles, Delete removes). `prefers-reduced-motion` turns
+  transitions off.
 
 ## Type & shape
 

@@ -22,3 +22,8 @@ jobs:
       - run: npx electron-vite build && npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # the CHANGELOG section becomes the release body = the app's “What’s new”
+      - run: node scripts/release-notes.mjs > RELEASE_NOTES.md
+      - run: gh release edit ${{ github.ref_name }} --notes-file RELEASE_NOTES.md --title "ApexCut ${{ github.ref_name }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

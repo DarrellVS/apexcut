@@ -1,6 +1,6 @@
 {
   "name": "apexcut",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Finds the fun parts of DJI helmet-cam motorcycle footage (corners, acceleration, braking) and turns them into one movie.",
   "main": "./out/main/index.js",
   "author": {

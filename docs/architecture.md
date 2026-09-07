@@ -15,8 +15,10 @@ src/
   main/        Electron main process
     index.ts        window, protocol, updater
     ipc/            one handler module per domain (library, analysis, export, media, settings)
-    services/       Library (registry of known videos), Projects (name + ordered videos + per-project
-                    selections, `.apexcut` export/import), Jobs (progress/ETA/cancel), Media (ffprobe/ffmpeg
+    services/       Library (registry of known videos, relink, per-day inspect), Projects (name + ordered
+                    videos + per-project selections, preset, archive, `.apexcut` export/import), Jobs
+                    (progress/ETA/cancel), Updater (electron-updater → status events), Storage (scan cache
+                    size + clean-up), Report (problem-report zip, own store-only zip writer), Media (ffprobe/ffmpeg
                     paths, hardware encoder detection), Thumbnails/Filmstrip, Protocol (apexcut:// with Range)
     actions/        one class per ffmpeg operation: ExtractMetadataAction, CutSegmentAction, ConcatAction,
                     FilmstripAction, ThumbnailAction
