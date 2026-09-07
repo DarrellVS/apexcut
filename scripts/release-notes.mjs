@@ -8,14 +8,20 @@
 import { readFileSync } from 'node:fs';
 
 const version = process.argv[2] ?? JSON.parse(readFileSync('package.json', 'utf8')).version;
-const md = readFileSync('CHANGELOG.md', 'utf8');
-const re = new RegExp(
-  `^## ${version.replace(/\./g, '\\.')}[^\\n]*\\n([\\s\\S]*?)(?=^## |\\s*$)`,
-  'm',
-);
-const m = re.exec(md);
-if (!m) {
+const lines = readFileSync('CHANGELOG.md', 'utf8').split(/\r?\n/);
+const start = lines.findIndex((l) => l.startsWith(`## ${version}`));
+if (start < 0) {
   console.error(`no CHANGELOG section for ${version}`);
   process.exit(1);
 }
-process.stdout.write(m[1].trim() + '\n');
+let end = lines.findIndex((l, i) => i > start && l.startsWith('## '));
+if (end < 0) end = lines.length;
+const body = lines
+  .slice(start + 1, end)
+  .join('\n')
+  .trim();
+if (!body) {
+  console.error(`CHANGELOG section for ${version} is empty`);
+  process.exit(1);
+}
+process.stdout.write(body + '\n');
