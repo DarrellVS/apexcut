@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { ApexcutApi, JobState } from '@shared/ipc';
 
 const invoke = <T>(channel: string, ...args: unknown[]): Promise<T> =>
@@ -10,6 +10,10 @@ const api: ApexcutApi = {
     pick: (kind) => invoke('library:pick', kind),
     add: (paths) => invoke('library:add', paths),
     remove: (stem) => invoke('library:remove', stem),
+    reorder: (stems) => invoke('library:reorder', stems),
+  },
+  files: {
+    pathOf: (file) => webUtils.getPathForFile(file),
   },
   analysis: {
     run: (stems, config) => invoke('analysis:run', stems, config),
@@ -35,6 +39,7 @@ const api: ApexcutApi = {
     get: () => invoke('settings:get'),
     set: (patch) => invoke('settings:set', patch),
     encoders: () => invoke('settings:encoders'),
+    pickOutputDir: () => invoke('settings:pickOutputDir'),
   },
   shell: {
     openFolder: (path) => invoke('shell:openFolder', path),

@@ -122,6 +122,12 @@ export interface ApexcutApi {
     pick(kind: 'files' | 'dir'): Promise<{ added: string[]; cancelled: boolean }>;
     add(paths: string[]): Promise<{ added: string[] }>;
     remove(stem: string): Promise<void>;
+    /** new order of all videos (also the order in the movie) */
+    reorder(stems: string[]): Promise<void>;
+  };
+  files: {
+    /** absolute path of a File dropped from Explorer (Electron webUtils) */
+    pathOf(file: File): string;
   };
   analysis: {
     run(stems: string[], config?: Partial<ScoreConfig>): Promise<string>;
@@ -143,6 +149,8 @@ export interface ApexcutApi {
     get(): Promise<Settings>;
     set(patch: Partial<Settings>): Promise<Settings>;
     encoders(): Promise<EncoderInfo>;
+    /** folder picker for the output folder; null when cancelled */
+    pickOutputDir(): Promise<Settings | null>;
   };
   shell: {
     openFolder(path: string): Promise<void>;

@@ -89,6 +89,18 @@ export class Library {
     this.save();
   }
 
+  /** Reorder (insertion order of the map = order in the list and in the movie). */
+  reorder(stems: string[]): void {
+    const next = new Map<string, ClipRecord>();
+    for (const s of stems) {
+      const c = this.clips.get(s);
+      if (c) next.set(s, c);
+    }
+    for (const [s, c] of this.clips) if (!next.has(s)) next.set(s, c);
+    this.clips = next;
+    this.save();
+  }
+
   get(stem: string): ClipRecord {
     const c = this.clips.get(stem);
     if (!c) throw new Error(`unknown clip ${stem}`);
@@ -103,10 +115,9 @@ export class Library {
     return p;
   }
 
+  /** In user order (defaults to the order videos were added). */
   list(): ClipInfo[] {
-    return [...this.clips.values()]
-      .sort((a, b) => a.stem.localeCompare(b.stem))
-      .map((c) => this.info(c));
+    return [...this.clips.values()].map((c) => this.info(c));
   }
 
   info(c: ClipRecord): ClipInfo {

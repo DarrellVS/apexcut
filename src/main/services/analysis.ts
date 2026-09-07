@@ -11,6 +11,7 @@ import { compute, type ScoreSignals } from '@core/score';
 import { autoToParts, mergeSelection } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
+import { ThumbnailAction } from '../actions/thumbs';
 import type { JobContext } from './jobs';
 import type { ClipMeta, Library } from './library';
 import { extractDataTrack, probe } from './media';
@@ -101,6 +102,10 @@ export class Analysis {
       tenBit: full.tenBit,
     };
     writeJson(join(dir, 'clip.json'), meta);
+    // card thumbnail for the video list: a frame 10 % in, past the parking-lot start
+    await new ThumbnailAction()
+      .execute(stem, source, info.duration * 0.1, 160, 'thumb.jpg')
+      .catch((e) => ctx.log(`thumbnail failed: ${(e as Error).message}`));
     const stored: StoredSignals = {
       fs: imu.fs,
       imuT: Array.from(imu.t, (v) => round(v, 4) as number),

@@ -70,9 +70,11 @@ async function exportEdl(): Promise<void> {
   toast(`EDL saved: ${r.file}`, 5000);
 }
 async function pickOutput(): Promise<void> {
-  const r = await window.apexcut.library.pick('dir');
-  // pick() adds videos; for the output folder we only want the path — reuse the dialog result via settings
-  void r;
+  const next = await window.apexcut.settings.pickOutputDir();
+  if (next) {
+    settings.settings = next;
+    toast(`Movies go to ${next.outputDir}`);
+  }
 }
 </script>
 
@@ -97,16 +99,16 @@ async function pickOutput(): Promise<void> {
       <div class="text-xs break-all text-muted">
         {{ settings.settings?.outputDir ?? 'Videos\\ApexCut (default)' }}
       </div>
-      <button
-        v-if="settings.settings?.outputDir"
-        class="btn btn-mini mt-2"
-        @click="settings.update({ outputDir: null })"
-      >
-        Use default
-      </button>
-      <button v-else class="btn btn-mini mt-2" disabled title="Coming soon" @click="pickOutput">
-        Change…
-      </button>
+      <div class="mt-2 flex gap-1.5">
+        <button class="btn btn-mini" @click="pickOutput">Change…</button>
+        <button
+          v-if="settings.settings?.outputDir"
+          class="btn btn-mini"
+          @click="settings.update({ outputDir: null })"
+        >
+          Use default
+        </button>
+      </div>
     </div>
     <div v-if="editor.stem" class="card">
       <h4 class="label-caps m-0 mb-2">This video</h4>

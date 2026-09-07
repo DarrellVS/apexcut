@@ -12,6 +12,53 @@ const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
 const editor = useEditorStore();
 
 const sorted = computed(() => [...editor.parts].sort((a, b) => a.start_s - b.start_s));
+
+/** "Your ride in numbers": a few facts straight from the 10 Hz signals. */
+const ride = computed(() => {
+  const lean = editor.data.leanDeg as (number | null)[] | undefined;
+  const aLon = editor.data.aLonG as (number | null)[] | undefined;
+  const t = editor.data.t as number[] | undefined;
+  if (!lean || !aLon || !t || !t.length) return null;
+  let maxLean = 0;
+  let maxLeanT = 0;
+  let maxBrake = 0;
+  let maxBrakeT = 0;
+  for (let i = 0; i < t.length; i++) {
+    const l = Math.abs(lean[i] ?? 0);
+    if (l > maxLean) {
+      maxLean = l;
+      maxLeanT = t[i];
+    }
+    const b = -(aLon[i] ?? 0);
+    if (b > maxBrake) {
+      maxBrake = b;
+      maxBrakeT = t[i];
+    }
+  }
+  // twistiest minute: 60 s window with the most time above 10° of lean
+  const win = 600;
+  let best = 0;
+  let bestT = 0;
+  let run = 0;
+  for (let i = 0; i < t.length; i++) {
+    run += Math.abs(lean[i] ?? 0) > 10 ? 1 : 0;
+    if (i >= win) run -= Math.abs(lean[i - win] ?? 0) > 10 ? 1 : 0;
+    if (run > best) {
+      best = run;
+      bestT = Math.max(0, t[i] - 60);
+    }
+  }
+  const corners = editor.parts.filter((p) => p.reden !== 'accel/rem').length;
+  return {
+    maxLean,
+    maxLeanT,
+    maxBrake,
+    maxBrakeT,
+    twistyT: bestT,
+    twistyPct: Math.round((best / win) * 100),
+    corners,
+  };
+});
 const colorOf = (p: Part): string =>
   ({
     bochten: 'var(--corner)',
@@ -57,6 +104,39 @@ function clickRow(p: Part, e: MouseEvent): void {
         <PhPlus :size="14" /> Add part at {{ fmtTime(editor.time) }}
       </button>
     </div>
+    <details v-if="ride" class="card" open>
+      <summary class="label-caps cursor-pointer">Your ride in numbers</summary>
+      <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+        <button
+          class="rounded-lg bg-s2 p-2 text-left hover:bg-s3"
+          title="Jump there"
+          @click="emit('play', Math.max(0, ride.maxLeanT - 3))"
+        >
+          <b class="block text-lg text-fg">{{ Math.round(ride.maxLean) }}°</b>sharpest lean ·
+          {{ fmtTime(ride.maxLeanT) }}
+        </button>
+        <button
+          class="rounded-lg bg-s2 p-2 text-left hover:bg-s3"
+          title="Jump there"
+          @click="emit('play', Math.max(0, ride.maxBrakeT - 3))"
+        >
+          <b class="block text-lg text-fg">{{ ride.maxBrake.toFixed(2) }} g</b>hardest braking ·
+          {{ fmtTime(ride.maxBrakeT) }}
+        </button>
+        <button
+          class="rounded-lg bg-s2 p-2 text-left hover:bg-s3"
+          title="Jump there"
+          @click="emit('play', ride.twistyT)"
+        >
+          <b class="block text-lg text-fg">{{ fmtTime(ride.twistyT) }}</b
+          >twistiest minute · leaning {{ ride.twistyPct }}% of the time
+        </button>
+        <div class="rounded-lg bg-s2 p-2">
+          <b class="block text-lg text-fg">{{ ride.corners }}</b
+          >parts with corners
+        </div>
+      </div>
+    </details>
     <h4 class="label-caps m-0">
       {{ editor.enabledParts.length }} parts · movie {{ fmtDuration(editor.movieLength) }}
     </h4>

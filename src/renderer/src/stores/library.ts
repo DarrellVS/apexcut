@@ -36,5 +36,15 @@ export const useLibraryStore = defineStore('library', () => {
     await refresh();
   }
 
-  return { clips, current, analyzed, currentClip, refresh, pick, add, remove };
+  /** Move `stem` before `beforeStem` (or to the end when null). Order = order in the movie. */
+  async function move(stem: string, beforeStem: string | null): Promise<void> {
+    const order = clips.value.map((c) => c.stem).filter((s) => s !== stem);
+    const idx = beforeStem ? order.indexOf(beforeStem) : -1;
+    if (idx < 0) order.push(stem);
+    else order.splice(idx, 0, stem);
+    clips.value = order.map((s) => clips.value.find((c) => c.stem === s)!);
+    await window.apexcut.library.reorder(order);
+  }
+
+  return { clips, current, analyzed, currentClip, refresh, pick, add, remove, move };
 });

@@ -44,11 +44,32 @@ async function openClip(stem: string, seekTo?: number): Promise<void> {
   if (seekTo) stage.value?.seek(seekTo);
 }
 
-async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
-  const added = await library.pick(kind);
+async function scanNew(added: string[]): Promise<void> {
   const todo = library.clips.filter((c) => !c.analyzed).map((c) => c.stem);
   if (added.length) toast(`${added.length} video${added.length === 1 ? '' : 's'} added`);
   if (todo.length) await window.apexcut.analysis.run(todo);
+}
+async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
+  await scanNew(await library.pick(kind));
+}
+
+// ---- drop MP4/LRF files or folders from Explorer anywhere in the window
+const dropping = ref(false);
+function onDragOver(e: DragEvent): void {
+  if (e.dataTransfer?.types.includes('Files')) {
+    e.preventDefault();
+    dropping.value = true;
+  }
+}
+async function onDrop(e: DragEvent): Promise<void> {
+  dropping.value = false;
+  const files = e.dataTransfer?.files;
+  if (!files?.length) return;
+  e.preventDefault();
+  const paths = Array.from(files).map((f) => window.apexcut.files.pathOf(f));
+  const added = await library.add(paths);
+  if (!added.length) toast('No DJI videos found in what you dropped');
+  await scanNew(added);
 }
 
 onMounted(async () => {
@@ -143,7 +164,18 @@ function onKey(e: KeyboardEvent): void {
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-2.5 p-2.5">
+  <div
+    class="relative flex h-full flex-col gap-2.5 p-2.5"
+    @dragover="onDragOver"
+    @dragleave.self="dropping = false"
+    @drop="onDrop"
+  >
+    <div
+      v-if="dropping"
+      class="pointer-events-none absolute inset-2.5 z-40 grid place-items-center rounded-card border-2 border-dashed border-acc2 bg-acc2/10 text-lg font-semibold text-fg"
+    >
+      Drop your videos to add them
+    </div>
     <EmptyState v-if="phase === 'empty'" @pick="pickAndScan" />
     <ScanProgress v-else-if="phase === 'scanning'" />
     <template v-else>

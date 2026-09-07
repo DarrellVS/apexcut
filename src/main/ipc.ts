@@ -9,7 +9,7 @@ import { edl } from '@core/edl';
 import type { Part, ScoreConfig } from '@core/types';
 import { exportRequestSchema, partSchema, settingsSchema, type JobState } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, type CutItem } from './actions/cut';
-import { FilmstripAction, ThumbnailAction } from './actions/thumbs';
+import { FilmstripAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
 import { Library } from './services/library';
@@ -44,6 +44,10 @@ const stamp = (): string =>
   new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').slice(0, 15);
 
 export function registerIpc(s: Services): void {
+  // the user's output folder must be servable (movie preview after a restart)
+  const out = s.settings.get().outputDir;
+  if (out) allowRoot(out);
+
   // ---- media protocol resolvers
   registerResolver('proxy', ([stem]) => (stem ? s.library.proxyOf(stem) : null));
   registerResolver('clip', ([stem, ...rest]) => (stem ? join(paths.clipDir(stem), ...rest) : null));
@@ -57,6 +61,9 @@ export function registerIpc(s: Services): void {
     added: s.library.add(z.array(z.string()).parse(paths)),
   }));
   ipcMain.handle('library:remove', (_e, stem: unknown) => s.library.remove(z.string().parse(stem)));
+  ipcMain.handle('library:reorder', (_e, stems: unknown) =>
+    s.library.reorder(z.array(z.string()).parse(stems)),
+  );
   ipcMain.handle('library:pick', async (e, kind: unknown) => {
     const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
     const k = z.enum(['files', 'dir']).parse(kind);
@@ -81,17 +88,6 @@ export function registerIpc(s: Services): void {
         for (let i = 0; i < list.length; i++) {
           if (ctx.signal.aborted) throw new Error('cancelled');
           await s.analysis.analyze(list[i], config, ctx, i / list.length, 1 / list.length);
-          // card thumbnail for the video list (a frame 10 % in, past the parking-lot start)
-          const meta = s.analysis.meta(list[i]);
-          await new ThumbnailAction()
-            .execute(
-              list[i],
-              s.library.proxyOf(list[i]),
-              (meta?.durationS ?? 0) * 0.1,
-              160,
-              'thumb.jpg',
-            )
-            .catch((e) => ctx.log(`thumbnail failed: ${(e as Error).message}`));
         }
         return { kind: 'analyze', stems: list };
       },
@@ -194,6 +190,18 @@ export function registerIpc(s: Services): void {
     s.settings.set(settingsSchema.partial().parse(patch)),
   );
   ipcMain.handle('settings:encoders', () => encoders());
+  ipcMain.handle('settings:pickOutputDir', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+    const res = await dialog.showOpenDialog(win as BrowserWindow, {
+      title: 'Where should your movies go?',
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: s.settings.get().outputDir ?? paths.defaultOutput,
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    const next = s.settings.set({ outputDir: res.filePaths[0] });
+    allowRoot(res.filePaths[0]);
+    return next;
+  });
   ipcMain.handle('shell:openFolder', (_e, p: unknown) => {
     const path = z.string().parse(p);
     if (!existsSync(path)) return;
