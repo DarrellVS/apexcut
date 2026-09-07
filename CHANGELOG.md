@@ -3,6 +3,10 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.3
+
+- The video list shows the number of parts in the movie (“6 parts”) instead of “1/3 parts”.
+
 ## 0.4.2
 
 - The telemetry overlay no longer prints a label (“Joined”, “Corners”) under the gauge — just the

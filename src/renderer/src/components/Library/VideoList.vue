@@ -74,7 +74,8 @@ function onDrop(target: string | 'end'): void {
         <span class="text-xs text-muted">
           <template v-if="c.durationS">{{ fmtTime(c.durationS) }} · </template>
           <template v-if="c.analyzed"
-            >{{ c.nEnabled }}/{{ c.nParts }} parts · {{ fmtDuration(c.highlightS ?? 0) }}</template
+            >{{ c.nEnabled }} part{{ c.nEnabled === 1 ? '' : 's' }} ·
+            {{ fmtDuration(c.highlightS ?? 0) }}</template
           >
           <template v-else-if="jobs.analyzeJob">scanning…</template>
           <template v-else>not scanned yet</template>
