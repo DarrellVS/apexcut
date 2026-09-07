@@ -84,3 +84,11 @@ smoke tests next to a running installed copy.
 
 `npm run check` = ESLint + Prettier check + `tsc`/`vue-tsc` + Vitest. CI runs it on every push; a `v*`
 tag builds and publishes the Windows installer + portable exe + update feed.
+
+## Renderer → main calls
+
+The renderer never calls `window.apexcut` directly (lint rule); it imports `api` from
+`src/renderer/src/api.ts`, which wraps every bridge function and copies its arguments to plain data
+(`src/shared/plain.ts`). Vue reactive proxies cannot cross the contextBridge (“An object could not be
+cloned”); store state or computed results holding store arrays reached the bridge three times before
+this wrapper existed.

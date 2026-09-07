@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { ApexcutApi, JobState, UpdateStatus } from '@shared/ipc';
-
 const invoke = <T>(channel: string, ...args: unknown[]): Promise<T> =>
   ipcRenderer.invoke(channel, ...args) as Promise<T>;
 

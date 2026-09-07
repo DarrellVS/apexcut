@@ -3,6 +3,12 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.14
+
+- Fixed: “Make my movie” / “Make clips” failed with “Something went wrong” (the same “could not be
+  cloned” error that hit adding videos earlier). Every call from the window to the app core now goes
+  through one wrapper that makes this impossible.
+
 ## 0.4.13
 
 - Fixed: 0.4.12 could not find updates (a file the updater needs was left out of the package). If you

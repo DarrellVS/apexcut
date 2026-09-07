@@ -1,6 +1,7 @@
 /**
  * Auto-update state mirrored from main: drives the "ready to update" banner and Settings → Updates.
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { UpdateStatus } from '@shared/ipc';
@@ -16,16 +17,16 @@ export const useUpdaterStore = defineStore('updater', () => {
   const showBanner = computed(() => (!!ready.value || !!downloading.value) && !dismissed.value);
 
   async function init(): Promise<void> {
-    status.value = await window.apexcut.updater.status();
-    window.apexcut.updater.onStatus((s) => {
+    status.value = await api.updater.status();
+    api.updater.onStatus((s) => {
       status.value = s;
     });
   }
   async function check(): Promise<void> {
-    status.value = await window.apexcut.updater.check();
+    status.value = await api.updater.check();
   }
   function install(): void {
-    window.apexcut.updater.install();
+    api.updater.install();
   }
 
   return { status, dismissed, ready, downloading, showBanner, init, check, install };

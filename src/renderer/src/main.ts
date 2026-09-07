@@ -1,3 +1,4 @@
+import { api } from './api';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
@@ -19,7 +20,7 @@ const fatal = (e: unknown, where: string): void => {
 app.config.errorHandler = (e, _instance, info) => fatal(e, `vue (${info})`);
 window.addEventListener('error', (ev) => fatal(ev.error ?? ev.message, 'window.error'));
 window.addEventListener('unhandledrejection', (ev) => fatal(ev.reason, 'unhandled rejection'));
-window.apexcut.app.onFatal((err) => {
+api.app.onFatal((err) => {
   ui.fatal = err;
 });
 

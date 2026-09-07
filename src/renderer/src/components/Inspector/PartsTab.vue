@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Parts tab: amount slider, add part, scrollable list synced with the timeline selection, bring back. */
+import { api } from '@renderer/api';
 import { computed, ref } from 'vue';
 import { PhPlus, PhStar } from '@phosphor-icons/vue';
 import { PRESET_IDS, PRESETS, presetOf, type PresetId } from '@core/presets';
@@ -24,7 +25,7 @@ async function choosePreset(id: PresetId): Promise<void> {
   applying.value = true;
   try {
     const before = editor.parts.length;
-    await window.apexcut.projects.setPreset(id);
+    await api.projects.setPreset(id);
     if (editor.stem) await editor.open(editor.stem);
     await Promise.all([library.refresh(), projects.refresh()]);
     toast(`${PRESETS[id].label}: ${editor.parts.length} parts in this video (was ${before})`);

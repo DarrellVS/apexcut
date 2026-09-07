@@ -2,6 +2,7 @@
  * Relink videos whose files moved: one file for a specific video, or a folder for all missing ones.
  * Wraps the dialog IPC with the toasts riders should read.
  */
+import { api } from '@renderer/api';
 import { useLibraryStore } from '@renderer/stores/library';
 import { shortName } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
@@ -14,7 +15,7 @@ export function useRelink(): Relink {
   const library = useLibraryStore();
 
   async function relink(kind: 'file' | 'dir', stem?: string): Promise<void> {
-    const r = await window.apexcut.library.relink(kind, stem);
+    const r = await api.library.relink(kind, stem);
     if (!r) return;
     await library.refresh();
     if (r.relinked.length) {

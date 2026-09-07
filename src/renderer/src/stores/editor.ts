@@ -2,6 +2,7 @@
  * Editing state for the open video: timeline data, parts, selection, undo/redo, playhead.
  * Every mutation goes through `mutate()` so undo snapshots and debounced saving stay consistent.
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import {
@@ -72,8 +73,8 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   async function open(s: string): Promise<void> {
-    load(s, await window.apexcut.analysis.timeline(s));
-    window.apexcut.analysis.filmstrip(s).then((f) => {
+    load(s, await api.analysis.timeline(s));
+    api.analysis.filmstrip(s).then((f) => {
       if (stem.value === s) filmstrip.value = f;
     });
   }
@@ -90,7 +91,7 @@ export const useEditorStore = defineStore('editor', () => {
     saveTimer = setTimeout(async () => {
       if (!stem.value) return;
       parts.value.sort((a, b) => a.start_s - b.start_s);
-      await window.apexcut.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
+      await api.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
       dirty.value = false;
       // counts in the video list, top bar and Movie tab follow the saved picks
       useLibraryStore().refresh();
@@ -103,7 +104,7 @@ export const useEditorStore = defineStore('editor', () => {
     clearTimeout(saveTimer);
     saveTimer = null;
     parts.value.sort((a, b) => a.start_s - b.start_s);
-    await window.apexcut.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
+    await api.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
     dirty.value = false;
     await useLibraryStore().refresh();
   }
@@ -249,7 +250,7 @@ export const useEditorStore = defineStore('editor', () => {
       ...patch,
       weights: { ...config.value.weights, ...(patch.weights ?? {}) },
     };
-    const payload = await window.apexcut.analysis.rescore(stem.value, cfg);
+    const payload = await api.analysis.rescore(stem.value, cfg);
     load(stem.value, payload);
     logger.info('rescored', stem.value, payload.parts.length, 'parts');
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Actions on the open video: scan again, EDL for other editors, remove from the project. */
+import { api } from '@renderer/api';
 import { useRelink } from '@renderer/composables/useRelink';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -18,13 +19,13 @@ const stem = (): string | null => library.currentClip?.stem ?? editor.stem;
 async function rescan(): Promise<void> {
   const s = stem();
   if (!s) return;
-  await window.apexcut.analysis.run([s]);
+  await api.analysis.run([s]);
   toast(library.currentClip?.analyzed ? 'Scanning again…' : 'Scanning…');
 }
 async function exportEdl(): Promise<void> {
   const s = stem();
   if (!s) return;
-  const r = await window.apexcut.exporter.edl(s);
+  const r = await api.exporter.edl(s);
   toast(`EDL saved: ${r.file}`, 5000);
 }
 async function remove(): Promise<void> {

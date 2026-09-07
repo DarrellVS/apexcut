@@ -1,6 +1,7 @@
 /**
  * Projects: the list, which one is open, and the actions of the projects screen.
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { MusicSettings, OverlaySpecDto, ProjectInfo, Transition } from '@shared/ipc';
@@ -53,64 +54,64 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function refresh(): Promise<void> {
     [projects.value, activeId.value] = await Promise.all([
-      window.apexcut.projects.list(),
-      window.apexcut.projects.active(),
+      api.projects.list(),
+      api.projects.active(),
     ]);
   }
 
   async function open(id: string): Promise<void> {
-    await window.apexcut.projects.open(id);
+    await api.projects.open(id);
     activeId.value = id;
     showHome.value = false;
     logger.info('project opened', id);
   }
 
   async function create(name: string): Promise<string> {
-    const p = await window.apexcut.projects.create(name);
+    const p = await api.projects.create(name);
     await refresh();
     return p.id;
   }
 
   async function rename(id: string, name: string): Promise<void> {
-    await window.apexcut.projects.rename(id, name);
+    await api.projects.rename(id, name);
     await refresh();
   }
 
   async function remove(id: string): Promise<void> {
-    await window.apexcut.projects.remove(id);
+    await api.projects.remove(id);
     await refresh();
   }
 
   async function archive(id: string, on: boolean): Promise<void> {
-    await window.apexcut.projects.archive(id, on);
+    await api.projects.archive(id, on);
     await refresh();
   }
 
   async function setTransition(t: Transition): Promise<void> {
-    await window.apexcut.projects.setTransition(t);
+    await api.projects.setTransition(t);
     await refresh();
   }
 
   async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.overlay = o;
-    await window.apexcut.projects.setOverlay(o ? { ...o } : null);
+    await api.projects.setOverlay(o ? { ...o } : null);
   }
 
   /** the music lane; optimistic so dragging feels instant, then persisted */
   async function setMusic(m: MusicSettings): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.music = m;
-    await window.apexcut.projects.setMusic(JSON.parse(JSON.stringify(m)));
+    await api.projects.setMusic(JSON.parse(JSON.stringify(m)));
   }
 
   async function exportFile(id: string): Promise<string | null> {
-    const r = await window.apexcut.projects.exportFile(id);
+    const r = await api.projects.exportFile(id);
     return r?.file ?? null;
   }
 
   async function importFile(): Promise<{ id: string; missing: string[] } | null> {
-    const r = await window.apexcut.projects.importFile();
+    const r = await api.projects.importFile();
     if (r) await refresh();
     return r;
   }

@@ -3,6 +3,7 @@
  * Application shell: phases projects → empty → scanning → editor, plus global keyboard shortcuts.
  * Restart-safe: the open project, its open video and the playhead are remembered.
  */
+import { api } from '@renderer/api';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
@@ -70,7 +71,7 @@ async function openProject(id: string): Promise<void> {
   if (first) await openClip(first.stem, Number(localStorage.getItem(timeKey())) || 0);
   // videos whose scan never ran or failed (e.g. the app was closed mid-scan) get scanned now
   const todo = library.clips.filter((c) => !c.analyzed && c.exists).map((c) => c.stem);
-  if (todo.length && !jobs.analyzeJob) await window.apexcut.analysis.run(todo);
+  if (todo.length && !jobs.analyzeJob) await api.analysis.run(todo);
 }
 
 async function goHome(): Promise<void> {
@@ -82,14 +83,14 @@ async function goHome(): Promise<void> {
 async function scanNew(added: string[]): Promise<void> {
   const todo = library.clips.filter((c) => !c.analyzed).map((c) => c.stem);
   if (added.length) toast(`${added.length} video${added.length === 1 ? '' : 's'} added`);
-  if (todo.length) await window.apexcut.analysis.run(todo);
+  if (todo.length) await api.analysis.run(todo);
 }
 
 // ---- adding videos: one day → straight into the project; several days → ask (ImportSheet)
 const pendingGroups = ref<ImportGroup[] | null>(null);
 async function importPaths(paths: string[]): Promise<void> {
   if (!paths.length) return;
-  const groups = await window.apexcut.library.inspect(paths);
+  const groups = await api.library.inspect(paths);
   if (!groups.length) {
     toast('No DJI videos found in what you picked');
     return;
@@ -102,7 +103,7 @@ async function importPaths(paths: string[]): Promise<void> {
 }
 async function confirmImport(groups: { name: string | null; paths: string[] }[]): Promise<void> {
   pendingGroups.value = null;
-  const r = await window.apexcut.projects.addGroups(JSON.parse(JSON.stringify(groups)));
+  const r = await api.projects.addGroups(JSON.parse(JSON.stringify(groups)));
   if (r.firstProject) await openProject(r.firstProject);
   else await library.refresh();
   const n = groups.filter((g) => g.name !== null).length;
@@ -111,7 +112,7 @@ async function confirmImport(groups: { name: string | null; paths: string[] }[])
       ? `${n} project${n === 1 ? '' : 's'} created with ${r.stems.length} videos`
       : `${r.stems.length} video${r.stems.length === 1 ? '' : 's'} added`,
   );
-  if (r.toScan.length) await window.apexcut.analysis.run(r.toScan);
+  if (r.toScan.length) await api.analysis.run(r.toScan);
 }
 async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
   await importPaths(await library.pick(kind));
@@ -130,11 +131,11 @@ async function onDrop(e: DragEvent): Promise<void> {
   const files = e.dataTransfer?.files;
   if (!files?.length || phase.value === 'projects') return;
   e.preventDefault();
-  const paths = Array.from(files).map((f) => window.apexcut.files.pathOf(f));
+  const paths = Array.from(files).map((f) => api.files.pathOf(f));
   // music files go under the movie, everything else is looked at as video
   const audio = paths.filter((p) => /\.(mp3|m4a|aac|wav|flac|ogg|opus)$/i.test(p));
   if (audio.length && projects.active) {
-    const tracks = await window.apexcut.music.add(audio);
+    const tracks = await api.music.add(audio);
     if (tracks.length) {
       await projects.setMusic({
         ...projects.active.music,

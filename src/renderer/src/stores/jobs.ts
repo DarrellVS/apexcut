@@ -1,6 +1,7 @@
 /**
  * Mirror of main-process jobs (analysis, export) with live updates over IPC.
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { JobState } from '@shared/ipc';
@@ -25,8 +26,8 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   async function init(): Promise<void> {
-    jobs.value = await window.apexcut.jobs.list();
-    window.apexcut.jobs.onUpdate(upsert);
+    jobs.value = await api.jobs.list();
+    api.jobs.onUpdate(upsert);
     setInterval(() => (now.value = Date.now()), 1000);
     // adopt a running export after a reload
     const runningExport = jobs.value.find(

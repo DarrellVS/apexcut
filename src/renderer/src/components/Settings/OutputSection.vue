@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Where movies and clips are written. */
+import { api } from '@renderer/api';
 import { PhFolderOpen } from '@phosphor-icons/vue';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
@@ -7,7 +8,7 @@ import { toast } from '@renderer/components/Base/ToastHost.vue';
 const settings = useSettingsStore();
 
 async function pickOutput(): Promise<void> {
-  const next = await window.apexcut.settings.pickOutputDir();
+  const next = await api.settings.pickOutputDir();
   if (next) {
     settings.settings = next;
     toast(`Movies go to ${next.outputDir}`);

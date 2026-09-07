@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Version, encoder in use, problem report, links. Update checks join here in a later step. */
+import { api } from '@renderer/api';
 import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { ref } from 'vue';
 import { useSettingsStore } from '@renderer/stores/settings';
@@ -13,7 +14,7 @@ const reporting = ref(false);
 async function report(): Promise<void> {
   reporting.value = true;
   try {
-    const r = await window.apexcut.app.report();
+    const r = await api.app.report();
     toast(`Report saved: ${r.file}`, 8000);
   } finally {
     reporting.value = false;

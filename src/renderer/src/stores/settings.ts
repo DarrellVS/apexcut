@@ -1,3 +1,4 @@
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import type { EncoderInfo, Settings, Theme } from '@shared/ipc';
@@ -14,17 +15,17 @@ export const useSettingsStore = defineStore('settings', () => {
   const version = ref('');
 
   async function init(): Promise<void> {
-    settings.value = await window.apexcut.settings.get();
+    settings.value = await api.settings.get();
     applyTheme(settings.value.theme);
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       if (settings.value) applyTheme(settings.value.theme);
     });
-    version.value = await window.apexcut.app.version();
-    window.apexcut.settings.encoders().then((e) => (encoders.value = e));
+    version.value = await api.app.version();
+    api.settings.encoders().then((e) => (encoders.value = e));
   }
 
   async function update(patch: Partial<Settings>): Promise<void> {
-    settings.value = await window.apexcut.settings.set(patch);
+    settings.value = await api.settings.set(patch);
   }
 
   watch(

@@ -4,6 +4,7 @@
  * left. Closing it asks first and then stops the export — nothing else can change the project while
  * a movie is being made. When done, the same card shows the result (Watch, Open folder).
  */
+import { api } from '@renderer/api';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { PhCheckCircle, PhFolderOpen, PhPlay, PhX } from '@phosphor-icons/vue';
 import { useJobsStore } from '@renderer/stores/jobs';
@@ -39,13 +40,13 @@ function requestClose(): void {
   else dismissed.value = job.value.id;
 }
 function stop(): void {
-  if (job.value) window.apexcut.exporter.cancel(job.value.id);
+  if (job.value) api.exporter.cancel(job.value.id);
   confirming.value = false;
 }
 function openFolder(): void {
   const r = job.value?.result;
   if (!r || r.kind === 'analyze') return;
-  window.apexcut.shell.openFolder(r.kind === 'export' ? r.file : r.folder);
+  api.shell.openFolder(r.kind === 'export' ? r.file : r.folder);
 }
 function onKey(e: KeyboardEvent): void {
   if (!open.value) return;

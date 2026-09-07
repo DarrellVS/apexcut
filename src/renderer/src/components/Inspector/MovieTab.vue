@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Movie tab: what (one movie / separate clips), format 2×2, framing hint, name, go, progress, result. */
+import { api } from '@renderer/api';
 import { computed, ref, watch } from 'vue';
 import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
 import {
@@ -112,7 +113,7 @@ const otherParts = ref<Record<string, Item[]>>({});
 async function loadOthers(): Promise<void> {
   for (const c of library.analyzed) {
     if (c.stem === editor.stem || otherParts.value[c.stem]) continue;
-    const tl = await window.apexcut.analysis.timeline(c.stem);
+    const tl = await api.analysis.timeline(c.stem);
     otherParts.value[c.stem] = tl.parts.filter((p) => p.enabled).map((p) => toItem(c.stem, p));
   }
 }
@@ -169,16 +170,16 @@ async function makeRideCard(): Promise<void> {
   if (cardBusy.value) return;
   cardBusy.value = true;
   try {
-    const stats = await window.apexcut.projects.rideStats();
+    const stats = await api.projects.rideStats();
     const thumbs = await Promise.all(
-      stats.top.map((t) => window.apexcut.analysis.frame(t.stem, t.tS, 960).catch(() => '')),
+      stats.top.map((t) => api.analysis.frame(t.stem, t.tS, 960).catch(() => '')),
     );
     const dark = document.documentElement.dataset.theme !== 'light';
     const base = `${stats.name} - ride card`;
     const portrait = await renderRideCard(stats, thumbs, 'portrait', dark);
     const landscape = await renderRideCard(stats, thumbs, 'landscape', dark);
-    await window.apexcut.app.saveImage(landscape, `${base} (wide)`);
-    const r = await window.apexcut.app.saveImage(portrait, base);
+    await api.app.saveImage(landscape, `${base} (wide)`);
+    const r = await api.app.saveImage(portrait, base);
     toast(`Ride card copied to the clipboard and saved next to your movies: ${r.file}`, 8000);
   } catch (e) {
     toast(`Could not make the ride card: ${(e as Error).message}`, 6000);
@@ -207,7 +208,7 @@ const summary = computed(() => {
 async function go(): Promise<void> {
   await loadOthers();
   await settings.update({ lastName: name.value });
-  const id = await window.apexcut.exporter.start({
+  const id = await api.exporter.start({
     items: items.value,
     separate: separate.value,
     format: format.value,
@@ -230,7 +231,7 @@ async function go(): Promise<void> {
 }
 const job = computed(() => jobs.exportJob);
 const emit = defineEmits<{ watch: [url: string] }>();
-const openFolder = (p: string): Promise<void> => window.apexcut.shell.openFolder(p);
+const openFolder = (p: string): Promise<void> => api.shell.openFolder(p);
 defineExpose({ format });
 </script>
 

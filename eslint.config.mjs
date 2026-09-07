@@ -36,5 +36,22 @@ export default defineConfig(
       ],
     },
   },
+  {
+    // the renderer talks to main through `api` (@renderer/api), which copies arguments to plain data;
+    // Vue reactive proxies passed straight to window.apexcut throw "An object could not be cloned"
+    files: ['src/renderer/**/*.{ts,vue}'],
+    ignores: ['src/renderer/src/env.d.ts'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'apexcut',
+          message:
+            'Import { api } from @renderer/api instead; it makes arguments safe for the bridge.',
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
 );

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Storage: where the data lives, how big the scan cache is, clean up scans no project uses. */
+import { api } from '@renderer/api';
 import { onMounted, ref } from 'vue';
 import { PhFolderOpen } from '@phosphor-icons/vue';
 import type { StorageInfo } from '@shared/ipc';
@@ -11,13 +12,13 @@ const busy = ref(false);
 const confirming = ref(false);
 
 async function load(): Promise<void> {
-  info.value = await window.apexcut.storage.info();
+  info.value = await api.storage.info();
 }
 async function cleanup(): Promise<void> {
   confirming.value = false;
   busy.value = true;
   try {
-    const r = await window.apexcut.storage.cleanup();
+    const r = await api.storage.cleanup();
     toast(
       r.removed.length
         ? `${r.removed.length} scan${r.removed.length === 1 ? '' : 's'} removed, ${fmtBytes(r.freedBytes)} freed`
@@ -31,7 +32,7 @@ async function cleanup(): Promise<void> {
   }
 }
 function openData(): void {
-  if (info.value) window.apexcut.shell.openFolder(info.value.dataRoot);
+  if (info.value) api.shell.openFolder(info.value.dataRoot);
 }
 onMounted(load);
 </script>

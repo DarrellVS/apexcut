@@ -3,6 +3,7 @@
  * Music lane under the parts lane, in movie time: songs back to back, trim handles on each, a
  * toolbar for the selected song (volume, fades, order, remove) and the mix levels in the header.
  */
+import { api } from '@renderer/api';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   PhCaretLeft,
@@ -56,7 +57,7 @@ async function addTracks(tracks: MusicTrack[]): Promise<void> {
   selected.value = tracks[0].id;
 }
 async function pick(): Promise<void> {
-  await addTracks(await window.apexcut.music.pick());
+  await addTracks(await api.music.pick());
 }
 async function remove(id: string): Promise<void> {
   selected.value = null;
@@ -106,7 +107,7 @@ function trim(e: MouseEvent, t: MusicTrack, edge: 'inS' | 'outS'): void {
 
 async function checkFiles(): Promise<void> {
   const out: Record<string, boolean> = {};
-  for (const t of music.value.tracks) out[t.id] = !(await window.apexcut.music.exists(t.path));
+  for (const t of music.value.tracks) out[t.id] = !(await api.music.exists(t.path));
   missing.value = out;
 }
 function onGlobalDown(e: MouseEvent): void {

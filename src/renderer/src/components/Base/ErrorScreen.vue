@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Full-screen card for errors we could not recover from: what happened, what to do, report, restart. */
+import { api } from '@renderer/api';
 import { ref } from 'vue';
 import { PhArrowsClockwise, PhLifebuoy } from '@phosphor-icons/vue';
 import { useUiStore } from '@renderer/stores/ui';
@@ -12,7 +13,7 @@ const reporting = ref(false);
 async function report(): Promise<void> {
   reporting.value = true;
   try {
-    const r = await window.apexcut.app.report();
+    const r = await api.app.report();
     toast(`Report saved: ${r.file}`, 8000);
   } catch (e) {
     toast(`Could not write the report: ${(e as Error).message}`, 8000);

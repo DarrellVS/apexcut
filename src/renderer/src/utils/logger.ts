@@ -1,3 +1,5 @@
+import { api } from '@renderer/api';
+
 /* Renderer logger: prefix + level gate; the only sanctioned console use. Warnings and errors are
  * also forwarded to the main process so they end up in main.log (and in a problem report). */
 const LEVELS = ['debug', 'info', 'warn', 'error'] as const;
@@ -12,7 +14,7 @@ function emit(level: Level, ...args: unknown[]): void {
   console[level](`[apexcut]`, ...args);
   if (level === 'warn' || level === 'error') {
     try {
-      window.apexcut?.app.log(level, args.map(describe).join(' '));
+      api?.app.log(level, args.map(describe).join(' '));
     } catch {
       /* preload not available (unit tests) */
     }

@@ -1,6 +1,7 @@
 /**
  * Known videos and which one is open. Refreshed after every job update.
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { ClipInfo } from '@shared/ipc';
@@ -14,25 +15,25 @@ export const useLibraryStore = defineStore('library', () => {
   const currentClip = computed(() => clips.value.find((c) => c.stem === current.value) ?? null);
 
   async function refresh(): Promise<void> {
-    clips.value = await window.apexcut.library.list();
+    clips.value = await api.library.list();
     if (current.value && !clips.value.some((c) => c.stem === current.value)) current.value = null;
   }
 
   /** File/folder dialog; returns the picked paths (nothing added yet — see App.importPaths). */
   async function pick(kind: 'files' | 'dir'): Promise<string[]> {
-    const r = await window.apexcut.library.pick(kind);
+    const r = await api.library.pick(kind);
     logger.info('picked', r);
     return r.paths;
   }
 
   async function add(paths: string[]): Promise<string[]> {
-    const r = await window.apexcut.library.add(paths);
+    const r = await api.library.add(paths);
     await refresh();
     return r.added;
   }
 
   async function remove(stem: string): Promise<void> {
-    await window.apexcut.library.remove(stem);
+    await api.library.remove(stem);
     await refresh();
   }
 
@@ -43,7 +44,7 @@ export const useLibraryStore = defineStore('library', () => {
     if (idx < 0) order.push(stem);
     else order.splice(idx, 0, stem);
     clips.value = order.map((s) => clips.value.find((c) => c.stem === s)!);
-    await window.apexcut.library.reorder(order);
+    await api.library.reorder(order);
   }
 
   return { clips, current, analyzed, currentClip, refresh, pick, add, remove, move };
