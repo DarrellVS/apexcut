@@ -150,9 +150,8 @@ app.whenReady().then(() => {
     }
   }
 
-  if (!is.dev) {
-    autoUpdater.checkForUpdatesAndNotify().catch((e) => log.warn('updater:', e));
-  }
+  // check for a new version a few seconds after start; the renderer shows a banner when it is ready
+  setTimeout(() => services.updater.check().catch((e) => log.warn('updater:', e)), 4000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

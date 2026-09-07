@@ -2,9 +2,12 @@
 /** Version, encoder in use, problem report, links. Update checks join here in a later step. */
 import { ref } from 'vue';
 import { useSettingsStore } from '@renderer/stores/settings';
+import { useUpdaterStore } from '@renderer/stores/updater';
+import { fmtWhen } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const settings = useSettingsStore();
+const updater = useUpdaterStore();
 const reporting = ref(false);
 async function report(): Promise<void> {
   reporting.value = true;
@@ -37,6 +40,52 @@ const encoderLabel = (): string => {
         <b class="block text-fg">ApexCut {{ settings.version }}</b>
         <span class="text-xs text-muted">Finds the fun parts of your helmet-cam videos.</span>
       </div>
+    </div>
+    <div class="card text-sm">
+      <div class="label-caps mb-1">Updates</div>
+      <div class="flex items-center gap-3">
+        <div class="min-w-0 flex-1 text-fg">
+          <template v-if="updater.status.state === 'checking'">Checking…</template>
+          <template v-else-if="updater.status.state === 'uptodate'">
+            You have the latest version.
+            <span class="text-xs text-muted">Checked {{ fmtWhen(updater.status.checkedAt) }}</span>
+          </template>
+          <template v-else-if="updater.status.state === 'downloading'">
+            Downloading
+            {{ updater.status.version ? `ApexCut ${updater.status.version}` : 'update' }}…
+            {{ updater.status.percent }}%
+          </template>
+          <template v-else-if="updater.status.state === 'ready'">
+            ApexCut {{ updater.status.version }} is ready — installs when you restart.
+          </template>
+          <template v-else-if="updater.status.state === 'error'">
+            <span class="text-play">{{ updater.status.message }}</span>
+          </template>
+          <template v-else-if="updater.status.state === 'disabled'">
+            <span class="text-muted">Updates are checked in the installed app only.</span>
+          </template>
+          <template v-else>Updates are checked when ApexCut starts.</template>
+        </div>
+        <button
+          v-if="updater.status.state === 'ready'"
+          class="btn btn-pri btn-mini"
+          @click="updater.install()"
+        >
+          Restart to update
+        </button>
+        <button
+          v-else
+          class="btn btn-mini"
+          :disabled="updater.status.state === 'checking' || updater.status.state === 'downloading'"
+          @click="updater.check()"
+        >
+          Check for updates
+        </button>
+      </div>
+      <details v-if="updater.status.state === 'ready' && updater.status.notes" class="mt-2 text-xs">
+        <summary class="cursor-pointer text-muted">What’s new</summary>
+        <pre class="m-0 mt-1 whitespace-pre-wrap text-muted">{{ updater.status.notes }}</pre>
+      </details>
     </div>
     <div class="card text-sm">
       <div class="label-caps mb-1">Exporting with</div>

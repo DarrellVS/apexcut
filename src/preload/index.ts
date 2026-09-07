@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
-import type { ApexcutApi, JobState } from '@shared/ipc';
+import type { ApexcutApi, JobState, UpdateStatus } from '@shared/ipc';
 
 const invoke = <T>(channel: string, ...args: unknown[]): Promise<T> =>
   ipcRenderer.invoke(channel, ...args) as Promise<T>;
@@ -54,6 +54,16 @@ const api: ApexcutApi = {
   },
   shell: {
     openFolder: (path) => invoke('shell:openFolder', path),
+  },
+  updater: {
+    status: () => invoke('updater:status'),
+    check: () => invoke('updater:check'),
+    install: () => invoke('updater:install'),
+    onStatus: (cb) => {
+      const handler = (_e: unknown, s: UpdateStatus): void => cb(s);
+      ipcRenderer.on('updater:status', handler);
+      return () => ipcRenderer.removeListener('updater:status', handler);
+    },
   },
   app: {
     version: () => invoke('app:version'),

@@ -138,6 +138,16 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
+/** Auto-update state as shown in the banner and in Settings → Updates & about. */
+export type UpdateStatus =
+  | { state: 'idle' }
+  | { state: 'disabled' }
+  | { state: 'checking' }
+  | { state: 'uptodate'; checkedAt: number }
+  | { state: 'downloading'; version?: string; percent: number }
+  | { state: 'ready'; version: string; notes: string }
+  | { state: 'error'; message: string };
+
 export interface EncoderInfo {
   ffmpegVersion: string;
   hevcEncoder: string;
@@ -206,6 +216,14 @@ export interface ApexcutApi {
   };
   shell: {
     openFolder(path: string): Promise<void>;
+  };
+  updater: {
+    status(): Promise<UpdateStatus>;
+    /** start a check; the outcome arrives through onStatus */
+    check(): Promise<UpdateStatus>;
+    /** quit and install a downloaded update */
+    install(): Promise<void>;
+    onStatus(cb: (s: UpdateStatus) => void): () => void;
   };
   app: {
     version(): Promise<string>;

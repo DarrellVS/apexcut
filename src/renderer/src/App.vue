@@ -10,6 +10,8 @@ import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUiStore } from '@renderer/stores/ui';
+import { useUpdaterStore } from '@renderer/stores/updater';
+import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
@@ -29,6 +31,7 @@ const jobs = useJobsStore();
 const editor = useEditorStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
+const updater = useUpdaterStore();
 
 const everAnalyzed = ref(false);
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
@@ -99,7 +102,7 @@ async function onDrop(e: DragEvent): Promise<void> {
 }
 
 onMounted(async () => {
-  await Promise.all([settings.init(), jobs.init(), projects.refresh()]);
+  await Promise.all([settings.init(), jobs.init(), projects.refresh(), updater.init()]);
   if (projects.activeId) await openProject(projects.activeId);
 
   jobs.onUpdate(async (job) => {
@@ -207,6 +210,7 @@ function onKey(e: KeyboardEvent): void {
     >
       Drop your videos to add them to “{{ projects.active?.name }}”
     </div>
+    <UpdateBanner />
     <ProjectsHome v-if="phase === 'projects'" @open="openProject" />
     <EmptyState
       v-else-if="phase === 'empty'"

@@ -18,6 +18,7 @@ import { Jobs } from './services/jobs';
 import { Library } from './services/library';
 import { Projects } from './services/projects';
 import { createReport } from './services/report';
+import { Updater } from './services/updater';
 import { encoders } from './services/media';
 import { allowRoot, mediaUrl, registerResolver } from './services/protocol';
 import { paths, SettingsStore } from './services/store';
@@ -28,6 +29,7 @@ export interface Services {
   analysis: Analysis;
   jobs: Jobs;
   settings: SettingsStore;
+  updater: Updater;
 }
 
 export function createServices(): Services {
@@ -39,6 +41,7 @@ export function createServices(): Services {
     analysis: new Analysis(library, (stem) => projects.selectionFile(stem)),
     jobs: new Jobs(),
     settings: new SettingsStore(),
+    updater: new Updater(app.isPackaged),
   };
 }
 
@@ -270,6 +273,9 @@ export function registerIpc(s: Services): void {
     allowRoot(res.filePaths[0]);
     return next;
   });
+  ipcMain.handle('updater:status', () => s.updater.status);
+  ipcMain.handle('updater:check', () => s.updater.check());
+  ipcMain.handle('updater:install', () => s.updater.install());
   ipcMain.handle('shell:openFolder', (_e, p: unknown) => {
     const path = z.string().parse(p);
     if (!existsSync(path)) return;
