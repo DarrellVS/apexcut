@@ -14,6 +14,18 @@ import { paths, readJson } from './services/store';
 // same data folder in dev (unpackaged runs default to "Electron") and in the packaged app
 app.setPath('userData', join(app.getPath('appData'), 'ApexCut'));
 
+// one running copy at a time: a second launch focuses the existing window instead
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+app.on('second-instance', () => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
 log.initialize();
 log.transports.file.level = 'info';
 autoUpdater.logger = log;

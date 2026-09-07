@@ -104,7 +104,7 @@ function choose(scope: 'all' | 'current'): void {
       </button>
       <div
         v-if="menuOpen"
-        class="glass absolute top-[calc(100%+6px)] right-0 z-30 min-w-[280px] p-1.5"
+        class="popover absolute top-[calc(100%+6px)] right-0 z-30 min-w-[280px] p-1.5"
         @click.stop
       >
         <div class="cursor-pointer rounded-lg px-3 py-2 hover:bg-s2" @click="choose('all')">

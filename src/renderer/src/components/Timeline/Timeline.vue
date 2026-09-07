@@ -182,7 +182,15 @@ watch(
   () => editor.time,
   (t) => editor.playing && view.follow(t),
 );
+/** Clicking anywhere that is not a block, the toolbar, or a part row clears the selection. */
+function onGlobalDown(e: MouseEvent): void {
+  if (!editor.selection.length) return;
+  const t = e.target as HTMLElement;
+  if (t.closest('[data-keep-selection]')) return;
+  editor.clearSelection();
+}
 onMounted(() => {
+  document.addEventListener('mousedown', onGlobalDown);
   new ResizeObserver(drawAll).observe(lane.value as Element);
   new MutationObserver(drawAll).observe(document.documentElement, {
     attributes: true,
@@ -340,6 +348,7 @@ const zoomInput = computed({
           left: `${view.xPct(p.start_s)}%`,
           width: `${Math.max(0.2, view.xPct(p.end_s) - view.xPct(p.start_s))}%`,
         }"
+        data-keep-selection
         @mousedown.stop="blockDown($event, p)"
         @dblclick="emit('play', p.start_s)"
         @mouseenter="editor.hoverId = p.id"
@@ -378,6 +387,7 @@ const zoomInput = computed({
         ref="toolbar"
         class="floating absolute top-3 z-[5] flex -translate-x-1/2 -translate-y-[115%] gap-1 p-1 whitespace-nowrap"
         :style="{ left: `${toolbarLeft}px` }"
+        data-keep-selection
         @mousedown.stop
       >
         <button

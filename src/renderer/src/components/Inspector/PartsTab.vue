@@ -151,6 +151,7 @@ function clickRow(p: Part, e: MouseEvent): void {
           editor.selection.includes(p.id) ? 'border-sel bg-s2' : 'border-transparent',
           { 'opacity-45': !p.enabled },
         ]"
+        data-keep-selection
         @click="clickRow(p, $event)"
         @dblclick="emit('play', p.start_s)"
         @mouseenter="editor.hoverId = p.id"

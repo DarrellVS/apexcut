@@ -18,6 +18,7 @@
   --brake: #1fa3a3;
   --both: #8b5cf6;
   --manual: #8d8d98;
+  --pop: #ffffff;
   --shadow: 0 10px 40px rgba(40, 40, 80, 0.14);
   --r: 14px;
   --rs: 10px;
@@ -36,6 +37,7 @@
   --brake: #4dd0d0;
   --both: #b394ff;
   --manual: #a0a0ab;
+  --pop: #1e1e26;
   --shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
@@ -44,6 +46,7 @@
   --color-bg: var(--bg);
   --color-bg2: var(--bg2);
   --color-glass: var(--glass);
+  --color-pop: var(--pop);
   --color-s2: var(--s2);
   --color-s3: var(--s3);
   --color-line: var(--line);
@@ -159,6 +162,12 @@
 }
 @utility num {
   font-variant-numeric: tabular-nums;
+}
+@utility popover {
+  background: var(--pop);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
 }
 @utility floating {
   background: rgba(18, 18, 26, 0.78);
