@@ -3,6 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.4
+
+- Part counts in the video list, the top bar and the Movie tab now follow every edit at once (they
+  could lag behind until a rescan).
+- Ride card: the big numbers shrink to fit their tile; in the app the Ride card button sits under its
+  text instead of squeezed beside it.
+
 ## 0.4.3
 
 - The video list shows the number of parts in the movie (“6 parts”) instead of “1/3 parts”.

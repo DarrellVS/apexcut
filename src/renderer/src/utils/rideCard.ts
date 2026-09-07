@@ -136,7 +136,13 @@ export async function renderRideCard(
   ];
   const tcols = variant === 'portrait' ? 2 : 4;
   const tileW = (w - 2 * pad - gap * (tcols - 1)) / tcols;
-  const tileH = variant === 'portrait' ? Math.round(h * 0.17) : Math.round(h * 0.26);
+  const tileH = variant === 'portrait' ? Math.round(h * 0.2) : Math.round(h * 0.26);
+  const inset = Math.round(tileH * 0.2);
+  // one font size for all big numbers: the largest that fits the widest one
+  let bigPx = Math.round(tileH * 0.4);
+  ctx.font = `800 ${bigPx}px ${FONT}`;
+  const widest = Math.max(...tiles.map(([big]) => ctx.measureText(big).width));
+  if (widest > tileW - 2 * inset) bigPx = Math.floor((bigPx * (tileW - 2 * inset)) / widest);
   tiles.forEach(([big, small], i) => {
     const x = pad + (i % tcols) * (tileW + gap);
     const y = statsTop + Math.floor(i / tcols) * (tileH + gap);
@@ -144,12 +150,14 @@ export async function renderRideCard(
     ctx.beginPath();
     ctx.roundRect(x, y, tileW, tileH, 22);
     ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = fg;
-    ctx.font = `800 ${Math.round(tileH * 0.4)}px ${FONT}`;
-    ctx.fillText(big, x + tileH * 0.22, y + tileH * 0.55);
+    ctx.font = `800 ${bigPx}px ${FONT}`;
+    ctx.fillText(big, x + inset, y + tileH * 0.56);
     ctx.fillStyle = muted;
     ctx.font = `500 ${Math.round(tileH * 0.16)}px ${FONT}`;
-    ctx.fillText(small, x + tileH * 0.22, y + tileH * 0.82);
+    ctx.fillText(small, x + inset, y + tileH * 0.8);
   });
 
   // footer line: twistiest minute + made with

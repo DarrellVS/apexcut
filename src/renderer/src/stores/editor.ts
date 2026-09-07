@@ -12,6 +12,7 @@ import {
 } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
+import { useLibraryStore } from '@renderer/stores/library';
 import { logger } from '@renderer/utils/logger';
 
 export const AMOUNT_LEVELS = [92, 85, 75, 65, 55];
@@ -91,6 +92,8 @@ export const useEditorStore = defineStore('editor', () => {
       parts.value.sort((a, b) => a.start_s - b.start_s);
       await window.apexcut.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
       dirty.value = false;
+      // counts in the video list, top bar and Movie tab follow the saved picks
+      useLibraryStore().refresh();
     }, 250);
   }
 
@@ -102,6 +105,7 @@ export const useEditorStore = defineStore('editor', () => {
     parts.value.sort((a, b) => a.start_s - b.start_s);
     await window.apexcut.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
     dirty.value = false;
+    await useLibraryStore().refresh();
   }
 
   /** Leave the current video/project: save what is pending and clear everything. */

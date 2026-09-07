@@ -116,7 +116,15 @@ async function loadOthers(): Promise<void> {
     otherParts.value[c.stem] = tl.parts.filter((p) => p.enabled).map((p) => toItem(c.stem, p));
   }
 }
-watch(() => library.clips, loadOthers, { immediate: true });
+// any change in what is picked (per-video counts) or which video is open invalidates the cache
+watch(
+  () => [editor.stem, library.clips.map((c) => `${c.stem}:${c.nEnabled}:${c.highlightS}`).join()],
+  () => {
+    otherParts.value = {};
+    loadOthers();
+  },
+  { immediate: true },
+);
 jobs.onUpdate(
   (j) =>
     j.kind !== 'export' &&
@@ -484,22 +492,18 @@ defineExpose({ format });
       Export cancelled.
     </div>
     <div v-if="scope === 'all'" class="card">
-      <div class="flex items-center gap-3">
-        <div class="min-w-0 flex-1">
-          <b class="block text-sm text-fg">Ride card</b>
-          <span class="text-xs text-muted">
-            A picture with the numbers of this ride and its best moments — for Instagram or the
-            group chat. Saved next to your movies and copied to the clipboard.
-          </span>
-        </div>
-        <button
-          class="btn btn-mini"
-          :disabled="cardBusy || !library.analyzed.length"
-          @click="makeRideCard"
-        >
-          {{ cardBusy ? 'Making…' : 'Make ride card' }}
-        </button>
-      </div>
+      <b class="block text-sm text-fg">Ride card</b>
+      <p class="m-0 mt-0.5 text-xs text-muted">
+        A picture with the numbers of this ride and its best moments, for Instagram or the group
+        chat. Saved next to your movies and copied to the clipboard.
+      </p>
+      <button
+        class="btn mt-2.5 w-full"
+        :disabled="cardBusy || !library.analyzed.length"
+        @click="makeRideCard"
+      >
+        {{ cardBusy ? 'Making…' : 'Make ride card' }}
+      </button>
     </div>
   </div>
 </template>
