@@ -2,7 +2,9 @@
 /** Movie tab: what (one movie / separate clips), format 2×2, framing hint, name, go, progress, result. */
 import { computed, ref, watch } from 'vue';
 import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
+import { pickByLength } from '@core/pick';
 import type { Part } from '@core/types';
+import { toast } from '@renderer/components/Base/ToastHost.vue';
 import {
   TRANSITION_LABEL,
   TRANSITIONS,
@@ -113,6 +115,69 @@ jobs.onUpdate(
     loadOthers(),
 );
 
+// ---- target length: "make me a 3-minute movie"
+const allPartsLength = computed(() => {
+  let s = editor.parts.reduce((a, p) => a + p.end_s - p.start_s, 0);
+  for (const list of Object.values(allParts.value))
+    s += list.reduce((a, p) => a + p.end_s - p.start_s, 0);
+  return s;
+});
+/** full part lists of the videos that are not open (enabled or not) */
+const allParts = ref<Record<string, Part[]>>({});
+async function loadAll(): Promise<Record<string, Part[]>> {
+  const out: Record<string, Part[]> = {};
+  for (const c of library.analyzed) {
+    if (c.stem === editor.stem) continue;
+    out[c.stem] = (await window.apexcut.analysis.timeline(c.stem)).parts;
+  }
+  allParts.value = out;
+  return out;
+}
+watch(() => library.clips, loadAll, { immediate: true });
+const targetS = ref(180);
+const keepPicks = ref(false);
+const picking = ref(false);
+const targetMax = computed(() => Math.max(60, Math.ceil(allPartsLength.value / 30) * 30));
+const perVideo = computed(() =>
+  library.analyzed
+    .map((c) => {
+      const list = items.value.filter((i) => i.stem === c.stem);
+      return {
+        stem: c.stem,
+        n: list.length,
+        s: list.reduce((a, i) => a + i.endS - i.startS, 0),
+      };
+    })
+    .filter((v) => v.n > 0),
+);
+async function pickBest(): Promise<void> {
+  if (!editor.stem || picking.value) return;
+  picking.value = true;
+  try {
+    const others = await loadAll();
+    const byVideo: Record<string, Part[]> = { ...others, [editor.stem]: editor.parts };
+    const r = pickByLength(byVideo, { targetS: targetS.value, keepPicks: keepPicks.value });
+    // the open video goes through the editor (undoable); the others are saved straight away
+    const mine = r.enabled[editor.stem] ?? {};
+    editor.mutate(() => editor.parts.forEach((p) => (p.enabled = mine[p.id] ?? p.enabled)));
+    await editor.flush(); // so the video list below reads the new picks, not the debounced old ones
+    for (const [stem, list] of Object.entries(others)) {
+      for (const p of list) p.enabled = r.enabled[stem]?.[p.id] ?? p.enabled;
+      await window.apexcut.analysis.saveParts(stem, JSON.parse(JSON.stringify(list)));
+    }
+    otherParts.value = {};
+    await Promise.all([loadOthers(), library.refresh(), projects.refresh()]);
+    toast(
+      r.reached
+        ? `${fmtDuration(r.totalS)} · ${r.nParts} parts picked`
+        : `Not enough parts for ${fmtDuration(targetS.value)} — everything is in (${fmtDuration(r.totalS)})`,
+      5000,
+    );
+  } finally {
+    picking.value = false;
+  }
+}
+
 /** how parts are joined: per project; crossfades overlap ½ s, so the movie is that much shorter */
 const transition = computed<Transition>(() => projects.active?.transition ?? 'crossfade');
 const XFADE_S = 0.5;
@@ -171,6 +236,47 @@ defineExpose({ format });
       <input v-model="onlyStarred" type="checkbox" class="m-0" />
       Only the starred parts ({{ nStarred }})
     </label>
+    <div v-if="!separate && scope === 'all'" class="card">
+      <div class="flex items-baseline justify-between text-xs text-muted">
+        <span>How long should it be?</span>
+        <b class="num text-sm text-fg">{{ fmtDuration(targetS) }}</b>
+      </div>
+      <input
+        v-model.number="targetS"
+        type="range"
+        class="mt-1 w-full"
+        min="30"
+        :max="targetMax"
+        step="15"
+        aria-label="Target movie length"
+      />
+      <div class="mt-1.5 flex items-center gap-2">
+        <button
+          class="btn btn-mini flex-1"
+          :disabled="picking || !editor.stem"
+          title="Turns parts on and off across all videos: the best-scoring ones until the length is reached. Stars and your own parts always stay in."
+          @click="pickBest"
+        >
+          {{ picking ? 'Picking…' : 'Pick the best parts' }}
+        </button>
+        <label
+          class="flex items-center gap-1.5 text-[11px] text-muted"
+          title="Only add or remove parts to reach the length; what you picked stays"
+        >
+          <input v-model="keepPicks" type="checkbox" class="m-0" /> Keep my picks
+        </label>
+      </div>
+      <div
+        v-if="perVideo.length > 1"
+        class="mt-2 grid grid-cols-[1fr_auto_auto] gap-x-3 text-[11px] text-muted"
+      >
+        <template v-for="v in perVideo" :key="v.stem">
+          <span class="truncate">{{ shortName(v.stem) }}</span>
+          <span class="num">{{ v.n }} parts</span>
+          <span class="num text-right">{{ fmtDuration(v.s) }}</span>
+        </template>
+      </div>
+    </div>
     <input
       v-model="name"
       class="rounded-ctl border border-line bg-s2 px-3 py-2 text-fg"
