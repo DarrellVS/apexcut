@@ -3,6 +3,11 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.10
+
+- The update banner now shows up while a new version downloads (with the percentage and a progress
+  line), then turns into the “ready — restart to update” banner.
+
 ## 0.4.9
 
 - Fixed: adding videos from several days at once failed with “An object could not be cloned”.

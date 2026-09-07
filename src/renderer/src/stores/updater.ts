@@ -11,7 +11,9 @@ export const useUpdaterStore = defineStore('updater', () => {
   const dismissed = ref(false);
 
   const ready = computed(() => (status.value.state === 'ready' ? status.value : null));
-  const showBanner = computed(() => !!ready.value && !dismissed.value);
+  const downloading = computed(() => (status.value.state === 'downloading' ? status.value : null));
+  /** banner while an update downloads and once it is ready to install */
+  const showBanner = computed(() => (!!ready.value || !!downloading.value) && !dismissed.value);
 
   async function init(): Promise<void> {
     status.value = await window.apexcut.updater.status();
@@ -26,5 +28,5 @@ export const useUpdaterStore = defineStore('updater', () => {
     window.apexcut.updater.install();
   }
 
-  return { status, dismissed, ready, showBanner, init, check, install };
+  return { status, dismissed, ready, downloading, showBanner, init, check, install };
 });

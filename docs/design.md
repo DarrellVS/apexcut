@@ -61,7 +61,7 @@ into a collapsed “Archived · n” section at the bottom.
 
 - **Import sheet**: a pick or drop that spans several recording days asks first — one row per day with a
   checkbox and an editable name, and the choice One project per day (recommended) / All into this project.
-- **Update banner**: a slim glass bar above the top bar once a new version has downloaded: “ApexCut 0.3.0
+- **Update banner**: a slim glass bar above the top bar once a new version has downloaded: “ApexCut 0.3.0 It appears already while the update downloads (icon pulses, percentage, a 2 px gradient progress line along the bottom edge) and turns into the ready state in place.
   is ready · What’s new · Restart to update · ×”.
 - **Error card**: a centred `popover` card for anything we could not recover from — plain title and hint
   from `utils/errors.ts`, Details disclosure with the raw text, Restart ApexCut, Report a problem (zip in
