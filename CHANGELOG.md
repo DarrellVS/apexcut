@@ -3,6 +3,11 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.1
+
+- Removed: the target-length picker (“How long should it be?”). Stars and the Parts list stay the way
+  to shape the movie.
+
 ## 0.4.0 — Telemetry
 
 - **Riding data on the picture**: a lean gauge on the exported movie — “Lean angle” (a leaning bike
@@ -14,8 +19,6 @@ notes (and the “What’s new” text in the update banner).
 
 ## 0.3.0 — Better movies
 
-- **Target length**: “How long should it be?” — pick the best parts across all videos for a 2-, 3- or
-  10-minute movie. Stars and your own parts always stay in.
 - **Transitions** between parts: crossfade (default), cut or dip to black, per project.
 - **Title card and end card**: the project name with the date and the numbers of the ride, and a
   “Made with ApexCut” card, in the movie's own format and quality.

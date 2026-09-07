@@ -73,8 +73,7 @@ into a collapsed “Archived · n” section at the bottom.
   the selected song (volume, fade in/out, earlier/later, remove), and Music / Ride sound sliders in the
   lane header. Missing files show dashed in `--play`. Preview plays the song that covers the playhead
   and ducks the ride sound to the chosen level.
-- **Movie tab**: target length slider with “Pick the best parts” (stars and own parts always stay),
-  per-video distribution, transition segment (Crossfade / Cut / Dip to black) with a plain-words hint,
+- **Movie tab**: transition segment (Crossfade / Cut / Dip to black) with a plain-words hint,
   title card and end card toggles, “Only the starred parts”.
 - **Telemetry overlay**: white bike silhouette and angle number (Lean angle) or dial + orange needle +
   teal/orange g-bar (Dashboard) in a chosen corner, sizes S/M/L as a share of the frame height; drawn
