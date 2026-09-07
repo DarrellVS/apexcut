@@ -51,16 +51,17 @@ describe('selection', () => {
 describe('edl', () => {
   it('timecode math', () => {
     expect(timecode(0, 29.97)).toBe('00:00:00:00');
-    expect(timecode(61, 29.97, '10:00:00:00')).toBe('10:01:00:29');
+    // 61 s × 29.97 = 1828.17 → 1828 frames = 1:00 + 28 frames (matches the Python oracle)
+    expect(timecode(61, 29.97, '10:00:00:00')).toBe('10:01:00:28');
   });
   it('one event per part with record timeline continuity', () => {
     const parts = autoToParts([seg(10, 20), seg(30, 45)]);
     const text = edl(parts, 'clip', 'clip.MP4', 29.97);
     expect(text).toContain(
-      '001  AX       AA/V  C        00:00:10:00 00:00:20:00 00:00:00:00 00:00:10:00',
+      '001  AX       AA/V  C        00:00:10:00 00:00:19:29 00:00:00:00 00:00:10:00',
     );
     expect(text).toContain(
-      '002  AX       AA/V  C        00:00:30:00 00:00:45:00 00:00:10:00 00:00:25:00',
+      '002  AX       AA/V  C        00:00:29:29 00:00:44:29 00:00:10:00 00:00:24:29',
     );
   });
 });
