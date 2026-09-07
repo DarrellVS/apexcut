@@ -181,6 +181,11 @@ export class Projects {
     this.save();
   }
 
+  /** Every video that is in at least one project (for cache clean-up). */
+  stemsInAnyProject(): Set<string> {
+    return new Set(this.state.projects.flatMap((p) => p.clips));
+  }
+
   // ---- videos of the open project
 
   clips(): string[] {

@@ -55,6 +55,10 @@ const api: ApexcutApi = {
   shell: {
     openFolder: (path) => invoke('shell:openFolder', path),
   },
+  storage: {
+    info: () => invoke('storage:info'),
+    cleanup: () => invoke('storage:cleanup'),
+  },
   updater: {
     status: () => invoke('updater:status'),
     check: () => invoke('updater:check'),

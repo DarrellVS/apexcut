@@ -9,6 +9,7 @@ import { useUiStore, type SettingsSection } from '@renderer/stores/ui';
 import { useSettingsStore } from '@renderer/stores/settings';
 import AppearanceSection from './AppearanceSection.vue';
 import OutputSection from './OutputSection.vue';
+import StorageSection from './StorageSection.vue';
 import AboutSection from './AboutSection.vue';
 import ScoringSection from './ScoringSection.vue';
 
@@ -30,6 +31,7 @@ const NAV: NavGroup[] = [
     items: [
       { id: 'appearance', label: 'Appearance' },
       { id: 'output', label: 'Output folder' },
+      { id: 'storage', label: 'Storage' },
       { id: 'about', label: 'Updates & about' },
     ],
   },
@@ -132,6 +134,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             <h2 class="m-0 mb-6 text-xl font-bold text-fg">{{ title }}</h2>
             <AppearanceSection v-if="ui.settingsSection === 'appearance'" />
             <OutputSection v-else-if="ui.settingsSection === 'output'" />
+            <StorageSection v-else-if="ui.settingsSection === 'storage'" />
             <AboutSection v-else-if="ui.settingsSection === 'about'" />
             <ScoringSection v-else-if="ui.settingsSection === 'scoring'" />
           </div>

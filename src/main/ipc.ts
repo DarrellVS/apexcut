@@ -18,6 +18,7 @@ import { Jobs } from './services/jobs';
 import { Library } from './services/library';
 import { Projects } from './services/projects';
 import { createReport } from './services/report';
+import { Storage } from './services/storage';
 import { Updater } from './services/updater';
 import { encoders } from './services/media';
 import { allowRoot, mediaUrl, registerResolver } from './services/protocol';
@@ -30,18 +31,21 @@ export interface Services {
   jobs: Jobs;
   settings: SettingsStore;
   updater: Updater;
+  storage: Storage;
 }
 
 export function createServices(): Services {
   const library = new Library();
   const projects = new Projects(library);
+  const jobs = new Jobs();
   return {
     library,
     projects,
     analysis: new Analysis(library, (stem) => projects.selectionFile(stem)),
-    jobs: new Jobs(),
+    jobs,
     settings: new SettingsStore(),
     updater: new Updater(app.isPackaged),
+    storage: new Storage(projects, jobs),
   };
 }
 
@@ -273,6 +277,8 @@ export function registerIpc(s: Services): void {
     allowRoot(res.filePaths[0]);
     return next;
   });
+  ipcMain.handle('storage:info', () => s.storage.info());
+  ipcMain.handle('storage:cleanup', () => s.storage.cleanup());
   ipcMain.handle('updater:status', () => s.updater.status);
   ipcMain.handle('updater:check', () => s.updater.check());
   ipcMain.handle('updater:install', () => s.updater.install());

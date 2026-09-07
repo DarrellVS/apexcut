@@ -148,6 +148,15 @@ export type UpdateStatus =
   | { state: 'ready'; version: string; notes: string }
   | { state: 'error'; message: string };
 
+/** Settings → Storage: size of the scan cache and which scans no project uses any more. */
+export interface StorageInfo {
+  dataRoot: string;
+  cacheBytes: number;
+  unusedBytes: number;
+  nScanned: number;
+  unused: string[];
+}
+
 export interface EncoderInfo {
   ffmpegVersion: string;
   hevcEncoder: string;
@@ -216,6 +225,11 @@ export interface ApexcutApi {
   };
   shell: {
     openFolder(path: string): Promise<void>;
+  };
+  storage: {
+    info(): Promise<StorageInfo>;
+    /** delete scans of videos that are in no project */
+    cleanup(): Promise<{ removed: string[]; freedBytes: number }>;
   };
   updater: {
     status(): Promise<UpdateStatus>;

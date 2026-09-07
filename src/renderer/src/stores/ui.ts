@@ -4,7 +4,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-export type SettingsSection = 'appearance' | 'output' | 'about' | 'scoring';
+export type SettingsSection = 'appearance' | 'output' | 'storage' | 'about' | 'scoring';
 
 export interface FatalError {
   message: string;

@@ -19,6 +19,13 @@ export function fmtElapsed(s: number): string {
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
+/** 1234567 → "1.2 MB" */
+export function fmtBytes(n: number): string {
+  if (n < 1e6) return `${Math.round(n / 1e3)} kB`;
+  if (n < 1e9) return `${(n / 1e6).toFixed(n < 1e7 ? 1 : 0)} MB`;
+  return `${(n / 1e9).toFixed(2)} GB`;
+}
+
 /** When something was last edited, the way people say it: "today 14:27", "yesterday", "Mon 7 Sep". */
 export function fmtWhen(ts: number): string {
   const d = new Date(ts);
