@@ -4,8 +4,10 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import log from 'electron-log/main';
 import { autoUpdater } from 'electron-updater';
 import icon from '../../resources/icon.png?asset';
+import type { Part } from '@core/types';
 import { createServices, registerIpc } from './ipc';
 import { installProtocol, registerScheme } from './services/protocol';
+import { readJson } from './services/store';
 
 // same data folder in dev (unpackaged runs default to "Electron") and in the packaged app
 app.setPath('userData', join(app.getPath('appData'), 'ApexCut'));
@@ -57,6 +59,23 @@ app.whenReady().then(() => {
 
   // `ApexCut --add=<file-or-folder>`: add videos on startup and scan them (also handy for smoke tests)
   const adds = process.argv.filter((a) => a.startsWith('--add=')).map((a) => a.slice(6));
+  // `ApexCut --import-legacy=<out dir of the Python prototype>`: take over its library and edited selections
+  for (const dir of process.argv
+    .filter((a) => a.startsWith('--import-legacy='))
+    .map((a) => a.slice(16))) {
+    const lib = readJson<Record<string, { mp4?: string | null; lrf?: string | null }>>(
+      join(dir, 'library.json'),
+      {},
+    );
+    for (const [stem, rec] of Object.entries(lib)) {
+      adds.push(...[rec.mp4, rec.lrf].filter((p): p is string => !!p));
+      const sel = readJson<{ segments?: Part[] } | null>(join(dir, stem, 'selection.json'), null);
+      if (sel?.segments) {
+        services.analysis.importSelection(stem, sel.segments);
+        log.info(`legacy import: ${stem} — ${sel.segments.length} parts`);
+      }
+    }
+  }
   if (adds.length) {
     const added = services.library.add(adds);
     log.info('startup add:', added);

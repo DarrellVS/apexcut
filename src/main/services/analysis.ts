@@ -115,9 +115,20 @@ export class Analysis {
     };
     writeJson(join(dir, 'signals.json'), stored);
     this.storeHighlights(dir, result);
-    const previous = readJson<{ parts: Part[] }>(join(dir, 'selection.json'), { parts: [] }).parts;
-    writeJson(join(dir, 'selection.json'), { parts: mergeSelection(previous, result.segments) });
+    const previous = readJson<{ parts: Part[]; frozen?: boolean }>(join(dir, 'selection.json'), {
+      parts: [],
+    });
+    // an imported selection (from the legacy editor) is kept exactly as it was, once
+    const parts = previous.frozen
+      ? previous.parts
+      : mergeSelection(previous.parts, result.segments);
+    writeJson(join(dir, 'selection.json'), { parts });
     prog(1, 'Done');
+  }
+
+  /** Import a selection edited elsewhere; the next analysis keeps it untouched instead of merging. */
+  importSelection(stem: string, parts: Part[]): void {
+    writeJson(join(this.dir(stem), 'selection.json'), { parts, frozen: true });
   }
 
   private storeHighlights(dir: string, result: ReturnType<typeof compute>): void {

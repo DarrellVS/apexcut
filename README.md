@@ -28,6 +28,12 @@ Scoring rules: [docs/scoring.md](docs/scoring.md). DJI metadata findings: [docs/
 The Python prototype this project was ported from lives in `C:\Users\darre\dji-highlights` and acts as
 the parity oracle: `tests/fixtures/` holds its raw metadata extract and expected output for one clip.
 
+## Command-line options
+
+- `ApexCut --add=<file-or-folder>` adds videos and scans them on startup.
+- `ApexCut --import-legacy=<out folder of the Python prototype>` takes over its library and your edited
+  selections (joined/added/left-out parts stay exactly as they were), then scans the videos.
+
 ## Release
 
 Tag `vX.Y.Z` on `main` → GitHub Actions builds the installer + portable exe and publishes a GitHub
