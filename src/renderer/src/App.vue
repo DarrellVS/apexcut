@@ -100,7 +100,7 @@ async function importPaths(paths: string[]): Promise<void> {
 }
 async function confirmImport(groups: { name: string | null; paths: string[] }[]): Promise<void> {
   pendingGroups.value = null;
-  const r = await window.apexcut.projects.addGroups(groups);
+  const r = await window.apexcut.projects.addGroups(JSON.parse(JSON.stringify(groups)));
   if (r.firstProject) await openProject(r.firstProject);
   else await library.refresh();
   const n = groups.filter((g) => g.name !== null).length;
@@ -151,7 +151,11 @@ onMounted(async () => {
   if (projects.activeId) await openProject(projects.activeId);
 
   jobs.onUpdate(async (job) => {
-    if (job.status === 'running') return;
+    if (job.status === 'running') {
+      // a scan reports "Done" per video: refresh so the "n of m videos done" count moves along
+      if (job.kind === 'analyze' && job.message === 'Done') await library.refresh();
+      return;
+    }
     await Promise.all([library.refresh(), projects.refresh()]);
     if (job.kind === 'analyze' && job.status === 'done') {
       everAnalyzed.value = true;
@@ -192,6 +196,10 @@ watch(
   },
   { immediate: true },
 );
+// leaving the editor (projects screen, settings) hides the tour; it comes back with the editor
+watch(phase, (p) => {
+  if (p !== 'editor' && ui.tourActive) ui.tourActive = false;
+});
 
 function onKey(e: KeyboardEvent): void {
   const mod = e.ctrlKey || e.metaKey;

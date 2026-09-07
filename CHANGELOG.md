@@ -3,6 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.9
+
+- Fixed: adding videos from several days at once failed with “An object could not be cloned”.
+- Fixed: the “n of m videos done” line under the scan bar stayed at 0 until the whole scan finished.
+- Fixed: the project card menu was cut off by the thumbnail; the quick tour no longer pops up on the
+  projects screen.
+
 ## 0.4.8
 
 - The new icon is used inside the app too (top bar, projects screen, empty project, About).
