@@ -38,6 +38,6 @@ portable:
 npmRebuild: false
 publish:
   provider: github
-  owner: darrellvs
+  owner: DarrellVS
   repo: apexcut
   releaseType: release

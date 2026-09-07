@@ -6,7 +6,7 @@
   "author": {
     "name": "Darrell van Swinderen"
   },
-  "homepage": "https://github.com/darrellvs/apexcut",
+  "homepage": "https://github.com/DarrellVS/apexcut",
   "scripts": {
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
@@ -70,7 +70,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/darrellvs/apexcut.git"
+    "url": "https://github.com/DarrellVS/apexcut.git"
   },
   "engines": {
     "node": ">=22.12"
