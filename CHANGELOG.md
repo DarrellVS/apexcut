@@ -3,9 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.7
+
+- App icon: the A of ApexCut with a racing line through its apex, on the brand gradient.
+
 ## 0.4.6
 
-- New app icon: a twisty road with the camera lens at the end, in the brand gradient.
+- App icon changed (superseded in 0.4.7).
 - Ride card: both sizes lay out properly — thumbnails fill the space, tiles are capped, numbers are
   centred; nothing overlaps the footer any more.
 
