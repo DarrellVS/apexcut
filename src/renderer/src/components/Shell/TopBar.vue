@@ -42,7 +42,10 @@ function choose(scope: 'all' | 'current'): void {
 </script>
 
 <template>
-  <header class="glass flex items-center gap-2.5 px-3.5 py-2" @click.self="menuOpen = false">
+  <header
+    class="glass relative z-40 flex items-center gap-2.5 px-3.5 py-2"
+    @click.self="menuOpen = false"
+  >
     <div
       class="grid h-7 w-7 place-items-center rounded-[9px] bg-gradient-to-br from-acc1 to-acc2 text-[13px] font-extrabold text-white"
     >
