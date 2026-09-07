@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** A project without videos yet: one primary action, a way back to all projects. */
+import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { PhSquaresFour } from '@phosphor-icons/vue';
 
 defineProps<{ project: string }>();
@@ -14,11 +15,7 @@ defineEmits<{ pick: [kind: 'files' | 'dir']; home: [] }>();
     >
       <PhSquaresFour :size="16" /> All projects
     </button>
-    <div
-      class="grid h-16 w-16 place-items-center rounded-[18px] bg-gradient-to-br from-acc1 to-acc2 text-3xl font-extrabold text-white shadow-float"
-    >
-      A
-    </div>
+    <BrandMark :size="64" />
     <h1 class="m-0 text-[34px] font-bold text-fg">{{ project || 'ApexCut' }}</h1>
     <p class="m-0 max-w-[520px] text-base text-muted">
       Add the videos of this ride. ApexCut finds the fun parts — corners, acceleration, braking —

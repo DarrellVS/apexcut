@@ -3,6 +3,7 @@
  * Projects screen: search + sort, "New project" / "Import project…", a grid of cards and a collapsed
  * Archived section. Card actions (rename, export, archive, delete) live in ProjectCard.
  */
+import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { nextTick, ref } from 'vue';
 import { PhArrowSquareIn, PhMagnifyingGlass, PhPlus } from '@phosphor-icons/vue';
 import type { ProjectInfo } from '@shared/ipc';
@@ -68,11 +69,7 @@ async function archive(p: ProjectInfo, on: boolean): Promise<void> {
   <div class="flex min-h-0 flex-1 flex-col items-center overflow-auto py-6" @click="menuFor = null">
     <div class="w-full max-w-[980px] px-4">
       <header class="mb-5 flex items-center gap-3">
-        <div
-          class="grid h-10 w-10 place-items-center rounded-[12px] bg-gradient-to-br from-acc1 to-acc2 text-lg font-extrabold text-white shadow-float"
-        >
-          A
-        </div>
+        <BrandMark :size="40" />
         <div class="min-w-0 flex-1">
           <h1 class="m-0 text-xl font-bold text-fg">Your projects</h1>
           <p class="m-0 text-xs text-muted">

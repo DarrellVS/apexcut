@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Version, encoder in use, problem report, links. Update checks join here in a later step. */
+import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { ref } from 'vue';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUpdaterStore } from '@renderer/stores/updater';
@@ -31,11 +32,7 @@ const encoderLabel = (): string => {
 <template>
   <div class="flex flex-col gap-3">
     <div class="card flex items-center gap-3">
-      <div
-        class="grid h-11 w-11 flex-none place-items-center rounded-[12px] bg-gradient-to-br from-acc1 to-acc2 text-lg font-extrabold text-white"
-      >
-        A
-      </div>
+      <BrandMark :size="44" />
       <div class="min-w-0">
         <b class="block text-fg">ApexCut {{ settings.version }}</b>
         <span class="text-xs text-muted">Finds the fun parts of your helmet-cam videos.</span>

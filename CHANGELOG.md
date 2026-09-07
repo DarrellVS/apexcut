@@ -3,6 +3,10 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.8
+
+- The new icon is used inside the app too (top bar, projects screen, empty project, About).
+
 ## 0.4.7
 
 - App icon: the A of ApexCut with a racing line through its apex, on the brand gradient.

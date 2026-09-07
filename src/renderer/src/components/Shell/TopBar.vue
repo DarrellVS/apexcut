@@ -3,6 +3,7 @@
  * Top bar: brand, project name (menu: all projects / rename / export), open video + save state,
  * the active part (hover / selection / playing), undo/redo and "Make my movie ▾".
  */
+import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   PhArrowCounterClockwise,
@@ -100,11 +101,7 @@ async function exportProject(): Promise<void> {
       title="All projects"
       @click="emit('home')"
     >
-      <div
-        class="grid h-7 w-7 place-items-center rounded-[9px] bg-gradient-to-br from-acc1 to-acc2 text-[13px] font-extrabold text-white"
-      >
-        A
-      </div>
+      <BrandMark :size="28" />
       <b class="text-fg">ApexCut</b>
     </button>
     <span class="text-muted">/</span>
