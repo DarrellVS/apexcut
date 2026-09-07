@@ -9,7 +9,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { PhCheckCircle, PhFolderOpen, PhPlay, PhX } from '@phosphor-icons/vue';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { friendlyError } from '@renderer/utils/errors';
-import { fmtElapsed } from '@renderer/utils/format';
+import { fmtClock } from '@shared/format';
 
 const emit = defineEmits<{ watch: [url: string] }>();
 const jobs = useJobsStore();
@@ -94,9 +94,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             <div class="mb-1.5 min-w-0 flex-1">
               <div class="truncate text-sm text-fg">{{ job.message || 'Starting…' }}</div>
               <div class="text-xs text-muted">
-                Running {{ fmtElapsed(jobs.elapsed(job)) }}
+                Running {{ fmtClock(jobs.elapsed(job)) }}
                 <template v-if="jobs.eta(job) != null">
-                  · about <b class="text-fg">{{ fmtElapsed(jobs.eta(job)!) }}</b> left
+                  · about <b class="text-fg">{{ fmtClock(jobs.eta(job)!) }}</b> left
                 </template>
                 <template v-else> · estimating time…</template>
               </div>
