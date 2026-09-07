@@ -19,6 +19,7 @@ const api: ApexcutApi = {
     archive: (id, archived) => invoke('projects:archive', id, archived),
     setTransition: (transition) => invoke('projects:setTransition', transition),
     setMusic: (music) => invoke('projects:setMusic', music),
+    setOverlay: (overlay) => invoke('projects:setOverlay', overlay),
   },
   library: {
     list: () => invoke('library:list'),

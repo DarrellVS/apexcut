@@ -17,6 +17,7 @@ import {
   type ClipInfo,
   type ProjectFile,
   type MusicSettings,
+  type OverlaySpecDto,
   type ProjectInfo,
   type Transition,
   DEFAULT_MUSIC,
@@ -38,6 +39,8 @@ export interface ProjectRecord {
   transition?: Transition;
   /** songs under the movie and the mix levels */
   music?: MusicSettings;
+  /** telemetry overlay in the export */
+  overlay?: OverlaySpecDto | null;
 }
 
 interface ProjectsFile {
@@ -183,7 +186,14 @@ export class Projects {
       archived: !!p.archived,
       transition: p.transition ?? 'crossfade',
       music: p.music ?? DEFAULT_MUSIC,
+      overlay: p.overlay ?? null,
     };
+  }
+
+  setOverlay(overlay: OverlaySpecDto | null): void {
+    const p = this.active;
+    p.overlay = overlay;
+    this.touch(p);
   }
 
   setMusic(music: MusicSettings): void {

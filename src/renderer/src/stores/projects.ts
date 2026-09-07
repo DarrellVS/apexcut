@@ -3,7 +3,7 @@
  */
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { MusicSettings, ProjectInfo, Transition } from '@shared/ipc';
+import type { MusicSettings, OverlaySpecDto, ProjectInfo, Transition } from '@shared/ipc';
 import { logger } from '@renderer/utils/logger';
 
 export type ProjectSort = 'edited' | 'name' | 'length';
@@ -91,6 +91,12 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
+    const p = projects.value.find((x) => x.id === activeId.value);
+    if (p) p.overlay = o;
+    await window.apexcut.projects.setOverlay(o ? { ...o } : null);
+  }
+
   /** the music lane; optimistic so dragging feels instant, then persisted */
   async function setMusic(m: MusicSettings): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
@@ -127,6 +133,7 @@ export const useProjectsStore = defineStore('projects', () => {
     archive,
     setTransition,
     setMusic,
+    setOverlay,
     exportFile,
     importFile,
   };

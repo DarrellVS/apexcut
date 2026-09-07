@@ -14,6 +14,7 @@ import type { Part, ScoreConfig } from '@core/types';
 import {
   exportRequestSchema,
   musicSettingsSchema,
+  overlaySpecSchema,
   partSchema,
   settingsSchema,
   TRANSITIONS,
@@ -22,6 +23,11 @@ import {
   type Settings,
 } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
+import type { OverlayJob, OverlaySprites } from './actions/overlay';
+import { resample } from '@core/overlay';
+import { REASON_LABEL, reasonOf } from '@core/selection';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { probeDuration } from './services/media';
 import { FilmstripAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
@@ -96,6 +102,9 @@ export function registerIpc(s: Services): void {
   );
   ipcMain.handle('projects:setTransition', (_e, t: unknown) =>
     s.projects.setTransition(z.enum(TRANSITIONS).parse(t)),
+  );
+  ipcMain.handle('projects:setOverlay', (_e, o: unknown) =>
+    s.projects.setOverlay(overlaySpecSchema.nullable().parse(o)),
   );
   ipcMain.handle('projects:setMusic', (_e, m: unknown) => {
     const music = musicSettingsSchema.parse(m);
@@ -300,6 +309,34 @@ export function registerIpc(s: Services): void {
   // ---- export
   ipcMain.handle('export:start', (_e, raw: unknown) => {
     const req = exportRequestSchema.parse(raw);
+    // telemetry overlay: sprites to disk once, per part the 30 Hz samples at the video's fps
+    let overlayFor: ((it: (typeof req.items)[number]) => OverlayJob | undefined) | null = null;
+    if (req.overlay) {
+      const dir = mkdtempSync(join(tmpdir(), 'apexcut-overlay-'));
+      const sprites = Object.fromEntries(
+        Object.entries(req.overlay.sprites).map(([k, dataUrl]) => {
+          const file = join(dir, `${k}.png`);
+          writeFileSync(file, Buffer.from(dataUrl.split(',')[1] ?? '', 'base64'));
+          return [k, file];
+        }),
+      ) as unknown as OverlaySprites;
+      const spec = req.overlay.spec;
+      overlayFor = (it) => {
+        const sig = s.analysis.signals(it.stem);
+        const meta = s.analysis.meta(it.stem);
+        if (!sig || !meta) return undefined;
+        const fps = meta.fps || 30;
+        return {
+          spec,
+          sprites,
+          fps,
+          samples: resample(sig.imuT, sig.imu.leanDeg, sig.imu.aLonG, it.startS, it.endS, fps),
+          label: it.reden
+            ? (REASON_LABEL[reasonOf({ reden: it.reden } as never)] ?? 'lean')
+            : 'lean',
+        };
+      };
+    }
     const items: CutItem[] = req.items.map((it, k) => {
       const rec = s.library.get(it.stem);
       const src = rec.mp4 ?? rec.lrf;
@@ -315,6 +352,7 @@ export function registerIpc(s: Services): void {
         framePos: req.framePos,
         fade: 0,
         name: `${it.stem}_${mm}m${ss}s_${label}_${k}.mp4`,
+        overlay: overlayFor?.(it),
       };
     });
     const total = Math.round(items.reduce((a, i) => a + i.endS - i.startS, 0));

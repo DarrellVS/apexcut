@@ -2,15 +2,25 @@
 /** Movie tab: what (one movie / separate clips), format 2×2, framing hint, name, go, progress, result. */
 import { computed, ref, watch } from 'vue';
 import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
+import {
+  OVERLAY_CORNERS,
+  OVERLAY_SIZES,
+  OVERLAY_STYLES,
+  type OverlayCorner,
+  type OverlayStyle,
+} from '@core/overlay';
 import { pickByLength } from '@core/pick';
 import type { Part } from '@core/types';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
+import { renderOverlaySprites } from '@renderer/utils/overlaySprites';
 import {
   DEFAULT_MUSIC,
+  FORMAT_SPEC,
   TRANSITION_LABEL,
   TRANSITIONS,
   type ExportFormat,
   type ExportRequest,
+  type OverlaySpecDto,
   type Transition,
 } from '@shared/ipc';
 import { useEditorStore } from '@renderer/stores/editor';
@@ -179,6 +189,35 @@ async function pickBest(): Promise<void> {
   }
 }
 
+// ---- telemetry overlay: per project; off, or a style + corner + size
+const overlay = computed<OverlaySpecDto | null>(() => projects.active?.overlay ?? null);
+const OVERLAY_STYLE_LABEL: Record<OverlayStyle, string> = {
+  minimal: 'Lean angle',
+  dashboard: 'Dashboard',
+};
+const CORNER_LABEL: Record<OverlayCorner, string> = {
+  'bottom-left': 'Bottom left',
+  'bottom-right': 'Bottom right',
+  'top-left': 'Top left',
+  'top-right': 'Top right',
+};
+function setOverlay(patch: Partial<OverlaySpecDto> | null): void {
+  if (patch === null) {
+    projects.setOverlay(null);
+    return;
+  }
+  const cur = overlay.value ?? { style: 'minimal', corner: 'bottom-left', size: 'M' };
+  projects.setOverlay({ ...cur, ...patch });
+}
+/** export resolution of the current format, for drawing the sprites at the right size */
+function exportSize(): { w: number; h: number } {
+  const spec = FORMAT_SPEC[format.value];
+  const clip = library.currentClip;
+  const w = clip?.width ?? 3840;
+  const h = clip?.height ?? 3840;
+  return spec ? { w: Math.min(spec.w, w), h: Math.min(spec.h, h) } : { w, h };
+}
+
 /** how parts are joined: per project; crossfades overlap ½ s, so the movie is that much shorter */
 const transition = computed<Transition>(() => projects.active?.transition ?? 'crossfade');
 const XFADE_S = 0.5;
@@ -211,6 +250,12 @@ async function go(): Promise<void> {
     music: separate.value
       ? DEFAULT_MUSIC
       : JSON.parse(JSON.stringify(projects.active?.music ?? DEFAULT_MUSIC)),
+    overlay: overlay.value
+      ? {
+          spec: { ...overlay.value },
+          sprites: renderOverlaySprites(overlay.value, exportSize().w, exportSize().h),
+        }
+      : null,
   });
   jobs.exportJobId = id;
 }
@@ -358,6 +403,67 @@ defineExpose({ format });
           Square with a transition or cards is re-encoded at full quality; Cut without cards keeps
           the lossless copy.
         </template>
+      </div>
+      <div class="mt-3">
+        <div class="mb-1.5 text-xs text-muted">Riding data on the picture</div>
+        <div class="grid grid-cols-3 gap-1 rounded-ctl bg-s2 p-1" role="radiogroup">
+          <button
+            class="rounded-lg py-1 text-xs font-semibold transition-colors"
+            :class="!overlay ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+            role="radio"
+            :aria-checked="!overlay"
+            @click="setOverlay(null)"
+          >
+            Off
+          </button>
+          <button
+            v-for="st in OVERLAY_STYLES"
+            :key="st"
+            class="rounded-lg py-1 text-xs font-semibold transition-colors"
+            :class="overlay?.style === st ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+            role="radio"
+            :aria-checked="overlay?.style === st"
+            :title="
+              st === 'minimal'
+                ? 'A leaning bike and the angle in degrees'
+                : 'Lean gauge with a needle plus a braking / acceleration bar'
+            "
+            @click="setOverlay({ style: st })"
+          >
+            {{ OVERLAY_STYLE_LABEL[st] }}
+          </button>
+        </div>
+        <div v-if="overlay" class="mt-1.5 flex items-center gap-1.5 text-xs">
+          <select
+            class="flex-1 rounded-ctl border border-line bg-s2 px-2 py-1 text-fg"
+            :value="overlay.corner"
+            aria-label="Corner of the overlay"
+            @change="
+              setOverlay({ corner: ($event.target as HTMLSelectElement).value as OverlayCorner })
+            "
+          >
+            <option v-for="c in OVERLAY_CORNERS" :key="c" :value="c">{{ CORNER_LABEL[c] }}</option>
+          </select>
+          <div class="flex rounded-ctl bg-s2 p-0.5" role="radiogroup" aria-label="Size">
+            <button
+              v-for="sz in OVERLAY_SIZES"
+              :key="sz"
+              class="rounded-lg px-2 py-0.5 font-semibold"
+              :class="overlay.size === sz ? 'bg-s3 text-fg' : 'text-muted hover:text-fg'"
+              role="radio"
+              :aria-checked="overlay.size === sz"
+              @click="setOverlay({ size: sz })"
+            >
+              {{ sz }}
+            </button>
+          </div>
+        </div>
+        <div v-if="overlay" class="mt-1 text-[11px] text-muted">
+          Shown live on the video; the export draws it at full resolution.
+          <template v-if="format === 'original' && transition === 'cut'">
+            Square is re-encoded for it (full quality).
+          </template>
+        </div>
       </div>
       <div class="mt-2.5 flex flex-col gap-1.5">
         <label class="flex items-start gap-2 text-xs text-fg">

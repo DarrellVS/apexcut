@@ -6,6 +6,8 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
 import { FORMAT_SPEC } from '@shared/ipc';
+import { drawOverlayFrame, overlayLayout, type Ctx2D, type Sample } from '@core/overlay';
+import { REASON_LABEL, reasonOf } from '@core/selection';
 import { musicUrl, useMovieTime } from '@renderer/composables/useMovieTime';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
@@ -236,6 +238,56 @@ function syncMusic(): void {
   if (a.paused) a.play().catch(() => undefined);
 }
 
+// ---- telemetry overlay preview: the same drawing as the export, on a canvas over the video box
+const gauge = ref<HTMLCanvasElement | null>(null);
+function sampleAt(t: number): Sample | null {
+  const ts = editor.data.t as number[] | undefined;
+  const lean = editor.data.leanDeg as (number | null)[] | undefined;
+  const aLon = editor.data.aLonG as (number | null)[] | undefined;
+  if (!ts?.length || !lean || !aLon) return null;
+  // 10 Hz grid → index directly
+  const i = Math.max(0, Math.min(ts.length - 1, Math.round(t * 10)));
+  return { leanDeg: lean[i] ?? 0, aLonG: aLon[i] ?? 0 };
+}
+function drawGauge(): void {
+  const c = gauge.value;
+  const spec = projects.active?.overlay;
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  if (!ctx) return;
+  const w = Math.round(box.value.width);
+  const h = Math.round(box.value.height);
+  if (c.width !== w || c.height !== h) {
+    c.width = w;
+    c.height = h;
+  }
+  ctx.clearRect(0, 0, w, h);
+  if (!spec || !w || !h) return;
+  // the export crops the frame: preview the gauge inside the same crop so it lands where it will be
+  const f = winFrac.value;
+  const cropW = isVertical.value ? w * f : w;
+  const cropH = isVertical.value ? h : h * f;
+  const ox = isVertical.value ? framePos.value * (w - cropW) : 0;
+  const oy = isVertical.value ? 0 : framePos.value * (h - cropH);
+  const L = overlayLayout(spec, cropW, cropH);
+  ctx.save();
+  ctx.translate(ox, oy);
+  const part = editor.activePart;
+  drawOverlayFrame(
+    ctx as unknown as Ctx2D,
+    spec,
+    L,
+    sampleAt(editor.time),
+    part ? REASON_LABEL[reasonOf(part)] : 'lean',
+  );
+  ctx.restore();
+}
+watch(
+  () => [projects.active?.overlay, editor.time, box.value, editor.stem, format.value],
+  () => requestAnimationFrame(drawGauge),
+  { deep: true },
+);
+
 // smooth clock: 'timeupdate' fires only ~4×/s, so follow currentTime per animation frame while playing
 let raf = 0;
 function tick(): void {
@@ -283,6 +335,18 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
       @click="togglePlay"
     />
     <audio ref="music" preload="auto" />
+    <!-- telemetry overlay preview, same drawing as the export, over the video box -->
+    <canvas
+      v-if="projects.active?.overlay"
+      ref="gauge"
+      class="pointer-events-none absolute z-10"
+      :style="{
+        left: `${box.left}px`,
+        top: `${box.top}px`,
+        width: `${box.width}px`,
+        height: `${box.height}px`,
+      }"
+    />
     <Transition
       enter-active-class="transition-opacity"
       leave-active-class="transition-opacity"

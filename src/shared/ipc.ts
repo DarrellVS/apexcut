@@ -3,6 +3,7 @@
  * the bridge from the renderer; the inferred types are the single source of truth.
  */
 import { z } from 'zod';
+import { OVERLAY_CORNERS, OVERLAY_SIZES, OVERLAY_STYLES } from '@core/overlay';
 import type { PresetId } from '@core/presets';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 
@@ -80,6 +81,14 @@ export const musicSettingsSchema = z.object({
 export type MusicSettings = z.infer<typeof musicSettingsSchema>;
 export const DEFAULT_MUSIC: MusicSettings = { tracks: [], musicGain: 0.8, originalGain: 0.35 };
 
+/** Telemetry overlay choice of a project (null = off). */
+export const overlaySpecSchema = z.object({
+  style: z.enum(OVERLAY_STYLES),
+  corner: z.enum(OVERLAY_CORNERS),
+  size: z.enum(OVERLAY_SIZES),
+});
+export type OverlaySpecDto = z.infer<typeof overlaySpecSchema>;
+
 /** A project: a name plus an ordered set of videos with their own selections. */
 export interface ProjectInfo {
   id: string;
@@ -98,6 +107,8 @@ export interface ProjectInfo {
   /** how parts are joined in this project's movie */
   transition: Transition;
   music: MusicSettings;
+  /** telemetry overlay in the export, null when off */
+  overlay: OverlaySpecDto | null;
 }
 
 export interface TimelinePayload {
@@ -153,6 +164,14 @@ export const exportRequestSchema = z.object({
     .default({ title: null, end: false }),
   /** songs under the movie; missing files are skipped */
   music: musicSettingsSchema.default(DEFAULT_MUSIC),
+  /** telemetry overlay: the choice plus the three sprites the renderer drew (PNG data URLs) */
+  overlay: z
+    .object({
+      spec: overlaySpecSchema,
+      sprites: z.object({ bike: z.string(), dial: z.string(), needle: z.string() }),
+    })
+    .nullable()
+    .default(null),
 });
 export type ExportRequest = z.infer<typeof exportRequestSchema>;
 
@@ -259,6 +278,8 @@ export interface ApexcutApi {
     setTransition(transition: Transition): Promise<void>;
     /** the open project's music lane */
     setMusic(music: MusicSettings): Promise<void>;
+    /** the open project's telemetry overlay (null = off) */
+    setOverlay(overlay: OverlaySpecDto | null): Promise<void>;
     /**
      * Add videos in groups: `name` null = into the open project, otherwise a new project with that
      * name. Returns the stems added, which of them still need a scan, and the first project created.

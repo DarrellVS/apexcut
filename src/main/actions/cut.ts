@@ -22,6 +22,7 @@ import { encoders, probe, runFfmpeg, type ProbeResult } from '../services/media'
 import type { JobContext } from '../services/jobs';
 import { CardAction } from './cards';
 import { MusicMixAction } from './music';
+import { overlayGraph, type OverlayJob } from './overlay';
 
 /** Title / end cards around the movie (see cards.ts). */
 export interface Cards {
@@ -46,6 +47,8 @@ export interface CutInput {
   encode?: boolean;
   /** force keyframes at these times (seconds from the part start) so the part can be cut losslessly there */
   keyframesAt?: number[];
+  /** telemetry overlay for this part (forces an encode) */
+  overlay?: OverlayJob;
 }
 
 export function cropFilter(format: ExportFormat, w: number, h: number, pos: number): string | null {
@@ -212,7 +215,7 @@ export class CutSegmentAction {
       '-map',
       '0:a:0?',
     ];
-    if (input.format === 'original' && !input.encode) {
+    if (input.format === 'original' && !input.encode && !input.overlay) {
       await runFfmpeg(
         [
           ...common,
@@ -242,8 +245,40 @@ export class CutSegmentAction {
         `fade=t=in:st=0:d=${input.fade.toFixed(2)},fade=t=out:st=${(dur - input.fade).toFixed(2)}:d=${input.fade.toFixed(2)}`,
       );
     }
-    const args = [...common];
-    if (vf.length) args.push('-vf', vf.join(','));
+    let args: string[];
+    if (input.overlay) {
+      // the crop/fade chain ends in [base]; the overlay graph continues from there to [v]
+      const spec = FORMAT_SPEC[input.format];
+      const outW = spec ? Math.min(spec.w, info.width) : info.width;
+      const outH = spec ? Math.min(spec.h, info.height) : info.height;
+      const og = overlayGraph(
+        input.overlay,
+        outW,
+        outH,
+        1,
+        join(input.dst, '..'),
+        basename(input.dst, '.mp4'),
+      );
+      const pre = vf.length ? `[0:v]${vf.join(',')}[base]` : `[0:v]null[base]`;
+      args = [
+        '-ss',
+        input.startS.toFixed(3),
+        '-to',
+        input.endS.toFixed(3),
+        '-i',
+        input.src,
+        ...og.inputs,
+        '-filter_complex',
+        `${pre};${og.graph}`,
+        '-map',
+        '[v]',
+        '-map',
+        '0:a:0?',
+      ];
+    } else {
+      args = [...common];
+      if (vf.length) args.push('-vf', vf.join(','));
+    }
     if (fading) {
       args.push(
         '-af',

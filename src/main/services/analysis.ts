@@ -247,6 +247,11 @@ export class Analysis {
     return this.readSelection(stem).parts;
   }
 
+  /** the stored 30 Hz signals (for the telemetry overlay) */
+  signals(stem: string): StoredSignals | null {
+    return readJson<StoredSignals | null>(join(this.dir(stem), 'signals.json'), null);
+  }
+
   meta(stem: string): ClipMeta | null {
     return readJson<ClipMeta | null>(join(this.dir(stem), 'clip.json'), null);
   }
