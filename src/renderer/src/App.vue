@@ -11,7 +11,9 @@ import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUiStore } from '@renderer/stores/ui';
 import { useUpdaterStore } from '@renderer/stores/updater';
+import type { ImportGroup } from '@shared/ipc';
 import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
+import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
@@ -78,8 +80,37 @@ async function scanNew(added: string[]): Promise<void> {
   if (added.length) toast(`${added.length} video${added.length === 1 ? '' : 's'} added`);
   if (todo.length) await window.apexcut.analysis.run(todo);
 }
+
+// ---- adding videos: one day → straight into the project; several days → ask (ImportSheet)
+const pendingGroups = ref<ImportGroup[] | null>(null);
+async function importPaths(paths: string[]): Promise<void> {
+  if (!paths.length) return;
+  const groups = await window.apexcut.library.inspect(paths);
+  if (!groups.length) {
+    toast('No DJI videos found in what you picked');
+    return;
+  }
+  if (groups.length > 1) {
+    pendingGroups.value = groups;
+    return;
+  }
+  await scanNew(await library.add(paths));
+}
+async function confirmImport(groups: { name: string | null; paths: string[] }[]): Promise<void> {
+  pendingGroups.value = null;
+  const r = await window.apexcut.projects.addGroups(groups);
+  if (r.firstProject) await openProject(r.firstProject);
+  else await library.refresh();
+  const n = groups.filter((g) => g.name !== null).length;
+  toast(
+    n
+      ? `${n} project${n === 1 ? '' : 's'} created with ${r.stems.length} videos`
+      : `${r.stems.length} video${r.stems.length === 1 ? '' : 's'} added`,
+  );
+  if (r.toScan.length) await window.apexcut.analysis.run(r.toScan);
+}
 async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
-  await scanNew(await library.pick(kind));
+  await importPaths(await library.pick(kind));
 }
 
 // ---- drop MP4/LRF files or folders from Explorer anywhere in the window (into the open project)
@@ -95,10 +126,7 @@ async function onDrop(e: DragEvent): Promise<void> {
   const files = e.dataTransfer?.files;
   if (!files?.length || phase.value === 'projects') return;
   e.preventDefault();
-  const paths = Array.from(files).map((f) => window.apexcut.files.pathOf(f));
-  const added = await library.add(paths);
-  if (!added.length) toast('No DJI videos found in what you dropped');
-  await scanNew(added);
+  await importPaths(Array.from(files).map((f) => window.apexcut.files.pathOf(f)));
 }
 
 onMounted(async () => {
@@ -233,6 +261,12 @@ function onKey(e: KeyboardEvent): void {
       </main>
       <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />
     </template>
+    <ImportSheet
+      v-if="pendingGroups"
+      :groups="pendingGroups"
+      @confirm="confirmImport"
+      @cancel="pendingGroups = null"
+    />
     <SettingsModal />
     <ErrorScreen />
     <ToastHost />

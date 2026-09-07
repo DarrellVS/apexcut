@@ -18,11 +18,11 @@ export const useLibraryStore = defineStore('library', () => {
     if (current.value && !clips.value.some((c) => c.stem === current.value)) current.value = null;
   }
 
+  /** File/folder dialog; returns the picked paths (nothing added yet — see App.importPaths). */
   async function pick(kind: 'files' | 'dir'): Promise<string[]> {
     const r = await window.apexcut.library.pick(kind);
-    await refresh();
     logger.info('picked', r);
-    return r.added;
+    return r.paths;
   }
 
   async function add(paths: string[]): Promise<string[]> {

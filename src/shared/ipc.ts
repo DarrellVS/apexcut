@@ -35,6 +35,17 @@ export interface ClipInfo {
   proxyUrl?: string;
 }
 
+/** Videos found in a pick/drop, grouped per recording day (before anything is added). */
+export interface ImportGroup {
+  /** "YYYY-MM-DD" */
+  day: string;
+  stems: string[];
+  /** every file (MP4 + LRF) of those videos */
+  paths: string[];
+  /** how many of them the app already knows */
+  known: number;
+}
+
 /** A project: a name plus an ordered set of videos with their own selections. */
 export interface ProjectInfo {
   id: string;
@@ -182,11 +193,21 @@ export interface ApexcutApi {
     importFile(): Promise<{ id: string; missing: string[] } | null>;
     /** sensitivity preset of the open project; rescoring every scanned video of it */
     setPreset(preset: PresetId): Promise<void>;
+    /**
+     * Add videos in groups: `name` null = into the open project, otherwise a new project with that
+     * name. Returns the stems added, which of them still need a scan, and the first project created.
+     */
+    addGroups(
+      groups: { name: string | null; paths: string[] }[],
+    ): Promise<{ stems: string[]; toScan: string[]; firstProject: string | null }>;
   };
   library: {
     /** videos of the open project, in movie order */
     list(): Promise<ClipInfo[]>;
-    pick(kind: 'files' | 'dir'): Promise<{ added: string[]; cancelled: boolean }>;
+    /** file/folder dialog; returns what was picked (nothing is added yet) */
+    pick(kind: 'files' | 'dir'): Promise<{ paths: string[]; cancelled: boolean }>;
+    /** what a pick/drop contains, per recording day, without adding */
+    inspect(paths: string[]): Promise<ImportGroup[]>;
     add(paths: string[]): Promise<{ added: string[] }>;
     /** take a video out of the open project (its scan is kept for other projects) */
     remove(stem: string): Promise<void>;

@@ -208,7 +208,11 @@ export class Projects {
 
   /** Add registered videos to the open project; returns the ones that were new to it. */
   addClips(stems: string[]): string[] {
-    const p = this.active;
+    return this.addClipsTo(this.activeId, stems);
+  }
+
+  addClipsTo(id: string, stems: string[]): string[] {
+    const p = this.find(id);
     const added: string[] = [];
     for (const stem of stems) {
       if (p.clips.includes(stem) || !this.library.has(stem)) continue;

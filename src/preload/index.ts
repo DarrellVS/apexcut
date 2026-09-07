@@ -15,10 +15,12 @@ const api: ApexcutApi = {
     exportFile: (id) => invoke('projects:exportFile', id),
     importFile: () => invoke('projects:importFile'),
     setPreset: (preset) => invoke('projects:setPreset', preset),
+    addGroups: (groups) => invoke('projects:addGroups', groups),
   },
   library: {
     list: () => invoke('library:list'),
     pick: (kind) => invoke('library:pick', kind),
+    inspect: (paths) => invoke('library:inspect', paths),
     add: (paths) => invoke('library:add', paths),
     remove: (stem) => invoke('library:remove', stem),
     reorder: (stems) => invoke('library:reorder', stems),

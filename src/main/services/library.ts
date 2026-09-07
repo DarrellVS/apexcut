@@ -7,7 +7,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import { autoToParts } from '@core/selection';
 import type { Part, Segment } from '@core/types';
-import type { ClipInfo } from '@shared/ipc';
+import type { ClipInfo, ImportGroup } from '@shared/ipc';
 import { paths, readJson, writeJson } from './store';
 import { mediaUrl } from './protocol';
 
@@ -74,6 +74,29 @@ export class Library {
       }
     }
     return [...byStem.values()];
+  }
+
+  /** Recording day of a video ("YYYY-MM-DD") from the DJI file name, else the file's mtime. */
+  static dayOf(rec: ClipRecord): string {
+    const m = /_(\d{4})(\d{2})(\d{2})\d{6}_/.exec(rec.stem);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    const file = rec.mp4 ?? rec.lrf;
+    const d = file && existsSync(file) ? statSync(file).mtime : new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  /** Look at picked files/folders without adding anything: the videos found, grouped per day. */
+  inspect(inputs: string[]): ImportGroup[] {
+    const byDay = new Map<string, ImportGroup>();
+    for (const rec of Library.discover(inputs)) {
+      const day = Library.dayOf(rec);
+      const g = byDay.get(day) ?? { day, stems: [], paths: [], known: 0 };
+      g.stems.push(rec.stem);
+      g.paths.push(...[rec.mp4, rec.lrf].filter((p): p is string => !!p));
+      if (this.clips.has(rec.stem)) g.known++;
+      byDay.set(day, g);
+    }
+    return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
   }
 
   /** Register the videos found in `inputs`; returns every stem found (known ones included). */

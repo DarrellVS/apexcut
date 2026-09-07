@@ -159,8 +159,33 @@ export function registerIpc(s: Services): void {
       filters:
         k === 'files' ? [{ name: 'DJI video', extensions: ['MP4', 'mp4', 'LRF', 'lrf'] }] : [],
     });
-    if (res.canceled) return { added: [], cancelled: true };
-    return { added: addToProject(res.filePaths), cancelled: false };
+    if (res.canceled) return { paths: [], cancelled: true };
+    return { paths: res.filePaths, cancelled: false };
+  });
+  ipcMain.handle('library:inspect', (_e, paths: unknown) =>
+    s.library.inspect(z.array(z.string()).parse(paths)),
+  );
+  ipcMain.handle('projects:addGroups', (_e, raw: unknown) => {
+    const groups = z
+      .array(z.object({ name: z.string().max(80).nullable(), paths: z.array(z.string()) }))
+      .parse(raw);
+    const stems: string[] = [];
+    let firstProject: string | null = null;
+    for (const g of groups) {
+      const found = s.library.add(g.paths);
+      if (g.name === null) stems.push(...s.projects.addClips(found));
+      else {
+        const p = s.projects.create(g.name);
+        firstProject ??= p.id;
+        stems.push(...s.projects.addClipsTo(p.id, found));
+      }
+    }
+    const unique = [...new Set(stems)];
+    const toScan = unique.filter((stem) => !s.analysis.meta(stem));
+    log.info(
+      `addGroups: ${groups.length} groups, ${unique.length} videos, ${toScan.length} to scan`,
+    );
+    return { stems: unique, toScan, firstProject };
   });
 
   // ---- analysis
