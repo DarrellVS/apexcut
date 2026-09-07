@@ -2,6 +2,7 @@
  * Editing state for the open video: timeline data, parts, selection, undo/redo, playhead.
  * Every mutation goes through `mutate()` so undo snapshots and debounced saving stay consistent.
  */
+import { rangeStats } from '@core/stats';
 import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -240,6 +241,23 @@ export const useEditorStore = defineStore('editor', () => {
     else v = Math.max(v, p.start_s + 1);
     p[edge] = v;
     p.manual = true;
+    refreshStats(p);
+  }
+  /** Lean/braking/acceleration figures and joined sub-ranges follow the part's current edges. */
+  function refreshStats(p: Part): void {
+    const t = (data.value.t ?? []) as number[];
+    if (!t.length) return;
+    const st = rangeStats(t, data.value.leanDeg ?? [], data.value.aLonG ?? [], p);
+    p.max_lean_deg = Math.round(st.maxLeanDeg * 10) / 10;
+    p.max_brake_g = Math.round(st.maxBrakeG * 100) / 100;
+    p.max_accel_g = Math.round(st.maxAccelG * 100) / 100;
+    if (p.parts) {
+      const clipped = p.parts
+        .map(([a, b]) => [Math.max(a, p.start_s), Math.min(b, p.end_s)] as [number, number])
+        .filter(([a, b]) => b - a > 0.05);
+      p.parts = clipped.length > 1 ? clipped : undefined;
+      if (!p.parts && p.reden === 'samengeplakt') p.reden = 'handmatig';
+    }
   }
 
   async function rescore(patch: Partial<ScoreConfig>): Promise<void> {

@@ -81,7 +81,10 @@ into a collapsed “Archived · n” section at the bottom.
   `#ff7a3d`, `#4dd0d0`) because they sit on video, not on the app theme.
 - **Ride card**: 1080×1350 and 1200×630 PNG — dark or light ground (follows the theme) with the brand
   glow, mark + project name + date, three thumbnails of the best parts, four stat tiles, footer with the
-  twistiest minute and “Made with ApexCut”.
+  twistiest minute and “Made with ApexCut”. Every number is measured inside the parts that are in the
+  movie (`src/core/stats.ts`): corners = lean excursions past 20° (ending under 12°, same-side dips
+  under 0.6 s merged, blips under 0.4 s dropped); sharpest lean / hardest braking are the extremes in
+  those parts; the twistiest minute is the 60 s window with the most time above 10° of lean.
 - **Export overlay**: while a movie is made, a centred `popover` card (520 px) with a 56 px percentage,
   the step, elapsed/left, a brand-gradient bar and the note that the project is locked; × or Esc asks
   “Stop the export?” inline before cancelling; when done the card shows Watch it / Open folder / Done.

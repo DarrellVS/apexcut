@@ -1,6 +1,8 @@
 /**
  * IPC handlers: thin — validate input, call a service, return. Long work becomes a job.
  */
+import { countCorners, rangeStats, twistiestMinute } from '@core/stats';
+import { fmtClock } from '@shared/format';
 import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } from 'electron';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -365,15 +367,19 @@ export function registerIpc(s: Services): void {
     }
     const out = join(s.settings.outputDir('movies'), `${sanitize(req.name)}_${stamp()}.mp4`);
     allowRoot(join(out, '..'));
-    return s.jobs.start('export', `Movie “${sanitize(req.name)}” (${total} s)`, async (ctx) => {
-      await compileMovie(items, out, ctx, req.transition, req.cards, req.music);
-      return {
-        kind: 'export',
-        file: out,
-        url: mediaUrl('movie', basename(out)),
-        sizeMb: fileSizeMb(out),
-      };
-    });
+    return s.jobs.start(
+      'export',
+      `Movie “${sanitize(req.name)}” · ${fmtClock(total)}`,
+      async (ctx) => {
+        await compileMovie(items, out, ctx, req.transition, req.cards, req.music);
+        return {
+          kind: 'export',
+          file: out,
+          url: mediaUrl('movie', basename(out)),
+          sizeMb: fileSizeMb(out),
+        };
+      },
+    );
   });
   ipcMain.handle('export:cancel', (_e, id: unknown) => s.jobs.cancel(z.string().parse(id)));
   ipcMain.handle('export:edl', (_e, stemRaw: unknown) => {
@@ -438,45 +444,36 @@ export function registerIpc(s: Services): void {
   ipcMain.handle('app:version', () => (app.isPackaged ? app.getVersion() : pkg.version));
   // ---- ride card: the numbers of the whole project, frames for its thumbnails, saving the PNG
   ipcMain.handle('projects:rideStats', (): RideStats => {
+    // the numbers of the movie: everything is measured inside the enabled parts only
     const clips = s.projects.clipInfos().filter((c) => c.analyzed);
     let maxLean = 0;
     let maxBrake = 0;
-    let best = 0;
-    let twistyStem: string | null = null;
-    let twistyT = 0;
+    let twisty: { stem: string; tS: number; pct: number } | null = null;
     let nParts = 0;
     let nCorners = 0;
     let movieS = 0;
     const ranked: (RideStats['top'][number] & { score: number })[] = [];
     for (const c of clips) {
       const tl = s.analysis.timeline(c.stem);
+      const t = (tl.data.t ?? []) as number[];
       const lean = tl.data.leanDeg ?? [];
       const aLon = tl.data.aLonG ?? [];
-      const t = tl.data.t ?? [];
-      let run = 0;
-      const win = 600; // 60 s at 10 Hz
-      for (let i = 0; i < t.length; i++) {
-        const l = Math.abs(lean[i] ?? 0);
-        if (l > maxLean) maxLean = l;
-        const b = -(aLon[i] ?? 0);
-        if (b > maxBrake) maxBrake = b;
-        run += l > 10 ? 1 : 0;
-        if (i >= win) run -= Math.abs(lean[i - win] ?? 0) > 10 ? 1 : 0;
-        if (run > best) {
-          best = run;
-          twistyStem = c.stem;
-          twistyT = Math.max(0, (t[i] ?? 0) - 60);
-        }
-      }
-      for (const p of tl.parts.filter((p) => p.enabled)) {
+      const enabled = tl.parts.filter((p) => p.enabled);
+      if (!enabled.length) continue;
+      nCorners += countCorners(t, lean, enabled);
+      const tw = twistiestMinute(t, lean, enabled);
+      if (tw && (!twisty || tw.pct > twisty.pct)) twisty = { stem: c.stem, ...tw };
+      for (const p of enabled) {
+        const st = rangeStats(t, lean, aLon, p);
+        maxLean = Math.max(maxLean, st.maxLeanDeg);
+        maxBrake = Math.max(maxBrake, st.maxBrakeG);
         nParts++;
-        if (p.reden !== 'accel/rem') nCorners++;
         movieS += p.end_s - p.start_s;
         ranked.push({
           stem: c.stem,
           tS: p.core_start_s ?? (p.start_s + p.end_s) / 2,
           reden: p.reden,
-          maxLeanDeg: p.max_lean_deg ?? 0,
+          maxLeanDeg: Math.round(st.maxLeanDeg * 10) / 10,
           score: p.score ?? 0,
         });
       }
@@ -493,9 +490,9 @@ export function registerIpc(s: Services): void {
       movieS: Math.round(movieS),
       maxLeanDeg: Math.round(maxLean),
       maxBrakeG: Math.round(maxBrake * 100) / 100,
-      twistyStem,
-      twistyT,
-      twistyPct: Math.round((best / 600) * 100),
+      twistyStem: twisty?.stem ?? null,
+      twistyT: twisty?.tS ?? 0,
+      twistyPct: twisty?.pct ?? 0,
       top: ranked
         .slice(0, 3)
         .map(({ stem, tS, reden, maxLeanDeg }) => ({ stem, tS, reden, maxLeanDeg })),
