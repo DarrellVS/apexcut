@@ -17,6 +17,7 @@ const api: ApexcutApi = {
     setPreset: (preset) => invoke('projects:setPreset', preset),
     addGroups: (groups) => invoke('projects:addGroups', groups),
     archive: (id, archived) => invoke('projects:archive', id, archived),
+    setTransition: (transition) => invoke('projects:setTransition', transition),
   },
   library: {
     list: () => invoke('library:list'),

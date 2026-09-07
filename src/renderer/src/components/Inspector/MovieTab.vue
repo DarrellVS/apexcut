@@ -3,10 +3,17 @@
 import { computed, ref, watch } from 'vue';
 import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
 import type { Part } from '@core/types';
-import type { ExportFormat, ExportRequest } from '@shared/ipc';
+import {
+  TRANSITION_LABEL,
+  TRANSITIONS,
+  type ExportFormat,
+  type ExportRequest,
+  type Transition,
+} from '@shared/ipc';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
+import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { friendlyError } from '@renderer/utils/errors';
 import { fmtDuration, fmtElapsed, shortName } from '@renderer/utils/format';
@@ -16,6 +23,7 @@ const editor = useEditorStore();
 const library = useLibraryStore();
 const jobs = useJobsStore();
 const settings = useSettingsStore();
+const projects = useProjectsStore();
 
 const separate = ref(false);
 const format = computed<ExportFormat>(() => settings.settings?.lastFormat ?? '16x9');
@@ -76,11 +84,21 @@ jobs.onUpdate(
     loadOthers(),
 );
 
+/** how parts are joined: per project; crossfades overlap ½ s, so the movie is that much shorter */
+const transition = computed<Transition>(() => projects.active?.transition ?? 'crossfade');
+const XFADE_S = 0.5;
+const movieLength = computed(() => {
+  const it = items.value;
+  const raw = it.reduce((a, i) => a + i.endS - i.startS, 0);
+  return transition.value === 'crossfade' && !separate.value
+    ? Math.max(0, raw - XFADE_S * Math.max(0, it.length - 1))
+    : raw;
+});
 const summary = computed(() => {
   const it = items.value;
   if (!it.length) return 'no parts selected yet';
   const n = new Set(it.map((i) => i.stem)).size;
-  return `${it.length} parts${n > 1 ? ` from ${n} videos` : ''} · ${fmtDuration(it.reduce((a, i) => a + i.endS - i.startS, 0))}`;
+  return `${it.length} parts${n > 1 ? ` from ${n} videos` : ''} · ${fmtDuration(movieLength.value)}`;
 });
 
 async function go(): Promise<void> {
@@ -92,6 +110,7 @@ async function go(): Promise<void> {
     format: format.value,
     framePos: settings.settings?.lastFramePos ?? 0.5,
     name: name.value,
+    transition: transition.value,
   });
   jobs.exportJobId = id;
 }
@@ -172,6 +191,29 @@ defineExpose({ format });
             ? 'Ready within a minute, no quality loss.'
             : 'Drag the frame on the video to choose what stays in view. Applies to the whole movie.'
         }}
+      </div>
+    </div>
+    <div v-if="!separate">
+      <div class="mb-1.5 text-xs text-muted">Between the parts</div>
+      <div class="grid grid-cols-3 gap-1 rounded-ctl bg-s2 p-1" role="radiogroup">
+        <button
+          v-for="t in TRANSITIONS"
+          :key="t"
+          class="rounded-lg py-1 text-xs font-semibold transition-colors"
+          :class="transition === t ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+          role="radio"
+          :aria-checked="transition === t"
+          :title="TRANSITION_LABEL[t].hint"
+          @click="projects.setTransition(t)"
+        >
+          {{ TRANSITION_LABEL[t].label }}
+        </button>
+      </div>
+      <div class="mt-1.5 text-xs text-muted">
+        {{ TRANSITION_LABEL[transition].hint }}.
+        <template v-if="format === 'original' && transition !== 'cut'">
+          Square with a transition is re-encoded at full quality; Cut keeps the lossless copy.
+        </template>
       </div>
     </div>
     <button

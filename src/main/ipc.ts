@@ -11,8 +11,14 @@ import pkg from '../../package.json';
 import { edl } from '@core/edl';
 import { PRESET_IDS, PRESETS } from '@core/presets';
 import type { Part, ScoreConfig } from '@core/types';
-import { exportRequestSchema, partSchema, settingsSchema, type JobState } from '@shared/ipc';
-import { compileMovie, cutAll, fileSizeMb, type CutItem } from './actions/cut';
+import {
+  exportRequestSchema,
+  partSchema,
+  settingsSchema,
+  TRANSITIONS,
+  type JobState,
+} from '@shared/ipc';
+import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
 import { FilmstripAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
@@ -77,7 +83,10 @@ export function registerIpc(s: Services): void {
   ipcMain.handle('projects:active', () => s.projects.activeId);
   ipcMain.handle('projects:open', (_e, id: unknown) => s.projects.open(z.string().parse(id)));
   ipcMain.handle('projects:create', (_e, name: unknown) =>
-    s.projects.create(z.string().max(80).parse(name)),
+    s.projects.create(z.string().max(80).parse(name), s.settings.get().defaultTransition),
+  );
+  ipcMain.handle('projects:setTransition', (_e, t: unknown) =>
+    s.projects.setTransition(z.enum(TRANSITIONS).parse(t)),
   );
   ipcMain.handle('projects:rename', (_e, id: unknown, name: unknown) =>
     s.projects.rename(z.string().parse(id), z.string().max(80).parse(name)),
@@ -248,7 +257,7 @@ export function registerIpc(s: Services): void {
         endS: it.endS,
         format: req.format,
         framePos: req.framePos,
-        fade: req.format === 'original' ? 0 : 0.4,
+        fade: 0,
         name: `${it.stem}_${mm}m${ss}s_${label}_${k}.mp4`,
       };
     });
@@ -256,15 +265,17 @@ export function registerIpc(s: Services): void {
     if (req.separate) {
       const outDir = join(s.settings.outputDir('clips'), `${sanitize(req.name)}_${stamp()}`);
       allowRoot(outDir);
+      // separate clips: a dip fades each clip in and out; otherwise clips are plain cuts
+      const clips = prepareItems(items, req.transition === 'dip' ? 'dip' : 'cut');
       return s.jobs.start('extract', `${items.length} clips`, async (ctx) => {
-        const files = await cutAll(items, outDir, ctx);
+        const files = await cutAll(clips, outDir, ctx);
         return { kind: 'extract', folder: outDir, files: files.map((f) => basename(f)) };
       });
     }
     const out = join(s.settings.outputDir('movies'), `${sanitize(req.name)}_${stamp()}.mp4`);
     allowRoot(join(out, '..'));
     return s.jobs.start('export', `Movie “${sanitize(req.name)}” (${total} s)`, async (ctx) => {
-      await compileMovie(items, out, ctx);
+      await compileMovie(items, out, ctx, req.transition);
       return {
         kind: 'export',
         file: out,

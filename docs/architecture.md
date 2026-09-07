@@ -43,7 +43,12 @@ src/
 3. Renderer loads `timeline(stem)` (10 Hz signals + selection) and renders. Edits are saved with a
    250 ms debounce via `selection.save`.
 4. Export job: `CutSegmentAction` per part (2 in parallel, GPU decode + encode, fallback chain) →
-   `ConcatAction` → result path + `latest` in job state.
+   `ConcatAction` → result path + `latest` in job state. Transitions (per project, default crossfade):
+   `cut` joins as is (square stays a lossless copy); `dip` fades each part in/out 0.4 s; `crossfade`
+   encodes parts with forced keyframes ½ s from each end, blends tail+head pairs with `XfadeAction`,
+   cuts the middles losslessly at those keyframes (`TrimCopyAction`), builds one `acrossfade` audio
+   track (`AudioCrossfadeAction`) and muxes. Square with dip/crossfade is re-encoded under the same
+   quality rules (10-bit, CQ 18, bitrate cap) — a copy/encode mix cannot be concatenated safely.
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 

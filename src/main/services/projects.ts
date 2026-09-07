@@ -12,7 +12,13 @@ import log from 'electron-log/main';
 import type { PresetId } from '@core/presets';
 import { autoToParts } from '@core/selection';
 import type { Part, Segment } from '@core/types';
-import { projectFileSchema, type ClipInfo, type ProjectFile, type ProjectInfo } from '@shared/ipc';
+import {
+  projectFileSchema,
+  type ClipInfo,
+  type ProjectFile,
+  type ProjectInfo,
+  type Transition,
+} from '@shared/ipc';
 import type { Library } from './library';
 import { ensureDir, paths, readJson, writeJson } from './store';
 
@@ -26,6 +32,8 @@ export interface ProjectRecord {
   preset?: PresetId;
   /** out of the way on the projects screen; never the open project */
   archived?: boolean;
+  /** how parts are joined in the movie (crossfade when absent) */
+  transition?: Transition;
 }
 
 interface ProjectsFile {
@@ -169,6 +177,7 @@ export class Projects {
       thumbStem,
       preset: p.preset ?? 'sporty',
       archived: !!p.archived,
+      transition: p.transition ?? 'crossfade',
     };
   }
 
@@ -178,8 +187,15 @@ export class Projects {
     this.touch(p);
   }
 
-  create(name: string): ProjectInfo {
+  setTransition(transition: Transition): void {
+    const p = this.active;
+    p.transition = transition;
+    this.touch(p);
+  }
+
+  create(name: string, transition?: Transition): ProjectInfo {
     const p = this.blank(name.trim() || DEFAULT_PROJECT_NAME);
+    if (transition) p.transition = transition;
     this.state.projects.push(p);
     this.save();
     log.info(`projects: created “${p.name}” (${p.id})`);

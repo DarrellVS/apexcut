@@ -9,6 +9,15 @@ import type { Part, ScoreConfig, Segment } from '@core/types';
 export const FORMATS = ['original', '16x9', '4x3', '9x16'] as const;
 export type ExportFormat = (typeof FORMATS)[number];
 
+/** How parts are joined in the movie (see actions/cut.ts). */
+export const TRANSITIONS = ['crossfade', 'cut', 'dip'] as const;
+export type Transition = (typeof TRANSITIONS)[number];
+export const TRANSITION_LABEL: Record<Transition, { label: string; hint: string }> = {
+  crossfade: { label: 'Crossfade', hint: 'parts blend into each other (½ s)' },
+  cut: { label: 'Cut', hint: 'straight from one part to the next' },
+  dip: { label: 'Dip to black', hint: 'a short fade out and in between parts' },
+};
+
 /** Crop windows for a square source; `pos` (0..1) slides along the cropped axis. */
 export const FORMAT_SPEC: Record<ExportFormat, { w: number; h: number } | null> = {
   original: null,
@@ -61,6 +70,8 @@ export interface ProjectInfo {
   /** sensitivity preset (see core/presets.ts) */
   preset: PresetId;
   archived: boolean;
+  /** how parts are joined in this project's movie */
+  transition: Transition;
 }
 
 export interface TimelinePayload {
@@ -106,6 +117,7 @@ export const exportRequestSchema = z.object({
   format: z.enum(FORMATS).default('original'),
   framePos: z.number().min(0).max(1).default(0.5),
   name: z.string().min(1).max(80).default('my-ride'),
+  transition: z.enum(TRANSITIONS).default('crossfade'),
 });
 export type ExportRequest = z.infer<typeof exportRequestSchema>;
 
@@ -155,6 +167,8 @@ export const settingsSchema = z.object({
   tourSeen: z.boolean().default(false),
   /** part edges snap to auto boundaries, score valleys, other parts and whole seconds while dragging */
   snapping: z.boolean().default(false),
+  /** transition new projects start with */
+  defaultTransition: z.enum(TRANSITIONS).default('crossfade'),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
@@ -201,6 +215,8 @@ export interface ApexcutApi {
     setPreset(preset: PresetId): Promise<void>;
     /** move a project to / out of the Archived section; an archived open project closes */
     archive(id: string, archived: boolean): Promise<void>;
+    /** how the open project's parts are joined in the movie */
+    setTransition(transition: Transition): Promise<void>;
     /**
      * Add videos in groups: `name` null = into the open project, otherwise a new project with that
      * name. Returns the stems added, which of them still need a scan, and the first project created.

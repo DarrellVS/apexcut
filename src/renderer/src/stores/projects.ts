@@ -3,7 +3,7 @@
  */
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { ProjectInfo } from '@shared/ipc';
+import type { ProjectInfo, Transition } from '@shared/ipc';
 import { logger } from '@renderer/utils/logger';
 
 export type ProjectSort = 'edited' | 'name' | 'length';
@@ -86,6 +86,11 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  async function setTransition(t: Transition): Promise<void> {
+    await window.apexcut.projects.setTransition(t);
+    await refresh();
+  }
+
   async function exportFile(id: string): Promise<string | null> {
     const r = await window.apexcut.projects.exportFile(id);
     return r?.file ?? null;
@@ -113,6 +118,7 @@ export const useProjectsStore = defineStore('projects', () => {
     rename,
     remove,
     archive,
+    setTransition,
     exportFile,
     importFile,
   };
