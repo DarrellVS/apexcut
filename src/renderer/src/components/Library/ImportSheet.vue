@@ -34,7 +34,7 @@ function confirm(): void {
     'confirm',
     selected.value.map((g) => ({
       name: mode.value === 'perDay' ? names[g.day].trim() || dayLabel(g.day) : null,
-      paths: g.paths,
+      paths: [...g.paths], // plain array: reactive proxies cannot cross IPC
     })),
   );
 }
