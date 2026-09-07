@@ -1,74 +1,94 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron';
-import { join } from 'path';
+import { app, BrowserWindow, shell } from 'electron';
+import { join } from 'node:path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
+import log from 'electron-log/main';
+import { autoUpdater } from 'electron-updater';
 import icon from '../../resources/icon.png?asset';
+import { createServices, registerIpc } from './ipc';
+import { installProtocol, registerScheme } from './services/protocol';
+
+// same data folder in dev (unpackaged runs default to "Electron") and in the packaged app
+app.setPath('userData', join(app.getPath('appData'), 'ApexCut'));
+
+log.initialize();
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
+
+registerScheme();
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  const win = new BrowserWindow({
+    width: 1500,
+    height: 950,
+    minWidth: 1100,
+    minHeight: 700,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: '#0d0d14',
+    title: 'ApexCut',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
-
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show();
-  });
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  win.on('ready-to-show', () => win.show());
+  win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: 'deny' };
   });
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    win.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    win.loadFile(join(__dirname, '../renderer/index.html'));
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron');
+  electronApp.setAppUserModelId('app.apexcut');
+  app.on('browser-window-created', (_, window) => optimizer.watchWindowShortcuts(window));
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window);
-  });
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'));
-
+  installProtocol();
+  const services = createServices();
+  registerIpc(services);
   createWindow();
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+  // `ApexCut --add=<file-or-folder>`: add videos on startup and scan them (also handy for smoke tests)
+  const adds = process.argv.filter((a) => a.startsWith('--add=')).map((a) => a.slice(6));
+  if (adds.length) {
+    const added = services.library.add(adds);
+    log.info('startup add:', added);
+    const todo = services.library
+      .list()
+      .filter((c) => !c.analyzed)
+      .map((c) => c.stem);
+    if (todo.length) {
+      services.jobs.start('analyze', `Scanning ${todo.length} videos`, async (ctx) => {
+        for (let i = 0; i < todo.length; i++) {
+          await services.analysis.analyze(
+            todo[i],
+            undefined,
+            ctx,
+            i / todo.length,
+            1 / todo.length,
+          );
+        }
+        return { kind: 'analyze', stems: todo };
+      });
+    }
+  }
+
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify().catch((e) => log.warn('updater:', e));
+  }
+
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
