@@ -301,7 +301,7 @@ const zoomInput = computed({
           :style="{ left: `${view.xPct(hoverT)}%` }"
         />
         <div
-          class="floating pointer-events-none absolute bottom-[calc(100%+4px)] z-10 -translate-x-1/2 px-2.5 py-1 text-xs leading-relaxed whitespace-nowrap"
+          class="floating pointer-events-none absolute top-[calc(100%+6px)] z-10 -translate-x-1/2 px-2.5 py-1 text-xs leading-relaxed whitespace-nowrap"
           :style="{ left: `${Math.min(85, Math.max(8, view.xPct(hoverT)))}%` }"
         >
           <b class="num">{{ fmtTime(hoverT) }}</b> · score {{ hoverVals.score }}<br />

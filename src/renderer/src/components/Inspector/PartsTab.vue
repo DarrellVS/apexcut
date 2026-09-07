@@ -105,7 +105,9 @@ function clickRow(p: Part, e: MouseEvent): void {
       </button>
     </div>
     <details v-if="ride" class="card" open>
-      <summary class="label-caps cursor-pointer">Your ride in numbers</summary>
+      <summary class="label-caps cursor-pointer outline-none select-none">
+        Your ride in numbers
+      </summary>
       <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
         <button
           class="rounded-lg bg-s2 p-2 text-left hover:bg-s3"
@@ -167,26 +169,5 @@ function clickRow(p: Part, e: MouseEvent): void {
         <span class="text-muted">{{ fmtDuration(p.end_s - p.start_s) }}</span>
       </div>
     </div>
-    <template v-if="editor.deletedAuto.length">
-      <h4 class="label-caps m-0 mt-2">Deleted or merged</h4>
-      <div
-        v-for="a in editor.deletedAuto"
-        :key="a.start_s"
-        class="flex items-center gap-2 px-2 py-1.5 text-xs"
-      >
-        <span class="num text-muted">{{ fmtTime(a.start_s) }} – {{ fmtTime(a.end_s) }}</span>
-        <span class="flex-1">{{ REASON_LABEL[a.reden] }}</span>
-        <button
-          class="btn btn-mini"
-          @click="
-            editor.restore(a);
-            emit('play', a.start_s);
-            toast('Part brought back');
-          "
-        >
-          Bring back
-        </button>
-      </div>
-    </template>
   </div>
 </template>

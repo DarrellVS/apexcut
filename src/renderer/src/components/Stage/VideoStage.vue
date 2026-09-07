@@ -180,7 +180,7 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
   >
     <video
       ref="video"
-      class="h-full w-full object-contain"
+      class="absolute inset-0 h-full w-full object-contain"
       preload="metadata"
       @timeupdate="onTime"
       @loadedmetadata="
