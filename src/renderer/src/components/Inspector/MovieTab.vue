@@ -42,13 +42,42 @@ const TILES: { f: ExportFormat; label: string; sub: string; w: number; h: number
 
 /** export only the starred parts */
 const onlyStarred = ref(false);
-type Item = ExportRequest['items'][number] & { starred?: boolean };
+type Item = ExportRequest['items'][number] & { starred?: boolean; maxLean?: number };
 const toItem = (stem: string, p: Part): Item => ({
   stem,
   startS: p.start_s,
   endS: p.end_s,
   reden: p.reden,
   starred: p.starred,
+  maxLean: p.max_lean_deg,
+});
+
+/** Title card text: the project name, and one line with the date and the numbers of the ride. */
+const cards = computed<ExportRequest['cards']>(() => {
+  const it = items.value;
+  const bits: string[] = [];
+  const first = [...it].sort((a, b) => a.stem.localeCompare(b.stem))[0];
+  const m = first && /_(\d{4})(\d{2})(\d{2})\d{6}_/.exec(first.stem);
+  if (m) {
+    bits.push(
+      new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00`).toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }),
+    );
+  }
+  const lean = Math.max(0, ...it.map((i) => i.maxLean ?? 0));
+  if (lean) bits.push(`${Math.round(lean)}° max lean`);
+  const corners = it.filter((i) => i.reden !== 'accel/rem').length;
+  if (corners) bits.push(`${corners} corner${corners === 1 ? '' : 's'}`);
+  bits.push(fmtDuration(movieLength.value));
+  return {
+    title: settings.settings?.titleCard
+      ? { heading: projects.active?.name ?? name.value, subheading: bits.join(' · ') }
+      : null,
+    end: settings.settings?.endCard ?? false,
+  };
 });
 const items = computed(() => {
   const out: Item[] = [];
@@ -111,6 +140,7 @@ async function go(): Promise<void> {
     framePos: settings.settings?.lastFramePos ?? 0.5,
     name: name.value,
     transition: transition.value,
+    cards: separate.value ? { title: null, end: false } : cards.value,
   });
   jobs.exportJobId = id;
 }
@@ -211,9 +241,37 @@ defineExpose({ format });
       </div>
       <div class="mt-1.5 text-xs text-muted">
         {{ TRANSITION_LABEL[transition].hint }}.
-        <template v-if="format === 'original' && transition !== 'cut'">
-          Square with a transition is re-encoded at full quality; Cut keeps the lossless copy.
+        <template
+          v-if="format === 'original' && (transition !== 'cut' || cards.title || cards.end)"
+        >
+          Square with a transition or cards is re-encoded at full quality; Cut without cards keeps
+          the lossless copy.
         </template>
+      </div>
+      <div class="mt-2.5 flex flex-col gap-1.5">
+        <label class="flex items-start gap-2 text-xs text-fg">
+          <input
+            type="checkbox"
+            class="m-0 mt-0.5"
+            :checked="settings.settings?.titleCard ?? true"
+            @change="settings.update({ titleCard: ($event.target as HTMLInputElement).checked })"
+          />
+          <span>
+            Title card
+            <span v-if="cards.title" class="block text-muted">
+              “{{ cards.title.heading }}” · {{ cards.title.subheading }}
+            </span>
+          </span>
+        </label>
+        <label class="flex items-center gap-2 text-xs text-fg">
+          <input
+            type="checkbox"
+            class="m-0"
+            :checked="settings.settings?.endCard ?? true"
+            @change="settings.update({ endCard: ($event.target as HTMLInputElement).checked })"
+          />
+          End card <span class="text-muted">· “Made with ApexCut”</span>
+        </label>
       </div>
     </div>
     <button

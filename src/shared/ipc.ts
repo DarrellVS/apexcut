@@ -118,6 +118,13 @@ export const exportRequestSchema = z.object({
   framePos: z.number().min(0).max(1).default(0.5),
   name: z.string().min(1).max(80).default('my-ride'),
   transition: z.enum(TRANSITIONS).default('crossfade'),
+  /** title card at the start (heading + one line of stats) and/or an end card */
+  cards: z
+    .object({
+      title: z.object({ heading: z.string().max(80), subheading: z.string().max(120) }).nullable(),
+      end: z.boolean(),
+    })
+    .default({ title: null, end: false }),
 });
 export type ExportRequest = z.infer<typeof exportRequestSchema>;
 
@@ -169,6 +176,10 @@ export const settingsSchema = z.object({
   snapping: z.boolean().default(false),
   /** transition new projects start with */
   defaultTransition: z.enum(TRANSITIONS).default('crossfade'),
+  /** title card (project name + stats) at the start of a movie */
+  titleCard: z.boolean().default(true),
+  /** "Made with ApexCut" card at the end of a movie */
+  endCard: z.boolean().default(true),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 

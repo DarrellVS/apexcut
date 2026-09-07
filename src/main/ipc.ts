@@ -275,7 +275,7 @@ export function registerIpc(s: Services): void {
     const out = join(s.settings.outputDir('movies'), `${sanitize(req.name)}_${stamp()}.mp4`);
     allowRoot(join(out, '..'));
     return s.jobs.start('export', `Movie “${sanitize(req.name)}” (${total} s)`, async (ctx) => {
-      await compileMovie(items, out, ctx, req.transition);
+      await compileMovie(items, out, ctx, req.transition, req.cards);
       return {
         kind: 'export',
         file: out,

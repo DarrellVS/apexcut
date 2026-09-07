@@ -20,6 +20,13 @@ import { mkdtempSync, rmSync, renameSync, statSync, writeFileSync } from 'node:f
 import { FORMAT_SPEC, type ExportFormat, type Transition } from '@shared/ipc';
 import { encoders, probe, runFfmpeg, type ProbeResult } from '../services/media';
 import type { JobContext } from '../services/jobs';
+import { CardAction } from './cards';
+
+/** Title / end cards around the movie (see cards.ts). */
+export interface Cards {
+  title: { heading: string; subheading: string } | null;
+  end: boolean;
+}
 
 /** crossfade length and dip-to-black fade length, seconds */
 export const XFADE_S = 0.5;
@@ -462,36 +469,90 @@ export function prepareItems(items: CutItem[], transition: Transition): CutItem[
   });
 }
 
+/** Title/end cards rendered like the movie itself, then joined around it losslessly. */
+async function addCards(
+  movie: string,
+  outPath: string,
+  cards: Cards,
+  encArgs: string[],
+  tmp: string,
+  ctx: JobContext,
+): Promise<void> {
+  const info = await probe(movie);
+  const spec = {
+    width: info.width,
+    height: info.height,
+    fps: String(info.fps),
+    tenBit: info.tenBit,
+    encArgs,
+    tmp,
+    footer: 'Made with ApexCut',
+  };
+  const sequence: string[] = [];
+  if (cards.title) {
+    ctx.progress(0.985, 'Making the title card');
+    sequence.push(
+      await new CardAction().execute({ ...spec, ...cards.title, dst: join(tmp, 'title.mp4') }, ctx),
+    );
+  }
+  sequence.push(movie);
+  if (cards.end) {
+    ctx.progress(0.99, 'Making the end card');
+    sequence.push(
+      await new CardAction().execute(
+        {
+          ...spec,
+          heading: 'Made with ApexCut',
+          subheading: '',
+          footer: '',
+          dst: join(tmp, 'end.mp4'),
+        },
+        ctx,
+      ),
+    );
+  }
+  ctx.progress(0.995, 'Joining everything');
+  await new ConcatAction().execute(sequence, outPath, ctx);
+}
+
 export async function compileMovie(
   items: CutItem[],
   outPath: string,
   ctx: JobContext,
   transition: Transition = 'crossfade',
+  cards: Cards = { title: null, end: false },
 ): Promise<string> {
   const tmp = mkdtempSync(join(outPath, '..', 'apexcut-'));
+  const withCards = !!cards.title || cards.end;
+  // cards are encoded clips: the movie must be encoded too so the pieces concatenate cleanly
+  const encodeAll = withCards && items.some((it) => it.format === 'original');
+  const { args: encArgs } = await videoArgsFor(
+    items[0].src,
+    items[0].format,
+    items[0].quality ?? 18,
+  );
+  const finish = async (movie: string): Promise<string> => {
+    if (withCards) await addCards(movie, outPath, cards, encArgs, tmp, ctx);
+    else renameSync(movie, outPath);
+    return outPath;
+  };
   try {
     const prepared = prepareItems(items, transition).map((it, k) => ({
       ...it,
+      encode: it.encode || encodeAll,
       name: `part_${String(k).padStart(3, '0')}.mp4`,
     }));
     const crossfading = transition === 'crossfade' && prepared.length > 1;
-    const parts = await cutAll(prepared, tmp, ctx, crossfading ? [0, 0.8] : [0, 0.97]);
-    if (parts.length === 1) {
-      renameSync(parts[0], outPath);
-      return outPath;
-    }
+    const parts = await cutAll(prepared, tmp, ctx, crossfading ? [0, 0.8] : [0, 0.95]);
+    if (parts.length === 1) return await finish(parts[0]);
     if (!crossfading) {
-      ctx.progress(0.98, 'Joining everything');
-      await new ConcatAction().execute(parts, outPath, ctx);
-      return outPath;
+      ctx.progress(0.97, 'Joining everything');
+      const joined = join(tmp, 'movie.mp4');
+      await new ConcatAction().execute(parts, joined, ctx);
+      return await finish(joined);
     }
     // crossfade: transition clips between neighbours, lossless middles, one crossfaded audio track
     const d = XFADE_S;
-    const { args: encArgs } = await videoArgsFor(
-      items[0].src,
-      items[0].format,
-      items[0].quality ?? 18,
-    );
     const sequence: string[] = [];
     for (let k = 0; k < parts.length; k++) {
       if (ctx.signal.aborted) throw new Error('cancelled');
@@ -526,7 +587,8 @@ export async function compileMovie(
       );
       haveAudio = false;
     }
-    ctx.progress(0.98, 'Joining everything');
+    ctx.progress(0.97, 'Joining everything');
+    const muxed = join(tmp, 'movie.mp4');
     await runFfmpeg(
       [
         '-i',
@@ -536,14 +598,14 @@ export async function compileMovie(
         'copy',
         '-movflags',
         '+faststart',
-        outPath,
+        muxed,
       ],
       { signal: ctx.signal },
     );
+    return await finish(muxed);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
-  return outPath;
 }
 
 export function fileSizeMb(file: string): number {
