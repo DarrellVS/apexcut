@@ -1,7 +1,8 @@
 /**
  * Analysis of one clip: ffmpeg stream-copies the `djmd` track → core parses, derives IMU signals,
- * scores → results persisted under clips/<stem>/. Also rescoring from cached signals, the timeline
- * payload for the renderer, and saving the user's selection.
+ * scores → results persisted under clips/<stem>/ (shared by all projects). Also rescoring from cached
+ * signals, the timeline payload for the renderer, and saving the user's selection, which lives per
+ * project (`selectionFile` is provided by the Projects service).
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -55,7 +56,18 @@ const round = (v: number, d: number): number | null =>
   Number.isFinite(v) ? Math.round(v * 10 ** d) / 10 ** d : null;
 
 export class Analysis {
-  constructor(private readonly library: Library) {}
+  constructor(
+    private readonly library: Library,
+    private readonly selectionFile: (stem: string) => string,
+  ) {}
+
+  private readSelection(stem: string): { parts: Part[]; frozen?: boolean } {
+    return readJson<{ parts: Part[]; frozen?: boolean }>(this.selectionFile(stem), { parts: [] });
+  }
+
+  private writeSelection(stem: string, sel: { parts: Part[]; frozen?: boolean }): void {
+    writeJson(this.selectionFile(stem), sel);
+  }
 
   dir(stem: string): string {
     return ensureDir(paths.clipDir(stem));
@@ -121,14 +133,12 @@ export class Analysis {
     };
     writeJson(join(dir, 'signals.json'), stored);
     this.storeHighlights(dir, result);
-    const previous = readJson<{ parts: Part[]; frozen?: boolean }>(join(dir, 'selection.json'), {
-      parts: [],
-    });
+    const previous = this.readSelection(stem);
     // an imported selection (from the legacy editor) is kept exactly as it was, once
     const parts = previous.frozen
       ? previous.parts
       : mergeSelection(previous.parts, result.segments);
-    writeJson(join(dir, 'selection.json'), { parts });
+    this.writeSelection(stem, { parts });
     log.info(
       `analysis ${stem}: ${result.segments.length} auto, selection now ${parts.length} parts (${parts.filter((p) => p.manual).length} manual, frozen=${!!previous.frozen}, previous=${previous.parts.length})`,
     );
@@ -137,7 +147,7 @@ export class Analysis {
 
   /** Import a selection edited elsewhere; the next analysis keeps it untouched instead of merging. */
   importSelection(stem: string, parts: Part[]): void {
-    writeJson(join(this.dir(stem), 'selection.json'), { parts, frozen: true });
+    this.writeSelection(stem, { parts, frozen: true });
   }
 
   private storeHighlights(dir: string, result: ReturnType<typeof compute>): void {
@@ -174,9 +184,9 @@ export class Analysis {
     };
     const result = compute(imu, cfg);
     this.storeHighlights(dir, result);
-    const previous = readJson<{ parts: Part[] }>(join(dir, 'selection.json'), { parts: [] }).parts;
+    const previous = this.readSelection(stem).parts;
     const merged = mergeSelection(previous, result.segments);
-    writeJson(join(dir, 'selection.json'), { parts: merged });
+    this.writeSelection(stem, { parts: merged });
     log.info(
       `rescore ${stem}: ${result.segments.length} auto, selection now ${merged.length} parts (${merged.filter((p) => p.manual).length} manual, previous=${previous.length})`,
     );
@@ -189,8 +199,8 @@ export class Analysis {
     const stored = readJson<StoredSignals | null>(join(dir, 'signals.json'), null);
     const meta = readJson<ClipMeta | null>(join(dir, 'clip.json'), null);
     if (!hl || !stored || !meta) throw new Error('not analysed');
-    const parts = existsSync(join(dir, 'selection.json'))
-      ? readJson<{ parts: Part[] }>(join(dir, 'selection.json'), { parts: [] }).parts
+    const parts = existsSync(this.selectionFile(stem))
+      ? this.readSelection(stem).parts
       : autoToParts(hl.segments);
     return {
       data: { t: stored.t, ...hl.signals },
@@ -206,13 +216,11 @@ export class Analysis {
     log.info(
       `saveParts ${stem}: ${parts.length} parts (${parts.filter((p) => p.manual).length} manual)`,
     );
-    writeJson(join(this.dir(stem), 'selection.json'), {
-      parts: [...parts].sort((a, b) => a.start_s - b.start_s),
-    });
+    this.writeSelection(stem, { parts: [...parts].sort((a, b) => a.start_s - b.start_s) });
   }
 
   parts(stem: string): Part[] {
-    return readJson<{ parts: Part[] }>(join(this.dir(stem), 'selection.json'), { parts: [] }).parts;
+    return this.readSelection(stem).parts;
   }
 
   meta(stem: string): ClipMeta | null {

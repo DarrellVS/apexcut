@@ -2,7 +2,9 @@
  * Where things live on disk + settings persistence.
  *   %APPDATA%/apexcut/library.json      known clips
  *   %APPDATA%/apexcut/settings.json     user settings
- *   %APPDATA%/apexcut/clips/<stem>/     analysis results, selection, filmstrip, thumbnails
+ *   %APPDATA%/apexcut/clips/<stem>/     analysis results, filmstrip, thumbnails (shared by projects)
+ *   %APPDATA%/apexcut/projects.json     projects (name, ordered videos) + which one is open
+ *   %APPDATA%/apexcut/projects/<id>/    per-project selection of each video
  *   <Videos>/ApexCut/{movies,clips}     default output (changeable)
  */
 import { app } from 'electron';
@@ -25,6 +27,12 @@ export const paths = {
   },
   get settingsFile(): string {
     return join(this.root, 'settings.json');
+  },
+  get projectsFile(): string {
+    return join(this.root, 'projects.json');
+  },
+  projectDir(id: string): string {
+    return join(this.root, 'projects', id);
   },
   get defaultOutput(): string {
     return join(app.getPath('videos'), 'ApexCut');

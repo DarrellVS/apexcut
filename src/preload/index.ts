@@ -5,6 +5,16 @@ const invoke = <T>(channel: string, ...args: unknown[]): Promise<T> =>
   ipcRenderer.invoke(channel, ...args) as Promise<T>;
 
 const api: ApexcutApi = {
+  projects: {
+    list: () => invoke('projects:list'),
+    active: () => invoke('projects:active'),
+    open: (id) => invoke('projects:open', id),
+    create: (name) => invoke('projects:create', name),
+    rename: (id, name) => invoke('projects:rename', id, name),
+    remove: (id) => invoke('projects:remove', id),
+    exportFile: (id) => invoke('projects:exportFile', id),
+    importFile: () => invoke('projects:importFile'),
+  },
   library: {
     list: () => invoke('library:list'),
     pick: (kind) => invoke('library:pick', kind),

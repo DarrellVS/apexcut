@@ -34,6 +34,20 @@ export interface ClipInfo {
   proxyUrl?: string;
 }
 
+/** A project: a name plus an ordered set of videos with their own selections. */
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  nClips: number;
+  nParts: number;
+  /** total seconds of selected parts */
+  highlightS: number;
+  /** stem of the first analysed video (for the card thumbnail) */
+  thumbStem: string | null;
+}
+
 export interface TimelinePayload {
   /** 10 Hz signals for the timeline lanes */
   data: Record<string, (number | null)[]>;
@@ -97,6 +111,21 @@ export const partSchema = z.object({
   max_accel_g: z.number().optional(),
 });
 
+/** The `.apexcut` file a project is exported to. Videos themselves are not included. */
+export const projectFileSchema = z.object({
+  apexcut: z.literal(1),
+  name: z.string().min(1).max(80),
+  exportedAt: z.string(),
+  clips: z.array(
+    z.object({ stem: z.string(), mp4: z.string().nullable(), lrf: z.string().nullable() }),
+  ),
+  selections: z.record(
+    z.string(),
+    z.object({ parts: z.array(partSchema), frozen: z.boolean().optional() }),
+  ),
+});
+export type ProjectFile = z.infer<typeof projectFileSchema>;
+
 export const themeSchema = z.enum(['system', 'light', 'dark']);
 export type Theme = z.infer<typeof themeSchema>;
 
@@ -117,10 +146,25 @@ export interface EncoderInfo {
 
 /** Everything the renderer can call. Implemented in preload, served by main. */
 export interface ApexcutApi {
+  projects: {
+    list(): Promise<ProjectInfo[]>;
+    /** id of the open project */
+    active(): Promise<string>;
+    open(id: string): Promise<void>;
+    create(name: string): Promise<ProjectInfo>;
+    rename(id: string, name: string): Promise<void>;
+    remove(id: string): Promise<void>;
+    /** save dialog + write `.apexcut`; null when cancelled */
+    exportFile(id: string): Promise<{ file: string } | null>;
+    /** open dialog + import `.apexcut` as a new project; null when cancelled */
+    importFile(): Promise<{ id: string; missing: string[] } | null>;
+  };
   library: {
+    /** videos of the open project, in movie order */
     list(): Promise<ClipInfo[]>;
     pick(kind: 'files' | 'dir'): Promise<{ added: string[]; cancelled: boolean }>;
     add(paths: string[]): Promise<{ added: string[] }>;
+    /** take a video out of the open project (its scan is kept for other projects) */
     remove(stem: string): Promise<void>;
     /** new order of all videos (also the order in the movie) */
     reorder(stems: string[]): Promise<void>;

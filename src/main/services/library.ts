@@ -1,9 +1,12 @@
 /**
- * The user's clips: MP4 + LRF pairs found from picked files/folders, persisted in library.json.
- * Analysis results live per clip in clips/<stem>/ (see analysis.ts).
+ * Registry of every video the app knows: MP4 + LRF pairs found from picked files/folders, persisted
+ * in library.json. Which videos belong to which project (and in what order) lives in projects.ts;
+ * analysis results live per clip in clips/<stem>/ (analysis.ts) and are shared between projects.
  */
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
+import { autoToParts } from '@core/selection';
+import type { Part, Segment } from '@core/types';
 import type { ClipInfo } from '@shared/ipc';
 import { paths, readJson, writeJson } from './store';
 import { mediaUrl } from './protocol';
@@ -73,38 +76,43 @@ export class Library {
     return [...byStem.values()];
   }
 
+  /** Register the videos found in `inputs`; returns every stem found (known ones included). */
   add(inputs: string[]): string[] {
-    const added: string[] = [];
-    for (const rec of Library.discover(inputs)) {
-      if (this.clips.has(rec.stem)) continue;
-      this.clips.set(rec.stem, rec);
-      added.push(rec.stem);
-    }
-    if (added.length) this.save();
-    return added;
+    const found = Library.discover(inputs);
+    for (const rec of found) this.register(rec);
+    return found.map((r) => r.stem);
   }
 
-  remove(stem: string): void {
-    this.clips.delete(stem);
+  /** Register a record directly (project import); known paths are only filled in, never replaced. */
+  register(rec: ClipRecord): void {
+    const cur = this.clips.get(rec.stem);
+    if (cur) {
+      let changed = false;
+      for (const k of ['mp4', 'lrf'] as const) {
+        if (!cur[k] && rec[k]) {
+          cur[k] = rec[k];
+          changed = true;
+        }
+      }
+      if (changed) this.save();
+      return;
+    }
+    this.clips.set(rec.stem, { ...rec });
     this.save();
   }
 
-  /** Reorder (insertion order of the map = order in the list and in the movie). */
-  reorder(stems: string[]): void {
-    const next = new Map<string, ClipRecord>();
-    for (const s of stems) {
-      const c = this.clips.get(s);
-      if (c) next.set(s, c);
-    }
-    for (const [s, c] of this.clips) if (!next.has(s)) next.set(s, c);
-    this.clips = next;
-    this.save();
+  has(stem: string): boolean {
+    return this.clips.has(stem);
   }
 
   get(stem: string): ClipRecord {
     const c = this.clips.get(stem);
     if (!c) throw new Error(`unknown clip ${stem}`);
     return c;
+  }
+
+  records(): ClipRecord[] {
+    return [...this.clips.values()];
   }
 
   /** Video used for analysis, filmstrip and the player: the small LRF when present. */
@@ -115,12 +123,8 @@ export class Library {
     return p;
   }
 
-  /** In user order (defaults to the order videos were added). */
-  list(): ClipInfo[] {
-    return [...this.clips.values()].map((c) => this.info(c));
-  }
-
-  info(c: ClipRecord): ClipInfo {
+  /** Card info for one video; `selectionFile` is the project's selection for it. */
+  info(c: ClipRecord, selectionFile: string): ClipInfo {
     const dir = paths.clipDir(c.stem);
     const meta = readJson<ClipMeta | null>(join(dir, 'clip.json'), null);
     const analyzed = existsSync(join(dir, 'signals.json')) && meta !== null;
@@ -139,10 +143,12 @@ export class Library {
       info.model = meta.model;
     }
     if (analyzed) {
-      const parts = readJson<{ parts: { enabled: boolean; start_s: number; end_s: number }[] }>(
-        join(dir, 'selection.json'),
-        { parts: [] },
-      ).parts;
+      const parts = existsSync(selectionFile)
+        ? readJson<{ parts: Part[] }>(selectionFile, { parts: [] }).parts
+        : autoToParts(
+            readJson<{ segments: Segment[] }>(join(dir, 'highlights.json'), { segments: [] })
+              .segments,
+          );
       info.nParts = parts.length;
       info.nEnabled = parts.filter((p) => p.enabled).length;
       info.highlightS =

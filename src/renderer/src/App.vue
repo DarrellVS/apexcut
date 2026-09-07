@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /**
- * Application shell: three phases (empty → scanning → editor) and global keyboard shortcuts.
- * Restart-safe: the open video and playhead are remembered in localStorage.
+ * Application shell: phases projects → empty → scanning → editor, plus global keyboard shortcuts.
+ * Restart-safe: the open project, its open video and the playhead are remembered.
  */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
+import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
+import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
 import VideoList from '@renderer/components/Library/VideoList.vue';
 import VideoStage from '@renderer/components/Stage/VideoStage.vue';
@@ -18,6 +20,7 @@ import Timeline from '@renderer/components/Timeline/Timeline.vue';
 import ToastHost, { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const library = useLibraryStore();
+const projects = useProjectsStore();
 const jobs = useJobsStore();
 const editor = useEditorStore();
 const settings = useSettingsStore();
@@ -26,22 +29,40 @@ const everAnalyzed = ref(false);
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
 const inspector = ref<InstanceType<typeof InspectorPanel> | null>(null);
 
-const phase = computed<'empty' | 'scanning' | 'editor'>(() => {
+const phase = computed<'projects' | 'empty' | 'scanning' | 'editor'>(() => {
+  if (projects.showHome || !projects.activeId) return 'projects';
   if (!library.clips.length) return 'empty';
   if (jobs.analyzeJob && !everAnalyzed.value) return 'scanning';
   return 'editor';
 });
 
+const videoKey = (): string => `apexcut.video.${projects.activeId}`;
+const timeKey = (): string => `apexcut.time.${projects.activeId}`;
+
 async function openClip(stem: string, seekTo?: number): Promise<void> {
   const clip = library.clips.find((c) => c.stem === stem);
-  if (!clip?.analyzed) {
-    library.current = stem;
-    return;
-  }
   library.current = stem;
+  if (!clip?.analyzed) return;
   await editor.open(stem);
-  localStorage.setItem('apexcut.video', stem);
+  localStorage.setItem(videoKey(), stem);
   if (seekTo) stage.value?.seek(seekTo);
+}
+
+/** Switch to a project: flush pending edits, load its videos and reopen the remembered one. */
+async function openProject(id: string): Promise<void> {
+  await editor.close();
+  await projects.open(id);
+  await library.refresh();
+  everAnalyzed.value = library.analyzed.length > 0;
+  const remembered = localStorage.getItem(videoKey());
+  const first = library.analyzed.find((c) => c.stem === remembered) ?? library.analyzed[0];
+  if (first) await openClip(first.stem, Number(localStorage.getItem(timeKey())) || 0);
+}
+
+async function goHome(): Promise<void> {
+  await editor.flush();
+  await projects.refresh();
+  projects.showHome = true;
 }
 
 async function scanNew(added: string[]): Promise<void> {
@@ -53,10 +74,10 @@ async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
   await scanNew(await library.pick(kind));
 }
 
-// ---- drop MP4/LRF files or folders from Explorer anywhere in the window
+// ---- drop MP4/LRF files or folders from Explorer anywhere in the window (into the open project)
 const dropping = ref(false);
 function onDragOver(e: DragEvent): void {
-  if (e.dataTransfer?.types.includes('Files')) {
+  if (phase.value !== 'projects' && e.dataTransfer?.types.includes('Files')) {
     e.preventDefault();
     dropping.value = true;
   }
@@ -64,7 +85,7 @@ function onDragOver(e: DragEvent): void {
 async function onDrop(e: DragEvent): Promise<void> {
   dropping.value = false;
   const files = e.dataTransfer?.files;
-  if (!files?.length) return;
+  if (!files?.length || phase.value === 'projects') return;
   e.preventDefault();
   const paths = Array.from(files).map((f) => window.apexcut.files.pathOf(f));
   const added = await library.add(paths);
@@ -73,20 +94,17 @@ async function onDrop(e: DragEvent): Promise<void> {
 }
 
 onMounted(async () => {
-  await Promise.all([settings.init(), jobs.init(), library.refresh()]);
-  everAnalyzed.value = library.analyzed.length > 0;
-  const remembered = localStorage.getItem('apexcut.video');
-  const first = library.analyzed.find((c) => c.stem === remembered) ?? library.analyzed[0];
-  if (first) await openClip(first.stem, Number(localStorage.getItem('apexcut.time')) || 0);
+  await Promise.all([settings.init(), jobs.init(), projects.refresh()]);
+  if (projects.activeId) await openProject(projects.activeId);
 
   jobs.onUpdate(async (job) => {
     if (job.status === 'running') return;
-    await library.refresh();
+    await Promise.all([library.refresh(), projects.refresh()]);
     if (job.kind === 'analyze' && job.status === 'done') {
       everAnalyzed.value = true;
       const target =
         library.analyzed.find((c) => c.stem === library.current) ?? library.analyzed[0];
-      if (target) {
+      if (target && phase.value === 'editor') {
         await openClip(target.stem);
         const n = editor.parts.length;
         const corners = editor.parts.filter((p) => p.reden !== 'accel/rem').length;
@@ -100,14 +118,14 @@ onMounted(async () => {
   });
   window.addEventListener('keydown', onKey);
   setInterval(() => {
-    if (editor.stem) localStorage.setItem('apexcut.time', String(Math.round(editor.time)));
+    if (editor.stem) localStorage.setItem(timeKey(), String(Math.round(editor.time)));
   }, 2000);
 });
 onUnmounted(() => window.removeEventListener('keydown', onKey));
 
 watch(
   () => library.current,
-  (s) => s && openClip(s),
+  (s) => s && s !== editor.stem && openClip(s),
 );
 
 function onKey(e: KeyboardEvent): void {
@@ -174,12 +192,18 @@ function onKey(e: KeyboardEvent): void {
       v-if="dropping"
       class="pointer-events-none absolute inset-2.5 z-40 grid place-items-center rounded-card border-2 border-dashed border-acc2 bg-acc2/10 text-lg font-semibold text-fg"
     >
-      Drop your videos to add them
+      Drop your videos to add them to “{{ projects.active?.name }}”
     </div>
-    <EmptyState v-if="phase === 'empty'" @pick="pickAndScan" />
+    <ProjectsHome v-if="phase === 'projects'" @open="openProject" />
+    <EmptyState
+      v-else-if="phase === 'empty'"
+      :project="projects.active?.name ?? ''"
+      @pick="pickAndScan"
+      @home="goHome"
+    />
     <ScanProgress v-else-if="phase === 'scanning'" />
     <template v-else>
-      <TopBar @make="inspector?.openMovie($event)" />
+      <TopBar @make="inspector?.openMovie($event)" @home="goHome" />
       <main class="grid min-h-0 flex-1 grid-cols-[300px_1fr_300px] gap-2.5">
         <VideoList @pick="pickAndScan" />
         <VideoStage ref="stage" :framing="inspector?.framingActive ?? false" />

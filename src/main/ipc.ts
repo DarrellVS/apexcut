@@ -3,6 +3,7 @@
  */
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { existsSync, statSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
 import { edl } from '@core/edl';
@@ -13,12 +14,14 @@ import { FilmstripAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
 import { Library } from './services/library';
+import { Projects } from './services/projects';
 import { encoders } from './services/media';
 import { allowRoot, mediaUrl, registerResolver } from './services/protocol';
 import { paths, SettingsStore } from './services/store';
 
 export interface Services {
   library: Library;
+  projects: Projects;
   analysis: Analysis;
   jobs: Jobs;
   settings: SettingsStore;
@@ -26,9 +29,11 @@ export interface Services {
 
 export function createServices(): Services {
   const library = new Library();
+  const projects = new Projects(library);
   return {
     library,
-    analysis: new Analysis(library),
+    projects,
+    analysis: new Analysis(library, (stem) => projects.selectionFile(stem)),
     jobs: new Jobs(),
     settings: new SettingsStore(),
   };
@@ -55,14 +60,53 @@ export function registerIpc(s: Services): void {
     file ? join(s.settings.outputDir('movies'), basename(file)) : null,
   );
 
-  // ---- library
-  ipcMain.handle('library:list', () => s.library.list());
+  // ---- projects
+  const projectFilter = [{ name: 'ApexCut project', extensions: ['apexcut'] }];
+  ipcMain.handle('projects:list', () => s.projects.list());
+  ipcMain.handle('projects:active', () => s.projects.activeId);
+  ipcMain.handle('projects:open', (_e, id: unknown) => s.projects.open(z.string().parse(id)));
+  ipcMain.handle('projects:create', (_e, name: unknown) =>
+    s.projects.create(z.string().max(80).parse(name)),
+  );
+  ipcMain.handle('projects:rename', (_e, id: unknown, name: unknown) =>
+    s.projects.rename(z.string().parse(id), z.string().max(80).parse(name)),
+  );
+  ipcMain.handle('projects:remove', (_e, id: unknown) => s.projects.remove(z.string().parse(id)));
+  ipcMain.handle('projects:exportFile', async (e, idRaw: unknown) => {
+    const id = z.string().parse(idRaw);
+    const name = s.projects.list().find((p) => p.id === id)?.name ?? 'project';
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+    const res = await dialog.showSaveDialog(win as BrowserWindow, {
+      title: 'Export project',
+      defaultPath: join(homedir(), 'Documents', `${sanitize(name)}.apexcut`),
+      filters: projectFilter,
+    });
+    if (res.canceled || !res.filePath) return null;
+    s.projects.exportTo(id, res.filePath);
+    return { file: res.filePath };
+  });
+  ipcMain.handle('projects:importFile', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+    const res = await dialog.showOpenDialog(win as BrowserWindow, {
+      title: 'Import project',
+      properties: ['openFile'],
+      filters: projectFilter,
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    return s.projects.importFrom(res.filePaths[0]);
+  });
+
+  // ---- library (videos of the open project)
+  const addToProject = (inputs: string[]): string[] => s.projects.addClips(s.library.add(inputs));
+  ipcMain.handle('library:list', () => s.projects.clipInfos());
   ipcMain.handle('library:add', (_e, paths: unknown) => ({
-    added: s.library.add(z.array(z.string()).parse(paths)),
+    added: addToProject(z.array(z.string()).parse(paths)),
   }));
-  ipcMain.handle('library:remove', (_e, stem: unknown) => s.library.remove(z.string().parse(stem)));
+  ipcMain.handle('library:remove', (_e, stem: unknown) =>
+    s.projects.removeClip(z.string().parse(stem)),
+  );
   ipcMain.handle('library:reorder', (_e, stems: unknown) =>
-    s.library.reorder(z.array(z.string()).parse(stems)),
+    s.projects.reorder(z.array(z.string()).parse(stems)),
   );
   ipcMain.handle('library:pick', async (e, kind: unknown) => {
     const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
@@ -74,7 +118,7 @@ export function registerIpc(s: Services): void {
         k === 'files' ? [{ name: 'DJI video', extensions: ['MP4', 'mp4', 'LRF', 'lrf'] }] : [],
     });
     if (res.canceled) return { added: [], cancelled: true };
-    return { added: s.library.add(res.filePaths), cancelled: false };
+    return { added: addToProject(res.filePaths), cancelled: false };
   });
 
   // ---- analysis

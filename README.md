@@ -5,6 +5,8 @@ turns them into one movie. Windows desktop app (Electron + Vue 3 + TypeScript), 
 
 - Reads the motion sensor data DJI Osmo Action cameras embed in every recording (30 Hz attitude
   quaternion + accelerometer). No re-encoding, no cloud, originals are never modified.
+- Projects: one per ride/movie, each with its own videos and picks; a video can be in several projects
+  without being scanned twice. Export a project as a small `.apexcut` file and import it elsewhere.
 - Timeline editor: filmstrip background, score curves, parts as blocks, join suggestions, undo/redo.
 - Export: square (lossless stream copy) or widescreen 16:9 / 4:3 / vertical 9:16 at full resolution,
   10-bit HEVC via NVENC/QSV/AMF (libx265 fallback), draggable framing, ETA, parallel cutting.

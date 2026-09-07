@@ -1,20 +1,34 @@
 <script setup lang="ts">
 /**
- * Top bar: brand, project name + save state, the active part (hover / selection / playing),
- * undo/redo and the split button "Make my movie ▾" (all videos / only this video).
+ * Top bar: brand, project name (menu: all projects / rename / export), open video + save state,
+ * the active part (hover / selection / playing), undo/redo and "Make my movie ▾".
  */
-import { computed, ref } from 'vue';
-import { PhArrowCounterClockwise, PhArrowClockwise, PhCaretDown } from '@phosphor-icons/vue';
+import { computed, nextTick, ref } from 'vue';
+import {
+  PhArrowCounterClockwise,
+  PhArrowClockwise,
+  PhCaretDown,
+  PhExport,
+  PhPencilSimple,
+  PhSquaresFour,
+} from '@phosphor-icons/vue';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
+import { useProjectsStore } from '@renderer/stores/projects';
 import { fmtDuration, fmtTime, shortName } from '@renderer/utils/format';
+import { toast } from '@renderer/components/Base/ToastHost.vue';
 
-const emit = defineEmits<{ make: [scope: 'all' | 'current'] }>();
+const emit = defineEmits<{ make: [scope: 'all' | 'current']; home: [] }>();
 const editor = useEditorStore();
 const library = useLibraryStore();
+const projects = useProjectsStore();
 const menuOpen = ref(false);
+const projectMenu = ref(false);
+const renaming = ref(false);
+const renameValue = ref('');
+const renameInput = ref<HTMLInputElement | null>(null);
 
 function why(p: Part): string {
   const bits = [`${fmtTime(p.start_s)} – ${fmtTime(p.end_s)}`, fmtDuration(p.end_s - p.start_s)];
@@ -39,20 +53,105 @@ function choose(scope: 'all' | 'current'): void {
   menuOpen.value = false;
   emit('make', scope);
 }
+function closeMenus(): void {
+  menuOpen.value = false;
+  projectMenu.value = false;
+}
+async function startRename(): Promise<void> {
+  projectMenu.value = false;
+  renameValue.value = projects.active?.name ?? '';
+  renaming.value = true;
+  await nextTick();
+  renameInput.value?.focus();
+  renameInput.value?.select();
+}
+async function commitRename(): Promise<void> {
+  if (!renaming.value) return;
+  renaming.value = false;
+  const id = projects.activeId;
+  if (id && renameValue.value.trim() && renameValue.value.trim() !== projects.active?.name) {
+    await projects.rename(id, renameValue.value);
+  }
+}
+async function exportProject(): Promise<void> {
+  projectMenu.value = false;
+  if (!projects.activeId) return;
+  const file = await projects.exportFile(projects.activeId);
+  if (file) toast(`Project saved as ${file}`, 6000);
+}
 </script>
 
 <template>
   <header
     class="glass relative z-40 flex items-center gap-2.5 px-3.5 py-2"
-    @click.self="menuOpen = false"
+    @click.self="closeMenus"
   >
-    <div
-      class="grid h-7 w-7 place-items-center rounded-[9px] bg-gradient-to-br from-acc1 to-acc2 text-[13px] font-extrabold text-white"
+    <button
+      class="flex items-center gap-2 rounded-ctl py-0.5 pr-1.5 hover:bg-s2"
+      title="All projects"
+      @click="emit('home')"
     >
-      A
+      <div
+        class="grid h-7 w-7 place-items-center rounded-[9px] bg-gradient-to-br from-acc1 to-acc2 text-[13px] font-extrabold text-white"
+      >
+        A
+      </div>
+      <b class="text-fg">ApexCut</b>
+    </button>
+    <span class="text-muted">/</span>
+    <div class="relative">
+      <input
+        v-if="renaming"
+        ref="renameInput"
+        v-model="renameValue"
+        class="w-[220px] rounded-ctl border border-sel bg-s2 px-2 py-0.5 text-sm font-semibold text-fg outline-none"
+        maxlength="80"
+        @keydown.enter="commitRename"
+        @keydown.esc="renaming = false"
+        @blur="commitRename"
+      />
+      <button
+        v-else
+        class="flex max-w-[260px] items-center gap-1 rounded-ctl px-1.5 py-0.5 text-sm font-semibold text-fg hover:bg-s2"
+        :class="{ 'bg-s2': projectMenu }"
+        title="Project"
+        @click.stop="
+          projectMenu = !projectMenu;
+          menuOpen = false;
+        "
+      >
+        <span class="truncate">{{ projects.active?.name ?? 'Project' }}</span>
+        <PhCaretDown :size="12" weight="bold" class="flex-none text-muted" />
+      </button>
+      <div
+        v-if="projectMenu"
+        class="popover absolute top-[calc(100%+6px)] left-0 z-30 min-w-[220px] p-1.5 text-sm"
+        @click.stop
+      >
+        <button
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+          @click="
+            projectMenu = false;
+            emit('home');
+          "
+        >
+          <PhSquaresFour :size="15" /> All projects
+        </button>
+        <button
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+          @click="startRename"
+        >
+          <PhPencilSimple :size="15" /> Rename
+        </button>
+        <button
+          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+          @click="exportProject"
+        >
+          <PhExport :size="15" /> Export project…
+        </button>
+      </div>
     </div>
-    <b class="text-fg">ApexCut</b>
-    <span v-if="editor.stem" class="text-xs text-muted">
+    <span v-if="editor.stem" class="truncate text-xs text-muted">
       {{ shortName(editor.stem) }} · {{ editor.dirty ? 'Saving…' : 'Saved' }}
     </span>
     <div class="min-w-0 flex-1 text-center">
@@ -98,7 +197,10 @@ function choose(scope: 'all' | 'current'): void {
         class="btn btn-pri rounded-l-none border-l border-black/20 px-2.5"
         :disabled="!canMake"
         title="More options"
-        @click.stop="menuOpen = !menuOpen"
+        @click.stop="
+          menuOpen = !menuOpen;
+          projectMenu = false;
+        "
       >
         <PhCaretDown :size="14" weight="bold" />
       </button>

@@ -15,23 +15,28 @@ src/
   main/        Electron main process
     index.ts        window, protocol, updater
     ipc/            one handler module per domain (library, analysis, export, media, settings)
-    services/       Library (JSON persistence in app data), Jobs (progress/ETA/cancel), Media (ffprobe/ffmpeg
+    services/       Library (registry of known videos), Projects (name + ordered videos + per-project
+                    selections, `.apexcut` export/import), Jobs (progress/ETA/cancel), Media (ffprobe/ffmpeg
                     paths, hardware encoder detection), Thumbnails/Filmstrip, Protocol (apexcut:// with Range)
     actions/        one class per ffmpeg operation: ExtractMetadataAction, CutSegmentAction, ConcatAction,
                     FilmstripAction, ThumbnailAction
     workers/        analysis runs in a worker_thread so the UI never stalls
   preload/     contextBridge → `window.apexcut` (typed, promise-based, plus event subscriptions)
   renderer/    Vue 3 + Pinia + Tailwind v4
-    components/{Shell,Library,Stage,Inspector,Timeline,Base}/
+    components/{Projects,Shell,Library,Stage,Inspector,Timeline,Base}/
     composables/    useTimelineView, useUndo, useSuggestions, useKeyboard, useFraming
-    stores/         library, editor (segments/selection/undo), jobs, settings
+    stores/         projects, library (videos of the open project), editor (segments/selection/undo), jobs, settings
 ```
 
 ## Data flow
 
-1. User picks files → main `Library.add` finds MP4/LRF pairs → renderer shows them.
+0. A project is one movie: a name plus an ordered set of videos. `Projects` keeps the list and which one
+   is open; every `library:*` call works on the open project. A video can be in several projects; its
+   scan (`clips/<stem>/`) is shared, its selection is per project (`projects/<id>/<stem>.json`).
+1. User picks files → main `Library.add` registers MP4/LRF pairs → `Projects.addClips` puts them in the
+   open project (an already-scanned video starts from its automatic parts, no rescan) → renderer shows them.
 2. `analysis.run(stems)` job: ffmpeg stream-copies the `djmd` track → core parses → IMU → score →
-   results written to `<appData>/apexcut/clips/<stem>/{signals.json,highlights.json,selection.json,clip.json}`.
+   results written to `<appData>/ApexCut/data/clips/<stem>/{signals.json,highlights.json,clip.json}`.
    Progress events stream to the renderer.
 3. Renderer loads `timeline(stem)` (10 Hz signals + selection) and renders. Edits are saved with a
    250 ms debounce via `selection.save`.
@@ -42,9 +47,18 @@ src/
 
 ## Persistence
 
-`%APPDATA%/apexcut/library.json` (clips: stem, mp4, lrf), `clips/<stem>/…` (analysis + selection),
-`settings.json` (theme, output folder, last export options). Output: `<Videos>/ApexCut/{movies,clips}` by
-default, changeable in Settings.
+`%APPDATA%/ApexCut/data/`: `library.json` (every known video: stem, mp4, lrf), `projects.json`
+(projects + the open one), `projects/<id>/<stem>.json` (that project's selection of that video),
+`clips/<stem>/…` (scan results, filmstrip, thumbnail — shared by projects), `settings.json` (theme, output
+folder, last export options). First start after the projects feature moves the old `clips/<stem>/selection.json`
+into a project called “My rides”. Output: `<Videos>/ApexCut/{movies,clips}` by default, changeable in Settings.
+
+A project exported from the app is a `.apexcut` JSON file (`projectFileSchema` in `src/shared/ipc.ts`): name,
+the videos' paths and the selections — never the videos or the scan. Importing it on a computer that has the
+same files re-discovers them next to the recorded paths and scans what has not been scanned there yet.
+
+`APEXCUT_USER_DATA=<folder>` points a run at its own data folder (and single-instance lock) — used for
+smoke tests next to a running installed copy.
 
 ## Quality gates
 

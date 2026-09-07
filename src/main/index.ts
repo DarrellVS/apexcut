@@ -11,8 +11,9 @@ import { createServices, registerIpc } from './ipc';
 import { installProtocol, registerScheme } from './services/protocol';
 import { paths, readJson } from './services/store';
 
-// same data folder in dev (unpackaged runs default to "Electron") and in the packaged app
-app.setPath('userData', join(app.getPath('appData'), 'ApexCut'));
+// same data folder in dev (unpackaged runs default to "Electron") and in the packaged app;
+// APEXCUT_USER_DATA points a test run at its own folder (also its own single-instance lock)
+app.setPath('userData', process.env.APEXCUT_USER_DATA ?? join(app.getPath('appData'), 'ApexCut'));
 
 // one running copy at a time: a second launch focuses the existing window instead
 if (!app.requestSingleInstanceLock()) {
@@ -77,9 +78,9 @@ app.whenReady().then(() => {
   installProtocol();
   const services = createServices();
   log.info(
-    'library:',
-    services.library
-      .list()
+    `project “${services.projects.active.name}”:`,
+    services.projects
+      .clipInfos()
       .map((c) => `${c.stem} ${c.nEnabled ?? '-'}/${c.nParts ?? '-'}`)
       .join(', '),
   );
@@ -106,10 +107,10 @@ app.whenReady().then(() => {
     }
   }
   if (adds.length) {
-    const added = services.library.add(adds);
+    const added = services.projects.addClips(services.library.add(adds));
     log.info('startup add:', added);
-    const todo = services.library
-      .list()
+    const todo = services.projects
+      .clipInfos()
       .filter((c) => !c.analyzed)
       .map((c) => c.stem);
     if (todo.length) {
@@ -129,16 +130,11 @@ app.whenReady().then(() => {
   }
 
   // backfill card thumbnails for clips analysed before thumbnails existed (e.g. legacy imports)
-  for (const c of services.library.list()) {
-    if (c.analyzed && !existsSync(join(paths.clipDir(c.stem), 'thumb.jpg'))) {
+  for (const c of services.library.records()) {
+    const meta = services.analysis.meta(c.stem);
+    if (meta && !existsSync(join(paths.clipDir(c.stem), 'thumb.jpg'))) {
       new ThumbnailAction()
-        .execute(
-          c.stem,
-          services.library.proxyOf(c.stem),
-          (c.durationS ?? 0) * 0.1,
-          160,
-          'thumb.jpg',
-        )
+        .execute(c.stem, services.library.proxyOf(c.stem), meta.durationS * 0.1, 160, 'thumb.jpg')
         .catch((e) => log.warn('thumbnail backfill:', e));
     }
   }

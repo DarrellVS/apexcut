@@ -94,6 +94,35 @@ export const useEditorStore = defineStore('editor', () => {
     }, 250);
   }
 
+  /** Write a pending debounced save right now (before switching project or leaving the editor). */
+  async function flush(): Promise<void> {
+    if (!saveTimer || !stem.value) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    parts.value.sort((a, b) => a.start_s - b.start_s);
+    await window.apexcut.analysis.saveParts(stem.value, JSON.parse(JSON.stringify(parts.value)));
+    dirty.value = false;
+  }
+
+  /** Leave the current video/project: save what is pending and clear everything. */
+  async function close(): Promise<void> {
+    await flush();
+    stem.value = null;
+    data.value = {};
+    threshold.value = 0;
+    config.value = null;
+    auto.value = [];
+    parts.value = [];
+    duration.value = 0;
+    selection.value = [];
+    hoverId.value = null;
+    time.value = 0;
+    playing.value = false;
+    history.value = [];
+    future.value = [];
+    filmstrip.value = null;
+  }
+
   /** Apply a change with an undo snapshot and a debounced save. */
   function mutate(fn: () => void): void {
     snapshot();
@@ -209,6 +238,8 @@ export const useEditorStore = defineStore('editor', () => {
     deletedAuto,
     amountIndex,
     open,
+    close,
+    flush,
     load,
     mutate,
     snapshot,

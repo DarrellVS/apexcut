@@ -117,8 +117,12 @@ async function pickOutput(): Promise<void> {
         <button class="btn btn-mini" @click="exportEdl">
           Export for DaVinci Resolve / Premiere
         </button>
-        <button class="btn btn-mini text-play" @click="library.remove(editor.stem!)">
-          Remove from list
+        <button
+          class="btn btn-mini text-play"
+          title="The video and its scan stay available for other projects"
+          @click="library.remove(editor.stem!)"
+        >
+          Remove from this project
         </button>
       </div>
     </div>

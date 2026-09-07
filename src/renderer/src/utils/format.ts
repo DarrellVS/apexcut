@@ -19,6 +19,24 @@ export function fmtElapsed(s: number): string {
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
+/** When something was last edited, the way people say it: "today 14:27", "yesterday", "Mon 7 Sep". */
+export function fmtWhen(ts: number): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const dayStart = (x: Date): number =>
+    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((dayStart(now) - dayStart(d)) / 86_400_000);
+  const hm = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  if (days === 0) return `today ${hm}`;
+  if (days === 1) return `yesterday ${hm}`;
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  });
+}
+
 /** "DJI_20260906104754_0034_D" → "Video 34" */
 export function shortName(stem: string): string {
   const m = /_(\d{4})_/.exec(stem);
