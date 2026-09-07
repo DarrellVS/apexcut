@@ -64,7 +64,9 @@ export async function renderRideCard(
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d') as CanvasRenderingContext2D;
-  const pad = Math.round(w * 0.06);
+  const portrait = variant === 'portrait';
+  const pad = Math.round(Math.min(w, h) * (portrait ? 0.06 : 0.07));
+  const gap = Math.round(w * 0.02);
 
   // background: dark or light ground with the brand gradient glowing from a corner
   ctx.fillStyle = dark ? '#0d0d14' : '#f4f2fa';
@@ -86,7 +88,7 @@ export async function renderRideCard(
   const muted = dark ? 'rgba(238,238,243,0.62)' : 'rgba(21,22,28,0.6)';
 
   // header: mark + name + date
-  const mark = Math.round(w * 0.055);
+  const mark = Math.round(portrait ? w * 0.055 : h * 0.07);
   const g = ctx.createLinearGradient(pad, pad, pad + mark, pad + mark);
   g.addColorStop(0, '#ff7a3d');
   g.addColorStop(1, '#ff3d81');
@@ -102,76 +104,92 @@ export async function renderRideCard(
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = fg;
-  const titlePx = Math.round(w * (variant === 'portrait' ? 0.075 : 0.055));
+  const titlePx = Math.round(portrait ? w * 0.075 : h * 0.085);
   ctx.font = `800 ${titlePx}px ${FONT}`;
   let name = stats.name;
-  while (ctx.measureText(name).width > w - 2 * pad - mark - 24 && name.length > 4) {
+  while (ctx.measureText(name).width > w - 2 * pad && name.length > 4) {
     name = `${name.slice(0, -2)}…`;
   }
-  const titleY = pad + mark + titlePx * 1.15;
+  const titleY = pad + mark + Math.round(titlePx * 1.1);
   ctx.fillText(name, pad, titleY);
+  const subPx = Math.round(titlePx * 0.4);
   ctx.fillStyle = muted;
-  ctx.font = `500 ${Math.round(titlePx * 0.42)}px ${FONT}`;
+  ctx.font = `500 ${subPx}px ${FONT}`;
   const sub = [dayLabel(stats.day), `${stats.nVideos} video${stats.nVideos === 1 ? '' : 's'}`]
     .filter(Boolean)
     .join(' · ');
-  ctx.fillText(sub, pad, titleY + titlePx * 0.6);
+  const subY = titleY + Math.round(subPx * 1.35);
+  ctx.fillText(sub, pad, subY);
 
-  // thumbnails: three, in a row
+  // vertical budget: header ─ thumbnails ─ tiles ─ footer, everything inside the padding
+  const footPx = Math.round(portrait ? w * 0.022 : h * 0.036);
+  const footerY = h - pad;
+  const tilesBottom = footerY - footPx - gap * 1.5;
   const imgs = (await Promise.all(thumbs.map(loadImage))).filter((i): i is HTMLImageElement => !!i);
-  const thumbTop = titleY + titlePx * 1.15;
-  const gap = Math.round(w * 0.02);
+  const thumbTop = subY + gap * 1.5;
   const cols = Math.max(1, imgs.length);
   const tw = (w - 2 * pad - gap * (cols - 1)) / cols;
-  const th = variant === 'portrait' ? tw * 0.78 : Math.min(tw * 0.66, h * 0.3);
-  imgs.forEach((img, i) => drawCover(ctx, img, pad + i * (tw + gap), thumbTop, tw, th, 22));
-  const statsTop = thumbTop + (imgs.length ? th : 0) + gap * 1.5;
+  // tiles have a comfortable height; whatever is left goes to the thumbnails (they are the eye-catcher)
+  const tcols = portrait ? 2 : 4;
+  const rows = 4 / tcols;
+  const tileCap = Math.round(portrait ? h * 0.17 : h * 0.22);
+  const tilesSpace = rows * tileCap + gap * (rows - 1);
+  const thumbH = imgs.length
+    ? Math.round(
+        Math.min(portrait ? tw * 0.95 : h * 0.3, tilesBottom - thumbTop - gap * 1.5 - tilesSpace),
+      )
+    : 0;
+  imgs.forEach((img, i) => drawCover(ctx, img, pad + i * (tw + gap), thumbTop, tw, thumbH, 22));
+  const statsTop = thumbTop + thumbH + (imgs.length ? gap * 1.5 : 0);
 
-  // stat tiles: 2×2 (portrait) or 4×1 (landscape)
+  // stat tiles: 2×2 (portrait) or 4×1 (landscape), filling the space that is left
   const tiles: [string, string][] = [
     [`${stats.maxLeanDeg}°`, 'sharpest lean'],
     [`${stats.maxBrakeG.toFixed(2)} g`, 'hardest braking'],
     [`${stats.nCorners}`, `corner${stats.nCorners === 1 ? '' : 's'}`],
     [fmtDuration(stats.movieS), 'of pure riding'],
   ];
-  const tcols = variant === 'portrait' ? 2 : 4;
   const tileW = (w - 2 * pad - gap * (tcols - 1)) / tcols;
-  const tileH = variant === 'portrait' ? Math.round(h * 0.2) : Math.round(h * 0.26);
-  const inset = Math.round(tileH * 0.2);
-  // one font size for all big numbers: the largest that fits the widest one
-  let bigPx = Math.round(tileH * 0.4);
+  const tileH = Math.floor((tilesBottom - statsTop - gap * (rows - 1)) / rows);
+  const inset = Math.round(tileW * 0.09);
+  // one font size for all big numbers: the largest that fits the widest one and the tile height
+  let bigPx = Math.round(Math.min(tileH * 0.4, tileW * 0.3));
   ctx.font = `800 ${bigPx}px ${FONT}`;
   const widest = Math.max(...tiles.map(([big]) => ctx.measureText(big).width));
   if (widest > tileW - 2 * inset) bigPx = Math.floor((bigPx * (tileW - 2 * inset)) / widest);
+  const smallPx = Math.round(Math.max(14, Math.min(bigPx * 0.42, tileW * 0.09)));
   tiles.forEach(([big, small], i) => {
     const x = pad + (i % tcols) * (tileW + gap);
     const y = statsTop + Math.floor(i / tcols) * (tileH + gap);
     ctx.fillStyle = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
     ctx.beginPath();
-    ctx.roundRect(x, y, tileW, tileH, 22);
+    ctx.roundRect(x, y, tileW, tileH, Math.min(22, tileH * 0.16));
     ctx.fill();
+    // number + label as one block, centred vertically in the tile
+    const blockH = bigPx + smallPx * 1.6;
+    const top = y + (tileH - blockH) / 2;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = fg;
     ctx.font = `800 ${bigPx}px ${FONT}`;
-    ctx.fillText(big, x + inset, y + tileH * 0.56);
+    ctx.fillText(big, x + inset, top + bigPx * 0.82);
     ctx.fillStyle = muted;
-    ctx.font = `500 ${Math.round(tileH * 0.16)}px ${FONT}`;
-    ctx.fillText(small, x + inset, y + tileH * 0.8);
+    ctx.font = `500 ${smallPx}px ${FONT}`;
+    ctx.fillText(small, x + inset, top + bigPx + smallPx * 1.25);
   });
 
   // footer line: twistiest minute + made with
-  const footY = h - pad * 0.7;
   ctx.fillStyle = muted;
-  ctx.font = `500 ${Math.round(w * 0.022)}px ${FONT}`;
+  ctx.font = `500 ${footPx}px ${FONT}`;
+  ctx.textAlign = 'left';
   if (stats.twistyStem && stats.twistyPct) {
     ctx.fillText(
       `Twistiest minute at ${fmtTime(stats.twistyT)} · leaning ${stats.twistyPct}% of the time`,
       pad,
-      footY,
+      footerY,
     );
   }
   ctx.textAlign = 'right';
-  ctx.fillText('Made with ApexCut', w - pad, footY);
+  ctx.fillText('Made with ApexCut', w - pad, footerY);
   return c.toDataURL('image/png');
 }
