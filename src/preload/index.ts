@@ -57,6 +57,13 @@ const api: ApexcutApi = {
   },
   app: {
     version: () => invoke('app:version'),
+    report: () => invoke('app:report'),
+    log: (level, message) => ipcRenderer.send('app:log', level, message),
+    onFatal: (cb) => {
+      const handler = (_e: unknown, err: { message: string; stack?: string }): void => cb(err);
+      ipcRenderer.on('app:fatal', handler);
+      return () => ipcRenderer.removeListener('app:fatal', handler);
+    },
   },
 };
 

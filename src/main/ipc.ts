@@ -17,6 +17,7 @@ import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
 import { Library } from './services/library';
 import { Projects } from './services/projects';
+import { createReport } from './services/report';
 import { encoders } from './services/media';
 import { allowRoot, mediaUrl, registerResolver } from './services/protocol';
 import { paths, SettingsStore } from './services/store';
@@ -277,4 +278,14 @@ export function registerIpc(s: Services): void {
   });
   // unpackaged runs report Electron's own version; the package version is what the UI should show
   ipcMain.handle('app:version', () => (app.isPackaged ? app.getVersion() : pkg.version));
+  ipcMain.handle('app:report', async () => {
+    const file = await createReport(s.jobs.list());
+    shell.showItemInFolder(file);
+    return { file };
+  });
+  ipcMain.on('app:log', (_e, level: unknown, message: unknown) => {
+    const text = `[renderer] ${String(message).slice(0, 4000)}`;
+    if (level === 'error') log.error(text);
+    else log.warn(text);
+  });
 }

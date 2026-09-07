@@ -7,6 +7,7 @@ import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useSettingsStore } from '@renderer/stores/settings';
+import { friendlyError } from '@renderer/utils/errors';
 import { fmtDuration, fmtElapsed, shortName } from '@renderer/utils/format';
 
 const scope = defineModel<'all' | 'current'>('scope', { default: 'all' });
@@ -216,10 +217,13 @@ defineExpose({ format });
       </div>
     </div>
     <div v-else-if="job && job.status === 'error'" class="card border-play/40 bg-play/10 text-sm">
-      <b>That didn't work.</b> Please try again.
+      <b>{{ friendlyError(job.error).title }}.</b>
+      <span class="text-muted">{{ friendlyError(job.error).hint }}</span>
       <details class="mt-1.5">
-        <summary class="text-xs text-muted">details</summary>
-        <pre class="text-[11px] whitespace-pre-wrap">{{ job.error }}</pre>
+        <summary class="cursor-pointer text-xs text-muted">Details</summary>
+        <pre class="max-h-[160px] overflow-auto text-[11px] whitespace-pre-wrap">{{
+          job.error
+        }}</pre>
       </details>
     </div>
     <div v-else-if="job && job.status === 'cancelled'" class="text-xs text-muted">

@@ -31,6 +31,17 @@ log.initialize();
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
+// main-process failures: log, then let the window show the error card instead of dying silently
+const tellRenderer = (kind: string, e: unknown): void => {
+  const err = e instanceof Error ? e : new Error(String(e));
+  log.error(`${kind}:`, err.stack ?? err.message);
+  for (const w of BrowserWindow.getAllWindows()) {
+    w.webContents.send('app:fatal', { message: err.message, stack: err.stack });
+  }
+};
+process.on('uncaughtException', (e) => tellRenderer('uncaught exception', e));
+process.on('unhandledRejection', (e) => tellRenderer('unhandled rejection', e));
+
 registerScheme();
 
 function createWindow(): void {

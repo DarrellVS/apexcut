@@ -209,5 +209,11 @@ export interface ApexcutApi {
   };
   app: {
     version(): Promise<string>;
+    /** zip of logs + project list + settings + app info in Documents; returns its path */
+    report(): Promise<{ file: string }>;
+    /** renderer warnings/errors also land in main.log */
+    log(level: 'warn' | 'error', message: string): void;
+    /** main-process crash that the renderer should show */
+    onFatal(cb: (err: { message: string; stack?: string }) => void): () => void;
   };
 }

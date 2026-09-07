@@ -11,7 +11,9 @@ import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUiStore } from '@renderer/stores/ui';
 import EmptyState from '@renderer/components/EmptyState.vue';
+import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
+import { friendlyError } from '@renderer/utils/errors';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
 import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
@@ -117,7 +119,10 @@ onMounted(async () => {
         stage.value?.startPreview();
       }
     }
-    if (job.kind === 'analyze' && job.status === 'error') toast(job.error ?? 'Scanning failed');
+    if (job.kind === 'analyze' && job.status === 'error') {
+      const f = friendlyError(job.error);
+      toast(`${f.title}. ${f.hint}`, 8000);
+    }
   });
   window.addEventListener('keydown', onKey);
   setInterval(() => {
@@ -225,6 +230,7 @@ function onKey(e: KeyboardEvent): void {
       <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />
     </template>
     <SettingsModal />
+    <ErrorScreen />
     <ToastHost />
   </div>
 </template>

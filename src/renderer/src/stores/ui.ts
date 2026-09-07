@@ -6,9 +6,16 @@ import { ref } from 'vue';
 
 export type SettingsSection = 'appearance' | 'output' | 'about' | 'scoring';
 
+export interface FatalError {
+  message: string;
+  stack?: string;
+}
+
 export const useUiStore = defineStore('ui', () => {
   const settingsOpen = ref(false);
   const settingsSection = ref<SettingsSection>('appearance');
+  /** an error we could not recover from; shows the full-screen error card */
+  const fatal = ref<FatalError | null>(null);
   /** element that had focus before the modal opened; focus goes back there on close */
   let opener: HTMLElement | null = null;
 
@@ -26,5 +33,5 @@ export const useUiStore = defineStore('ui', () => {
     settingsOpen.value ? closeSettings() : openSettings();
   }
 
-  return { settingsOpen, settingsSection, openSettings, closeSettings, toggleSettings };
+  return { settingsOpen, settingsSection, fatal, openSettings, closeSettings, toggleSettings };
 });
