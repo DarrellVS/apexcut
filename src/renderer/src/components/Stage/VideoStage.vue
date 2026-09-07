@@ -271,6 +271,7 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
       <button
         class="rounded-lg px-2.5 py-1.5 hover:bg-white/10"
         title="Previous part ["
+        aria-label="Previous part"
         @click="seekPart(-1)"
       >
         <PhSkipBack :size="18" weight="fill" />
@@ -278,6 +279,7 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
       <button
         class="min-w-11 rounded-[10px] bg-white px-2.5 py-1.5 text-black"
         title="Play / pause (space)"
+        :aria-label="editor.playing ? 'Pause' : 'Play'"
         @click="togglePlay"
       >
         <PhPause v-if="editor.playing" :size="18" weight="fill" class="mx-auto" />
@@ -286,6 +288,7 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
       <button
         class="rounded-lg px-2.5 py-1.5 hover:bg-white/10"
         title="Next part ]"
+        aria-label="Next part"
         @click="seekPart(1)"
       >
         <PhSkipForward :size="18" weight="fill" />

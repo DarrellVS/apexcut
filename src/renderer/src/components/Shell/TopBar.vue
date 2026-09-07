@@ -3,7 +3,7 @@
  * Top bar: brand, project name (menu: all projects / rename / export), open video + save state,
  * the active part (hover / selection / playing), undo/redo and "Make my movie ▾".
  */
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   PhArrowCounterClockwise,
   PhArrowClockwise,
@@ -60,6 +60,12 @@ function closeMenus(): void {
   menuOpen.value = false;
   projectMenu.value = false;
 }
+// Esc closes an open menu wherever the focus is
+function onKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape' && (menuOpen.value || projectMenu.value)) closeMenus();
+}
+onMounted(() => window.addEventListener('keydown', onKey));
+onUnmounted(() => window.removeEventListener('keydown', onKey));
 async function startRename(): Promise<void> {
   projectMenu.value = false;
   renameValue.value = projects.active?.name ?? '';
@@ -179,6 +185,7 @@ async function exportProject(): Promise<void> {
     <button
       class="btn btn-ghost px-2"
       title="Undo (Ctrl+Z)"
+      aria-label="Undo"
       :disabled="!editor.history.length"
       @click="editor.undo()"
     >
@@ -187,6 +194,7 @@ async function exportProject(): Promise<void> {
     <button
       class="btn btn-ghost px-2"
       title="Redo (Ctrl+Y)"
+      aria-label="Redo"
       :disabled="!editor.future.length"
       @click="editor.redo()"
     >
@@ -213,6 +221,8 @@ async function exportProject(): Promise<void> {
         class="btn btn-pri rounded-l-none border-l border-black/20 px-2.5"
         :disabled="!canMake"
         title="More options"
+        aria-label="More export options"
+        :aria-expanded="menuOpen"
         @click.stop="
           menuOpen = !menuOpen;
           projectMenu = false;

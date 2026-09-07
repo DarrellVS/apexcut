@@ -219,6 +219,40 @@ function laneDown(e: MouseEvent): void {
 function blockDown(e: MouseEvent, p: Part): void {
   editor.select(p.id, e.shiftKey || e.ctrlKey);
 }
+/** Keyboard on a focused block: arrows move to the neighbour, Enter plays, Space toggles, Delete removes. */
+function blockKey(e: KeyboardEvent, p: Part): void {
+  const sorted = [...editor.parts].sort((a, b) => a.start_s - b.start_s);
+  const i = sorted.findIndex((x) => x.id === p.id);
+  const focusPart = (q: Part | undefined): void => {
+    if (!q) return;
+    editor.select(q.id);
+    (lane.value?.querySelector(`[data-part="${q.id}"]`) as HTMLElement | null)?.focus();
+  };
+  switch (e.key) {
+    case 'ArrowRight':
+      e.preventDefault();
+      focusPart(sorted[i + 1]);
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      focusPart(sorted[i - 1]);
+      break;
+    case 'Enter':
+      e.preventDefault();
+      emit('play', p.start_s);
+      break;
+    case ' ':
+      e.preventDefault();
+      editor.setEnabled([p], !p.enabled);
+      break;
+    case 'Delete':
+    case 'Backspace':
+      e.preventDefault();
+      editor.remove([p]);
+      toast('Part deleted — Ctrl+Z brings it back');
+      break;
+  }
+}
 function dragEdge(_e: MouseEvent, p: Part, edge: 'start_s' | 'end_s'): void {
   editor.select(p.id);
   editor.snapshot();
@@ -350,8 +384,15 @@ const zoomInput = computed({
           width: `${Math.max(0.2, view.xPct(p.end_s) - view.xPct(p.start_s))}%`,
         }"
         data-keep-selection
+        :data-part="p.id"
+        tabindex="0"
+        role="button"
+        :aria-label="`${REASON_LABEL[reasonOf(p)]}, ${fmtTime(p.start_s)} to ${fmtTime(p.end_s)}${p.enabled ? '' : ', left out'}`"
+        :aria-pressed="editor.selection.includes(p.id)"
         @mousedown.stop="blockDown($event, p)"
         @dblclick="emit('play', p.start_s)"
+        @focus="editor.select(p.id)"
+        @keydown="blockKey($event, p)"
         @mouseenter="editor.hoverId = p.id"
         @mouseleave="editor.hoverId = null"
       >
@@ -465,10 +506,13 @@ const zoomInput = computed({
         class="w-[120px]"
       />
       <button class="btn btn-mini" @click="view.fit()">Fit</button>
-      <span
+      <button
+        class="rounded px-1"
         title="click a block = select · shift+click = select more · drag the edges · scroll = zoom · shift+scroll = pan"
-        >ⓘ</span
+        aria-label="Timeline help: click a block to select, shift-click to select more, drag the edges, scroll to zoom, shift-scroll to pan"
       >
+        ⓘ
+      </button>
     </div>
   </footer>
 </template>
