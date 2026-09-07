@@ -41,6 +41,17 @@ Data colours are semantic and identical in meaning across themes. Primary button
 gradient; everything else is neutral. Theme: `data-theme="light|dark"` on `<html>`, "System" follows
 `prefers-color-scheme`; stored in settings.
 
+## Projects screen
+
+Shown before the editor (and via the brand button / project menu in the top bar). Header: logo, "Your
+projects" + one-line explanation, `Import project…` (neutral) and `New project` (primary). Cards in an
+auto-fill grid (min 280 px): 16:9 thumbnail of the first scanned video, name, `N videos · N parts · length`,
+last edit ("today 14:27", "yesterday", "Mon 7 Sep"). The open project has a `Open` pill and a selection
+ring. A `···` button on hover opens Rename / Export project… / Delete; delete confirms inline on the card
+("Your videos and their scans stay; only this project's picks go."). New project = an inline card with a
+name field. The top bar reads `ApexCut / <project> ▾ · Video 34 · Saved`; the project menu offers All
+projects / Rename (inline) / Export project….
+
 ## Type & shape
 
 Inter (self-hosted), 14 px base, 12 px timeline/tables, 11 px uppercase section labels with 0.06em
