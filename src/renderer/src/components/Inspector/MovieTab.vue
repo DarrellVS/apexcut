@@ -13,6 +13,7 @@ import { pickByLength } from '@core/pick';
 import type { Part } from '@core/types';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import { renderOverlaySprites } from '@renderer/utils/overlaySprites';
+import { renderRideCard } from '@renderer/utils/rideCard';
 import {
   DEFAULT_MUSIC,
   FORMAT_SPEC,
@@ -216,6 +217,30 @@ function exportSize(): { w: number; h: number } {
   const w = clip?.width ?? 3840;
   const h = clip?.height ?? 3840;
   return spec ? { w: Math.min(spec.w, w), h: Math.min(spec.h, h) } : { w, h };
+}
+
+// ---- ride card: the numbers of the project as a shareable picture (portrait + landscape)
+const cardBusy = ref(false);
+async function makeRideCard(): Promise<void> {
+  if (cardBusy.value) return;
+  cardBusy.value = true;
+  try {
+    const stats = await window.apexcut.projects.rideStats();
+    const thumbs = await Promise.all(
+      stats.top.map((t) => window.apexcut.analysis.frame(t.stem, t.tS, 960).catch(() => '')),
+    );
+    const dark = document.documentElement.dataset.theme !== 'light';
+    const base = `${stats.name} - ride card`;
+    const portrait = await renderRideCard(stats, thumbs, 'portrait', dark);
+    const landscape = await renderRideCard(stats, thumbs, 'landscape', dark);
+    await window.apexcut.app.saveImage(landscape, `${base} (wide)`);
+    const r = await window.apexcut.app.saveImage(portrait, base);
+    toast(`Ride card copied to the clipboard and saved next to your movies: ${r.file}`, 8000);
+  } catch (e) {
+    toast(`Could not make the ride card: ${(e as Error).message}`, 6000);
+  } finally {
+    cardBusy.value = false;
+  }
 }
 
 /** how parts are joined: per project; crossfades overlap ½ s, so the movie is that much shorter */
@@ -562,6 +587,24 @@ defineExpose({ format });
     </div>
     <div v-else-if="job && job.status === 'cancelled'" class="text-xs text-muted">
       Export cancelled.
+    </div>
+    <div v-if="scope === 'all'" class="card">
+      <div class="flex items-center gap-3">
+        <div class="min-w-0 flex-1">
+          <b class="block text-sm text-fg">Ride card</b>
+          <span class="text-xs text-muted">
+            A picture with the numbers of this ride and its best moments — for Instagram or the
+            group chat. Saved next to your movies and copied to the clipboard.
+          </span>
+        </div>
+        <button
+          class="btn btn-mini"
+          :disabled="cardBusy || !library.analyzed.length"
+          @click="makeRideCard"
+        >
+          {{ cardBusy ? 'Making…' : 'Make ride card' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>

@@ -20,6 +20,7 @@ const api: ApexcutApi = {
     setTransition: (transition) => invoke('projects:setTransition', transition),
     setMusic: (music) => invoke('projects:setMusic', music),
     setOverlay: (overlay) => invoke('projects:setOverlay', overlay),
+    rideStats: () => invoke('projects:rideStats'),
   },
   library: {
     list: () => invoke('library:list'),
@@ -44,6 +45,7 @@ const api: ApexcutApi = {
     timeline: (stem) => invoke('analysis:timeline', stem),
     saveParts: (stem, parts) => invoke('analysis:saveParts', stem, parts),
     filmstrip: (stem) => invoke('analysis:filmstrip', stem),
+    frame: (stem, tS, width) => invoke('analysis:frame', stem, tS, width),
   },
   exporter: {
     start: (req) => invoke('export:start', req),
@@ -90,6 +92,7 @@ const api: ApexcutApi = {
       ipcRenderer.on('app:fatal', handler);
       return () => ipcRenderer.removeListener('app:fatal', handler);
     },
+    saveImage: (dataUrl, name) => invoke('app:saveImage', dataUrl, name),
   },
 };
 

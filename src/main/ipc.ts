@@ -1,8 +1,8 @@
 /**
  * IPC handlers: thin — validate input, call a service, return. Long work becomes a job.
  */
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { existsSync, statSync, writeFileSync } from 'node:fs';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } from 'electron';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ import {
   TRANSITIONS,
   type JobState,
   type MusicTrack,
+  type RideStats,
   type Settings,
 } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
@@ -29,7 +30,7 @@ import { REASON_LABEL, reasonOf } from '@core/selection';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { probeDuration } from './services/media';
-import { FilmstripAction } from './actions/thumbs';
+import { FilmstripAction, ThumbnailAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
 import { Library } from './services/library';
@@ -439,6 +440,100 @@ export function registerIpc(s: Services): void {
   });
   // unpackaged runs report Electron's own version; the package version is what the UI should show
   ipcMain.handle('app:version', () => (app.isPackaged ? app.getVersion() : pkg.version));
+  // ---- ride card: the numbers of the whole project, frames for its thumbnails, saving the PNG
+  ipcMain.handle('projects:rideStats', (): RideStats => {
+    const clips = s.projects.clipInfos().filter((c) => c.analyzed);
+    let maxLean = 0;
+    let maxBrake = 0;
+    let best = 0;
+    let twistyStem: string | null = null;
+    let twistyT = 0;
+    let nParts = 0;
+    let nCorners = 0;
+    let movieS = 0;
+    const top: RideStats['top'] = [];
+    for (const c of clips) {
+      const tl = s.analysis.timeline(c.stem);
+      const lean = tl.data.leanDeg ?? [];
+      const aLon = tl.data.aLonG ?? [];
+      const t = tl.data.t ?? [];
+      let run = 0;
+      const win = 600; // 60 s at 10 Hz
+      for (let i = 0; i < t.length; i++) {
+        const l = Math.abs(lean[i] ?? 0);
+        if (l > maxLean) maxLean = l;
+        const b = -(aLon[i] ?? 0);
+        if (b > maxBrake) maxBrake = b;
+        run += l > 10 ? 1 : 0;
+        if (i >= win) run -= Math.abs(lean[i - win] ?? 0) > 10 ? 1 : 0;
+        if (run > best) {
+          best = run;
+          twistyStem = c.stem;
+          twistyT = Math.max(0, t[i] - 60);
+        }
+      }
+      for (const p of tl.parts.filter((p) => p.enabled)) {
+        nParts++;
+        if (p.reden !== 'accel/rem') nCorners++;
+        movieS += p.end_s - p.start_s;
+        top.push({
+          stem: c.stem,
+          tS: p.core_start_s ?? (p.start_s + p.end_s) / 2,
+          reden: p.reden,
+          maxLeanDeg: p.max_lean_deg ?? 0,
+          score: p.score ?? 0,
+        } as RideStats['top'][number] & { score: number });
+      }
+    }
+    top.sort((a, b) => (b as { score: number }).score - (a as { score: number }).score);
+    const first = [...clips].sort((a, b) => a.stem.localeCompare(b.stem))[0];
+    const m = first && /_(\d{4})(\d{2})(\d{2})\d{6}_/.exec(first.stem);
+    return {
+      name: s.projects.active.name,
+      day: m ? `${m[1]}-${m[2]}-${m[3]}` : null,
+      nVideos: clips.length,
+      nParts,
+      nCorners,
+      movieS: Math.round(movieS),
+      maxLeanDeg: Math.round(maxLean),
+      maxBrakeG: Math.round(maxBrake * 100) / 100,
+      twistyStem,
+      twistyT,
+      twistyPct: Math.round((best / 600) * 100),
+      top: top
+        .slice(0, 3)
+        .map(({ stem, tS, reden, maxLeanDeg }) => ({ stem, tS, reden, maxLeanDeg })),
+    };
+  });
+  ipcMain.handle('analysis:frame', async (_e, stemRaw: unknown, tRaw: unknown, wRaw: unknown) => {
+    const stem = z.string().parse(stemRaw);
+    const tS = z.number().nonnegative().parse(tRaw);
+    const width = z
+      .number()
+      .int()
+      .min(64)
+      .max(1920)
+      .default(640)
+      .parse(wRaw ?? undefined);
+    const file = await new ThumbnailAction().execute(
+      stem,
+      s.library.proxyOf(stem),
+      tS,
+      width,
+      `frame_${Math.round(tS * 10)}_${width}.jpg`,
+    );
+    return `data:image/jpeg;base64,${readFileSync(file).toString('base64')}`;
+  });
+  ipcMain.handle('app:saveImage', (_e, dataRaw: unknown, nameRaw: unknown) => {
+    const dataUrl = z.string().startsWith('data:image/png;base64,').parse(dataRaw);
+    const name = sanitize(z.string().max(80).parse(nameRaw));
+    const buf = Buffer.from(dataUrl.split(',')[1] ?? '', 'base64');
+    const file = join(s.settings.outputDir('movies'), `${name}.png`);
+    writeFileSync(file, buf);
+    clipboard.writeImage(nativeImage.createFromBuffer(buf));
+    log.info('ride card saved:', file);
+    return { file };
+  });
   ipcMain.handle('app:report', async () => {
     const file = await createReport(s.jobs.list());
     shell.showItemInFolder(file);

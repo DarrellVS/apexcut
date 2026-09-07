@@ -89,6 +89,26 @@ export const overlaySpecSchema = z.object({
 });
 export type OverlaySpecDto = z.infer<typeof overlaySpecSchema>;
 
+/** The numbers of a whole project (all its videos), for the ride card. */
+export interface RideStats {
+  name: string;
+  /** "YYYY-MM-DD" of the first video, or null */
+  day: string | null;
+  nVideos: number;
+  nParts: number;
+  nCorners: number;
+  /** seconds of enabled parts */
+  movieS: number;
+  maxLeanDeg: number;
+  maxBrakeG: number;
+  /** start of the 60 s window with the most leaning, and the share of that minute spent leaning */
+  twistyStem: string | null;
+  twistyT: number;
+  twistyPct: number;
+  /** the three best parts: video + a moment inside them, for thumbnails */
+  top: { stem: string; tS: number; reden: string; maxLeanDeg: number }[];
+}
+
 /** A project: a name plus an ordered set of videos with their own selections. */
 export interface ProjectInfo {
   id: string;
@@ -280,6 +300,8 @@ export interface ApexcutApi {
     setMusic(music: MusicSettings): Promise<void>;
     /** the open project's telemetry overlay (null = off) */
     setOverlay(overlay: OverlaySpecDto | null): Promise<void>;
+    /** the numbers of the open project for the ride card */
+    rideStats(): Promise<RideStats>;
     /**
      * Add videos in groups: `name` null = into the open project, otherwise a new project with that
      * name. Returns the stems added, which of them still need a scan, and the first project created.
@@ -327,6 +349,8 @@ export interface ApexcutApi {
     timeline(stem: string): Promise<TimelinePayload>;
     saveParts(stem: string, parts: Part[]): Promise<void>;
     filmstrip(stem: string): Promise<{ url: string; step: number; n: number; size: number }>;
+    /** one frame of a video as a JPEG data URL (for the ride card) */
+    frame(stem: string, tS: number, width?: number): Promise<string>;
   };
   exporter: {
     start(req: ExportRequest): Promise<string>;
@@ -368,5 +392,7 @@ export interface ApexcutApi {
     log(level: 'warn' | 'error', message: string): void;
     /** main-process crash that the renderer should show */
     onFatal(cb: (err: { message: string; stack?: string }) => void): () => void;
+    /** save a PNG data URL into the output folder and put it on the clipboard; returns the file */
+    saveImage(dataUrl: string, name: string): Promise<{ file: string }>;
   };
 }
