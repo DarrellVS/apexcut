@@ -201,7 +201,12 @@ async function exportProject(): Promise<void> {
       <PhGearSix :size="18" />
     </button>
     <div class="relative flex">
-      <button class="btn btn-pri rounded-r-none" :disabled="!canMake" @click="choose('all')">
+      <button
+        class="btn btn-pri rounded-r-none"
+        :disabled="!canMake"
+        data-tour="make"
+        @click="choose('all')"
+      >
         Make my movie
       </button>
       <button

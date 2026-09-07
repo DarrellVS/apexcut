@@ -326,6 +326,7 @@ const zoomInput = computed({
     <div
       ref="lane"
       class="relative flex-1 border-t border-line"
+      data-tour="parts"
       @mousedown.self="laneDown"
       @wheel="view.onWheel($event, lane!)"
     >

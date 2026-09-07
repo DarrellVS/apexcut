@@ -4,7 +4,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-export type SettingsSection = 'appearance' | 'output' | 'storage' | 'about' | 'scoring';
+export type SettingsSection =
+  'appearance' | 'output' | 'storage' | 'about' | 'onboarding' | 'scoring';
 
 export interface FatalError {
   message: string;
@@ -16,6 +17,8 @@ export const useUiStore = defineStore('ui', () => {
   const settingsSection = ref<SettingsSection>('appearance');
   /** an error we could not recover from; shows the full-screen error card */
   const fatal = ref<FatalError | null>(null);
+  /** the three-step first-run tour is showing */
+  const tourActive = ref(false);
   /** element that had focus before the modal opened; focus goes back there on close */
   let opener: HTMLElement | null = null;
 
@@ -33,5 +36,13 @@ export const useUiStore = defineStore('ui', () => {
     settingsOpen.value ? closeSettings() : openSettings();
   }
 
-  return { settingsOpen, settingsSection, fatal, openSettings, closeSettings, toggleSettings };
+  return {
+    settingsOpen,
+    settingsSection,
+    fatal,
+    tourActive,
+    openSettings,
+    closeSettings,
+    toggleSettings,
+  };
 });

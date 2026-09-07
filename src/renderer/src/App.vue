@@ -14,6 +14,7 @@ import { useUpdaterStore } from '@renderer/stores/updater';
 import type { ImportGroup } from '@shared/ipc';
 import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
 import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
+import TourOverlay from '@renderer/components/Onboarding/TourOverlay.vue';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
@@ -167,6 +168,15 @@ watch(
   (s) => s && s !== editor.stem && openClip(s),
 );
 
+// the quick tour: once, the first time the editor is on screen with a scanned video, never during an export
+watch(
+  () => phase.value === 'editor' && !!editor.stem && settings.settings?.tourSeen === false,
+  (due) => {
+    if (due && !jobs.exporting && !ui.tourActive) setTimeout(() => (ui.tourActive = true), 800);
+  },
+  { immediate: true },
+);
+
 function onKey(e: KeyboardEvent): void {
   const mod = e.ctrlKey || e.metaKey;
   if (mod && e.key === ',') {
@@ -268,6 +278,7 @@ function onKey(e: KeyboardEvent): void {
       @cancel="pendingGroups = null"
     />
     <SettingsModal />
+    <TourOverlay />
     <ErrorScreen />
     <ToastHost />
   </div>

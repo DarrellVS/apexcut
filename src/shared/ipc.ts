@@ -150,6 +150,8 @@ export const settingsSchema = z.object({
   lastFormat: z.enum(FORMATS).default('16x9'),
   lastFramePos: z.number().min(0).max(1).default(0.5),
   lastName: z.string().default('my-ride'),
+  /** the three-step tour has been shown (or skipped) */
+  tourSeen: z.boolean().default(false),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 

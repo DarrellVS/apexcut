@@ -10,6 +10,7 @@ import { useSettingsStore } from '@renderer/stores/settings';
 import AppearanceSection from './AppearanceSection.vue';
 import OutputSection from './OutputSection.vue';
 import StorageSection from './StorageSection.vue';
+import OnboardingSection from './OnboardingSection.vue';
 import AboutSection from './AboutSection.vue';
 import ScoringSection from './ScoringSection.vue';
 
@@ -32,6 +33,7 @@ const NAV: NavGroup[] = [
       { id: 'appearance', label: 'Appearance' },
       { id: 'output', label: 'Output folder' },
       { id: 'storage', label: 'Storage' },
+      { id: 'onboarding', label: 'Quick tour' },
       { id: 'about', label: 'Updates & about' },
     ],
   },
@@ -135,6 +137,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             <AppearanceSection v-if="ui.settingsSection === 'appearance'" />
             <OutputSection v-else-if="ui.settingsSection === 'output'" />
             <StorageSection v-else-if="ui.settingsSection === 'storage'" />
+            <OnboardingSection v-else-if="ui.settingsSection === 'onboarding'" />
             <AboutSection v-else-if="ui.settingsSection === 'about'" />
             <ScoringSection v-else-if="ui.settingsSection === 'scoring'" />
           </div>

@@ -298,6 +298,7 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
         class="rounded-lg px-2.5 py-1.5 text-sm hover:bg-white/10"
         :class="{ 'bg-white/15': previewOn }"
         title="Play only the selected parts back to back"
+        data-tour="preview"
         @click="togglePreview"
       >
         {{ previewOn ? '● Preview on' : 'Preview' }}
