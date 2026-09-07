@@ -170,6 +170,28 @@ onMounted(() => {
   if (src.value && video.value) video.value.src = src.value;
 });
 
+// smooth clock: 'timeupdate' fires only ~4×/s, so follow currentTime per animation frame while playing
+let raf = 0;
+function tick(): void {
+  const v = video.value;
+  if (!v || v.paused) {
+    raf = 0;
+    return;
+  }
+  editor.time = v.currentTime;
+  raf = requestAnimationFrame(tick);
+}
+function onPlay(): void {
+  editor.playing = true;
+  if (!raf) raf = requestAnimationFrame(tick);
+}
+function onPause(): void {
+  editor.playing = false;
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+  onTime();
+}
+
 defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
 </script>
 
@@ -187,8 +209,8 @@ defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
         onTime();
         measure();
       "
-      @play="editor.playing = true"
-      @pause="editor.playing = false"
+      @play="onPlay"
+      @pause="onPause"
       @click="togglePlay"
     />
     <Transition
