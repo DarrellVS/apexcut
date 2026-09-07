@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Packaging guard: every file unpacked from the asar (worker threads run from app.asar.unpacked with
+ * Packaging guard, run on dist/win-unpacked before publishing: every file unpacked from the asar (worker threads run from app.asar.unpacked with
  * plain Node resolution) must find its relative requires next to it. Caught the 0.4.9 bug where the
  * analysis worker required ../chunks/score-*.js that only existed inside app.asar.
  *   node scripts/check-package.mjs [dist/win-unpacked]
@@ -29,5 +29,10 @@ for (const file of files) {
     }
   }
 }
-console.log(`checked ${files.length} unpacked main files, ${missing} broken require(s)`);
+// the auto-updater reads this at start-up; a --dir or --prepackaged build leaves it out (0.4.12 could not update)
+if (!existsSync(join(root, 'resources', 'app-update.yml'))) {
+  console.error('resources/app-update.yml missing: the installed app would never find updates');
+  missing++;
+}
+console.log(`checked ${files.length} unpacked main files, ${missing} problem(s)`);
 process.exit(missing ? 1 : 0);

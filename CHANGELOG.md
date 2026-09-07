@@ -3,6 +3,15 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.13
+
+- Fixed: 0.4.12 could not find updates (a file the updater needs was left out of the package). If you
+  are on 0.4.12, install this version once by hand; updates work again from here.
+- Fixed: “Remove from this project” and “Scan again” on a video that was not scanned yet acted on the
+  wrong video or did nothing. Unscanned videos now offer “Scan now”.
+- Videos whose scan never finished (for example after the 0.4.9 scan failure) are scanned when the
+  project opens.
+
 ## 0.4.12
 
 (0.4.11 was tagged but never built.)

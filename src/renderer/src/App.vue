@@ -68,6 +68,9 @@ async function openProject(id: string): Promise<void> {
   const remembered = localStorage.getItem(videoKey());
   const first = library.analyzed.find((c) => c.stem === remembered) ?? library.analyzed[0];
   if (first) await openClip(first.stem, Number(localStorage.getItem(timeKey())) || 0);
+  // videos whose scan never ran or failed (e.g. the app was closed mid-scan) get scanned now
+  const todo = library.clips.filter((c) => !c.analyzed && c.exists).map((c) => c.stem);
+  if (todo.length && !jobs.analyzeJob) await window.apexcut.analysis.run(todo);
 }
 
 async function goHome(): Promise<void> {

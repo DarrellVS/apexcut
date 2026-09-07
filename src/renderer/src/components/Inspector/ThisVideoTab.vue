@@ -12,15 +12,26 @@ const library = useLibraryStore();
 const ui = useUiStore();
 const { relink } = useRelink();
 
+// the selected video, scanned or not (editor.stem is only set for scanned ones)
+const stem = (): string | null => library.currentClip?.stem ?? editor.stem;
+
 async function rescan(): Promise<void> {
-  if (!editor.stem) return;
-  await window.apexcut.analysis.run([editor.stem]);
-  toast('Scanning again…');
+  const s = stem();
+  if (!s) return;
+  await window.apexcut.analysis.run([s]);
+  toast(library.currentClip?.analyzed ? 'Scanning again…' : 'Scanning…');
 }
 async function exportEdl(): Promise<void> {
-  if (!editor.stem) return;
-  const r = await window.apexcut.exporter.edl(editor.stem);
+  const s = stem();
+  if (!s) return;
+  const r = await window.apexcut.exporter.edl(s);
   toast(`EDL saved: ${r.file}`, 5000);
+}
+async function remove(): Promise<void> {
+  const s = stem();
+  if (!s) return;
+  await library.remove(s);
+  toast(`${shortName(s)} removed from this project`);
 }
 </script>
 
@@ -54,8 +65,10 @@ async function exportEdl(): Promise<void> {
     </div>
     <div class="card flex flex-col gap-1.5">
       <h4 class="label-caps m-0 mb-1">Actions</h4>
-      <button class="btn w-full text-left" @click="rescan">Scan again</button>
-      <button class="btn w-full text-left" @click="exportEdl">
+      <button class="btn w-full text-left" @click="rescan">
+        {{ library.currentClip.analyzed ? 'Scan again' : 'Scan now' }}
+      </button>
+      <button v-if="library.currentClip.analyzed" class="btn w-full text-left" @click="exportEdl">
         Export for DaVinci Resolve / Premiere
       </button>
       <button class="btn w-full text-left" @click="ui.openSettings('scoring')">
@@ -66,7 +79,7 @@ async function exportEdl(): Promise<void> {
       <button
         class="btn btn-mini text-play"
         title="The video and its scan stay available for other projects"
-        @click="library.remove(editor.stem!)"
+        @click="remove"
       >
         Remove from this project
       </button>
