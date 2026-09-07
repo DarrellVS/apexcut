@@ -19,6 +19,7 @@ import {
   TRANSITIONS,
   type JobState,
   type MusicTrack,
+  type Settings,
 } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
 import { probeDuration } from './services/media';
@@ -366,9 +367,14 @@ export function registerIpc(s: Services): void {
 
   // ---- settings / shell / app
   ipcMain.handle('settings:get', () => s.settings.get());
-  ipcMain.handle('settings:set', (_e, patch: unknown) =>
-    s.settings.set(settingsSchema.partial().parse(patch)),
-  );
+  ipcMain.handle('settings:set', (_e, patch: unknown) => {
+    // `.partial()` still fills defaults for absent keys, which would reset every other setting
+    // (the quick tour came back after changing the theme) — keep only the keys that were sent
+    const raw = z.record(z.string(), z.unknown()).parse(patch);
+    const parsed = settingsSchema.partial().parse(raw) as Record<string, unknown>;
+    const clean = Object.fromEntries(Object.entries(parsed).filter(([k]) => k in raw));
+    return s.settings.set(clean as Partial<Settings>);
+  });
   ipcMain.handle('settings:encoders', () => encoders());
   ipcMain.handle('settings:pickOutputDir', async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;

@@ -49,6 +49,10 @@ src/
    cuts the middles losslessly at those keyframes (`TrimCopyAction`), builds one `acrossfade` audio
    track (`AudioCrossfadeAction`) and muxes. Square with dip/crossfade is re-encoded under the same
    quality rules (10-bit, CQ 18, bitrate cap) — a copy/encode mix cannot be concatenated safely.
+   Then, in `finish()`: title/end cards (`CardAction`, ffmpeg gradients + drawtext, encoded like the
+   parts, concatenated around the movie) and the music mix (`MusicMixAction`: songs trimmed, faded and
+   concatenated, cut at the movie end, laid over the original audio with `amix`; video stream copied).
+   Songs are referenced by path and served to the player through `apexcut://media/music/<base64url>`.
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 

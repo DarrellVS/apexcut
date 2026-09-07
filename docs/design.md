@@ -68,6 +68,14 @@ into a collapsed “Archived · n” section at the bottom.
   Documents), Continue anyway.
 - **Quick tour**: three steps with a spotlight (a rounded hole in a 60 % black overlay) on the parts lane,
   Preview and Make my movie; a 340 px card that clamps to the window. Shown once, replayable from Settings.
+- **Music lane**: under the parts lane, in movie time (all enabled parts back to back): songs as teal
+  blocks laid end to end with trim handles, a dashed line where the movie ends, a floating toolbar for
+  the selected song (volume, fade in/out, earlier/later, remove), and Music / Ride sound sliders in the
+  lane header. Missing files show dashed in `--play`. Preview plays the song that covers the playhead
+  and ducks the ride sound to the chosen level.
+- **Movie tab**: target length slider with “Pick the best parts” (stars and own parts always stay),
+  per-video distribution, transition segment (Crossfade / Cut / Dip to black) with a plain-words hint,
+  title card and end card toggles, “Only the starred parts”.
 - **Focus**: every interactive element shows a 2 px `--sel` ring for keyboard focus only; timeline blocks
   are focusable (arrows move, Enter plays, Space toggles, Delete removes). `prefers-reduced-motion` turns
   transitions off.

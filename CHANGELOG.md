@@ -3,6 +3,21 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.3.0 — Better movies
+
+- **Target length**: “How long should it be?” — pick the best parts across all videos for a 2-, 3- or
+  10-minute movie. Stars and your own parts always stay in.
+- **Transitions** between parts: crossfade (default), cut or dip to black, per project.
+- **Title card and end card**: the project name with the date and the numbers of the ride, and a
+  “Made with ApexCut” card, in the movie's own format and quality.
+- **Music lane**: drop songs under the movie. They play back to back; trim each, set its volume and
+  fades, and choose how much of the ride sound stays. Preview plays the music in sync.
+- **Stars**: mark favourite parts (F); export only the starred ones.
+- **Keyboard trimming**: J/K/L, frame steps with , and ., I/O set the edges of the selected part,
+  Shift+I/O trim to where the action really is. Full list under Settings → Shortcuts or `?`.
+- **Snapping** while dragging edges (Settings → Editing, off by default; hold Alt to invert).
+- Fixed: changing one setting (for example the theme) reset the others and brought the quick tour back.
+
 ## 0.2.0 — Trust
 
 - **Projects**: one project per ride, each with its own videos and picks. A video can be in several
