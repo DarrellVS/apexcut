@@ -66,7 +66,7 @@ function choose(scope: 'all' | 'current'): void {
           class="inline-block max-w-full truncate text-[15px]"
         >
           <b>{{ REASON_LABEL[reasonOf(editor.activePart)] }}</b>
-          <span class="text-muted"> {{ why(editor.activePart) }}</span>
+          <span class="ml-1.5 text-muted">{{ why(editor.activePart) }}</span>
         </span>
         <span v-else class="text-xs text-muted">{{ summary }}</span>
       </Transition>
