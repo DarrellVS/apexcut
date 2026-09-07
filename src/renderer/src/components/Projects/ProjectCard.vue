@@ -59,7 +59,7 @@ function onCardClick(): void {
 <template>
   <article
     class="glass group relative flex cursor-pointer flex-col gap-2 p-3 transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-sel"
-    :class="{ 'ring-2 ring-sel': active, 'opacity-80': project.archived }"
+    :class="{ 'ring-2 ring-sel': active, 'opacity-80': project.archived, 'z-30': menuOpen }"
     tabindex="0"
     @click="onCardClick"
     @keydown.enter.self="onCardClick"
@@ -93,52 +93,52 @@ function onCardClick(): void {
       >
         <PhDotsThree :size="18" weight="bold" />
       </button>
-      <div
-        v-if="menuOpen"
-        class="popover absolute top-10 right-2 z-20 min-w-[190px] p-1.5 text-sm"
-        role="menu"
-        @click.stop
+    </div>
+    <div
+      v-if="menuOpen"
+      class="popover absolute top-[52px] right-5 z-20 min-w-[190px] p-1.5 text-sm"
+      role="menu"
+      @click.stop
+    >
+      <button
+        class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+        role="menuitem"
+        @click="startRename"
       >
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          role="menuitem"
-          @click="startRename"
-        >
-          <PhPencilSimple :size="15" /> Rename
-        </button>
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          role="menuitem"
-          @click="
-            emit('menu', false);
-            emit('export');
-          "
-        >
-          <PhExport :size="15" /> Export project…
-        </button>
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          role="menuitem"
-          @click="
-            emit('menu', false);
-            emit('archive', !project.archived);
-          "
-        >
-          <PhArrowCounterClockwise v-if="project.archived" :size="15" />
-          <PhArchive v-else :size="15" />
-          {{ project.archived ? 'Unarchive' : 'Archive' }}
-        </button>
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-play hover:bg-s2"
-          role="menuitem"
-          @click="
-            emit('menu', false);
-            confirmDelete = true;
-          "
-        >
-          <PhTrash :size="15" /> Delete
-        </button>
-      </div>
+        <PhPencilSimple :size="15" /> Rename
+      </button>
+      <button
+        class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+        role="menuitem"
+        @click="
+          emit('menu', false);
+          emit('export');
+        "
+      >
+        <PhExport :size="15" /> Export project…
+      </button>
+      <button
+        class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
+        role="menuitem"
+        @click="
+          emit('menu', false);
+          emit('archive', !project.archived);
+        "
+      >
+        <PhArrowCounterClockwise v-if="project.archived" :size="15" />
+        <PhArchive v-else :size="15" />
+        {{ project.archived ? 'Unarchive' : 'Archive' }}
+      </button>
+      <button
+        class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-play hover:bg-s2"
+        role="menuitem"
+        @click="
+          emit('menu', false);
+          confirmDelete = true;
+        "
+      >
+        <PhTrash :size="15" /> Delete
+      </button>
     </div>
 
     <div v-if="confirmDelete" class="flex flex-col gap-2" @click.stop>
