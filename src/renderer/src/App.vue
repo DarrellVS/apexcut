@@ -197,10 +197,50 @@ function onKey(e: KeyboardEvent): void {
   }
   const tag = (e.target as HTMLElement).tagName;
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+  // I / O: set an edge of the selected part at the playhead (a new part when none is selected)
+  const trim = (edge: 'start_s' | 'end_s', toCore: boolean): void => {
+    let p = editor.selectedParts.length === 1 ? editor.selectedParts[0] : null;
+    if (!p && !toCore) p = editor.addAt(editor.time);
+    if (!p) return;
+    const ok = toCore ? editor.trimToCore(p, edge) : editor.trimTo(p, edge, editor.time);
+    if (!ok)
+      toast(toCore ? 'This part has no scanned core to trim to' : 'Cannot move the edge there');
+  };
   switch (e.key) {
     case ' ':
       e.preventDefault();
       stage.value?.togglePlay();
+      break;
+    case 'l':
+    case 'L': {
+      const rate = stage.value?.shuttle('play') ?? 1;
+      if (rate > 1) toast(`${rate}× speed`, 1200);
+      break;
+    }
+    case 'k':
+    case 'K':
+      stage.value?.shuttle('pause');
+      break;
+    case 'j':
+    case 'J':
+      stage.value?.seek(editor.time - 10);
+      break;
+    case ',':
+      stage.value?.frameStep(-1);
+      break;
+    case '.':
+      stage.value?.frameStep(1);
+      break;
+    case 'i':
+    case 'I':
+      trim('start_s', e.shiftKey);
+      break;
+    case 'o':
+    case 'O':
+      trim('end_s', e.shiftKey);
+      break;
+    case '?':
+      ui.openSettings('shortcuts');
       break;
     case 'ArrowLeft':
       stage.value?.seek(editor.time - 5);

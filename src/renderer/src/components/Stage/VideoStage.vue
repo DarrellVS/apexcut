@@ -84,6 +84,30 @@ function togglePlay(): void {
   if (!v?.src) return;
   v.paused ? v.play().catch(() => undefined) : v.pause();
 }
+/** L: play, and faster on every press (1× → 2× → 4×); K: pause and back to 1×. */
+function shuttle(dir: 'play' | 'pause'): number {
+  const v = video.value;
+  if (!v?.src) return 1;
+  if (dir === 'pause') {
+    v.pause();
+    v.playbackRate = 1;
+    return 1;
+  }
+  if (v.paused) {
+    v.playbackRate = 1;
+    v.play().catch(() => undefined);
+  } else v.playbackRate = v.playbackRate >= 4 ? 1 : v.playbackRate * 2;
+  return v.playbackRate;
+}
+/** , and . : one frame back / forward (pauses). */
+function frameStep(dir: 1 | -1): void {
+  const v = video.value;
+  if (!v?.src) return;
+  v.pause();
+  const fps = library.currentClip?.fps || 30;
+  seek(v.currentTime + dir / fps);
+  onTime();
+}
 function seekPart(dir: 1 | -1): void {
   const list = editor.parts.slice().sort((a, b) => a.start_s - b.start_s);
   const t = editor.time;
@@ -203,7 +227,7 @@ function onPause(): void {
   onTime();
 }
 
-defineExpose({ seek, play, togglePlay, seekPart, startPreview, watchResult });
+defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPreview, watchResult });
 </script>
 
 <template>

@@ -199,6 +199,36 @@ export const useEditorStore = defineStore('editor', () => {
     return p;
   }
   /** Drag edit: caller snapshots once on drag start, then calls `setEdge` repeatedly and `save` on release. */
+  /**
+   * Keyboard trim (I/O): move one edge to `t`, never past the neighbouring parts, with undo + save.
+   * Returns false when nothing could move.
+   */
+  function trimTo(p: Part, edge: 'start_s' | 'end_s', t: number): boolean {
+    const others = parts.value.filter((x) => x !== p);
+    let v = t;
+    if (edge === 'start_s') {
+      const prevEnd = Math.max(
+        0,
+        ...others.filter((x) => x.end_s <= p.end_s - 1).map((x) => x.end_s),
+      );
+      v = Math.max(v, prevEnd);
+    } else {
+      const nextStart = Math.min(
+        duration.value,
+        ...others.filter((x) => x.start_s >= p.start_s + 1).map((x) => x.start_s),
+      );
+      v = Math.min(v, nextStart);
+    }
+    const before = p[edge];
+    mutate(() => setEdge(p, edge, v));
+    return p[edge] !== before;
+  }
+  /** Shift+I / Shift+O: trim to where the scan saw the action itself (the core of the part). */
+  function trimToCore(p: Part, edge: 'start_s' | 'end_s'): boolean {
+    const core = edge === 'start_s' ? p.core_start_s : p.core_end_s;
+    if (core === undefined) return false;
+    return trimTo(p, edge, core);
+  }
   function setEdge(p: Part, edge: 'start_s' | 'end_s', t: number): void {
     let v = Math.round(Math.max(0, Math.min(duration.value, t)) * 10) / 10;
     if (edge === 'start_s') v = Math.min(v, p.end_s - 1);
@@ -262,6 +292,8 @@ export const useEditorStore = defineStore('editor', () => {
     addAt,
     restore,
     setEdge,
+    trimTo,
+    trimToCore,
     rescore,
   };
 });
