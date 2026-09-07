@@ -6,6 +6,7 @@ import { pickByLength } from '@core/pick';
 import type { Part } from '@core/types';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import {
+  DEFAULT_MUSIC,
   TRANSITION_LABEL,
   TRANSITIONS,
   type ExportFormat,
@@ -206,6 +207,10 @@ async function go(): Promise<void> {
     name: name.value,
     transition: transition.value,
     cards: separate.value ? { title: null, end: false } : cards.value,
+    // plain copy: reactive proxies cannot cross the IPC bridge
+    music: separate.value
+      ? DEFAULT_MUSIC
+      : JSON.parse(JSON.stringify(projects.active?.music ?? DEFAULT_MUSIC)),
   });
   jobs.exportJobId = id;
 }

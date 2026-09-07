@@ -78,6 +78,25 @@ export async function probe(path: string): Promise<ProbeResult> {
   };
 }
 
+/** Length of an audio (or any) file in seconds; null when ffprobe cannot read it. */
+export async function probeDuration(path: string): Promise<number | null> {
+  try {
+    const { stdout } = await execFileP(FFPROBE, [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-of',
+      'default=noprint_wrappers=1:nokey=1',
+      path,
+    ]);
+    const d = Number(stdout.trim());
+    return Number.isFinite(d) && d > 0 ? d : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Stream-copy a data track (e.g. `djmd`) out of the container. Returns the raw bytes. */
 export async function extractDataTrack(path: string, tag = 'djmd'): Promise<Uint8Array> {
   const info = await probe(path);

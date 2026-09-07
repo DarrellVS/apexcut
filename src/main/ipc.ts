@@ -13,12 +13,15 @@ import { PRESET_IDS, PRESETS } from '@core/presets';
 import type { Part, ScoreConfig } from '@core/types';
 import {
   exportRequestSchema,
+  musicSettingsSchema,
   partSchema,
   settingsSchema,
   TRANSITIONS,
   type JobState,
+  type MusicTrack,
 } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
+import { probeDuration } from './services/media';
 import { FilmstripAction } from './actions/thumbs';
 import { Analysis } from './services/analysis';
 import { Jobs } from './services/jobs';
@@ -76,6 +79,11 @@ export function registerIpc(s: Services): void {
   registerResolver('movie', ([file]) =>
     file ? join(s.settings.outputDir('movies'), basename(file)) : null,
   );
+  // songs live wherever the user keeps them: the path travels base64url-encoded, its folder is allowed
+  registerResolver('music', ([enc]) =>
+    enc ? Buffer.from(enc, 'base64url').toString('utf8') : null,
+  );
+  for (const t of s.projects.list().flatMap((p) => p.music.tracks)) allowRoot(join(t.path, '..'));
 
   // ---- projects
   const projectFilter = [{ name: 'ApexCut project', extensions: ['apexcut'] }];
@@ -88,6 +96,53 @@ export function registerIpc(s: Services): void {
   ipcMain.handle('projects:setTransition', (_e, t: unknown) =>
     s.projects.setTransition(z.enum(TRANSITIONS).parse(t)),
   );
+  ipcMain.handle('projects:setMusic', (_e, m: unknown) => {
+    const music = musicSettingsSchema.parse(m);
+    for (const t of music.tracks) allowRoot(join(t.path, '..'));
+    s.projects.setMusic(music);
+  });
+
+  // ---- music files
+  const AUDIO_EXT = ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus'];
+  const probeTracks = async (paths: string[]): Promise<MusicTrack[]> => {
+    const out: MusicTrack[] = [];
+    for (const p of paths) {
+      if (!existsSync(p)) continue;
+      const duration = await probeDuration(p);
+      if (!duration) continue;
+      allowRoot(join(p, '..'));
+      out.push({
+        id: Math.random().toString(36).slice(2, 10),
+        path: p,
+        name: basename(p).replace(/\.[^.]+$/, ''),
+        durationS: Math.round(duration * 10) / 10,
+        inS: 0,
+        outS: Math.round(duration * 10) / 10,
+        gain: 1,
+        fadeInS: 1,
+        fadeOutS: 2,
+      });
+    }
+    return out;
+  };
+  ipcMain.handle('music:pick', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+    const res = await dialog.showOpenDialog(win as BrowserWindow, {
+      title: 'Choose music',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Music', extensions: AUDIO_EXT }],
+    });
+    return res.canceled ? [] : probeTracks(res.filePaths);
+  });
+  ipcMain.handle('music:add', (_e, paths: unknown) =>
+    probeTracks(
+      z
+        .array(z.string())
+        .parse(paths)
+        .filter((p) => AUDIO_EXT.includes(p.split('.').pop()?.toLowerCase() ?? '')),
+    ),
+  );
+  ipcMain.handle('music:exists', (_e, p: unknown) => existsSync(z.string().parse(p)));
   ipcMain.handle('projects:rename', (_e, id: unknown, name: unknown) =>
     s.projects.rename(z.string().parse(id), z.string().max(80).parse(name)),
   );
@@ -275,7 +330,7 @@ export function registerIpc(s: Services): void {
     const out = join(s.settings.outputDir('movies'), `${sanitize(req.name)}_${stamp()}.mp4`);
     allowRoot(join(out, '..'));
     return s.jobs.start('export', `Movie “${sanitize(req.name)}” (${total} s)`, async (ctx) => {
-      await compileMovie(items, out, ctx, req.transition, req.cards);
+      await compileMovie(items, out, ctx, req.transition, req.cards, req.music);
       return {
         kind: 'export',
         file: out,

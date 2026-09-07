@@ -12,6 +12,7 @@ import { useEditorStore } from '@renderer/stores/editor';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { fmtDuration, fmtTime } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
+import MusicLane from './MusicLane.vue';
 
 const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
 const editor = useEditorStore();
@@ -363,7 +364,7 @@ const zoomInput = computed({
 </script>
 
 <template>
-  <footer class="glass flex h-[250px] flex-none flex-col overflow-hidden select-none">
+  <footer class="glass flex h-[314px] flex-none flex-col overflow-hidden select-none">
     <!-- ruler -->
     <div class="relative h-5 cursor-pointer bg-s2" @mousedown="scrub">
       <canvas ref="rulerCv" class="block h-full w-full" />
@@ -538,6 +539,7 @@ const zoomInput = computed({
         </button>
       </div>
     </div>
+    <MusicLane />
     <!-- legend / zoom -->
     <div class="flex items-center gap-3.5 border-t border-line px-3.5 py-1.5 text-xs text-muted">
       <span

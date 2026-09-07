@@ -127,7 +127,22 @@ async function onDrop(e: DragEvent): Promise<void> {
   const files = e.dataTransfer?.files;
   if (!files?.length || phase.value === 'projects') return;
   e.preventDefault();
-  await importPaths(Array.from(files).map((f) => window.apexcut.files.pathOf(f)));
+  const paths = Array.from(files).map((f) => window.apexcut.files.pathOf(f));
+  // music files go under the movie, everything else is looked at as video
+  const audio = paths.filter((p) => /\.(mp3|m4a|aac|wav|flac|ogg|opus)$/i.test(p));
+  if (audio.length && projects.active) {
+    const tracks = await window.apexcut.music.add(audio);
+    if (tracks.length) {
+      await projects.setMusic({
+        ...projects.active.music,
+        tracks: [...projects.active.music.tracks, ...tracks],
+      });
+      toast(
+        `${tracks.length === 1 ? tracks[0].name : `${tracks.length} songs`} added under your movie`,
+      );
+    }
+  }
+  await importPaths(paths.filter((p) => !audio.includes(p)));
 }
 
 onMounted(async () => {

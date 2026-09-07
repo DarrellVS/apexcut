@@ -6,9 +6,11 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
 import { FORMAT_SPEC } from '@shared/ipc';
+import { musicUrl, useMovieTime } from '@renderer/composables/useMovieTime';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
+import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { fmtTime } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
@@ -18,6 +20,7 @@ const editor = useEditorStore();
 const library = useLibraryStore();
 const jobs = useJobsStore();
 const settings = useSettingsStore();
+const projects = useProjectsStore();
 
 const video = ref<HTMLVideoElement | null>(null);
 const stage = ref<HTMLElement | null>(null);
@@ -205,6 +208,34 @@ onMounted(() => {
   if (src.value && video.value) video.value.src = src.value;
 });
 
+// ---- music under the preview: the song that covers the movie time plays in sync, the ride sound ducks
+const music = ref<HTMLAudioElement | null>(null);
+const { movieTimeOf, trackAt } = useMovieTime();
+let musicSrc = '';
+function syncMusic(): void {
+  const v = video.value;
+  const a = music.value;
+  if (!v || !a) return;
+  const settings = projects.active?.music;
+  const active = previewOn.value && !v.paused && !watchingResult.value && settings?.tracks.length;
+  const hit = active ? trackAt(movieTimeOf(v.currentTime)) : null;
+  if (!hit) {
+    if (!a.paused) a.pause();
+    v.volume = 1;
+    return;
+  }
+  const url = musicUrl(hit.track.path);
+  if (musicSrc !== url) {
+    musicSrc = url;
+    a.src = url;
+  }
+  const want = hit.track.inS + (movieTimeOf(v.currentTime) - hit.offsetS);
+  if (Math.abs(a.currentTime - want) > 0.35) a.currentTime = want;
+  a.volume = Math.min(1, hit.track.gain * (settings?.musicGain ?? 0.8));
+  v.volume = settings?.originalGain ?? 0.35;
+  if (a.paused) a.play().catch(() => undefined);
+}
+
 // smooth clock: 'timeupdate' fires only ~4×/s, so follow currentTime per animation frame while playing
 let raf = 0;
 function tick(): void {
@@ -214,6 +245,7 @@ function tick(): void {
     return;
   }
   editor.time = v.currentTime;
+  syncMusic();
   raf = requestAnimationFrame(tick);
 }
 function onPlay(): void {
@@ -225,7 +257,9 @@ function onPause(): void {
   if (raf) cancelAnimationFrame(raf);
   raf = 0;
   onTime();
+  syncMusic();
 }
+watch(previewOn, syncMusic);
 
 defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPreview, watchResult });
 </script>
@@ -248,6 +282,7 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
       @pause="onPause"
       @click="togglePlay"
     />
+    <audio ref="music" preload="auto" />
     <Transition
       enter-active-class="transition-opacity"
       leave-active-class="transition-opacity"

@@ -16,8 +16,10 @@ import {
   projectFileSchema,
   type ClipInfo,
   type ProjectFile,
+  type MusicSettings,
   type ProjectInfo,
   type Transition,
+  DEFAULT_MUSIC,
 } from '@shared/ipc';
 import type { Library } from './library';
 import { ensureDir, paths, readJson, writeJson } from './store';
@@ -34,6 +36,8 @@ export interface ProjectRecord {
   archived?: boolean;
   /** how parts are joined in the movie (crossfade when absent) */
   transition?: Transition;
+  /** songs under the movie and the mix levels */
+  music?: MusicSettings;
 }
 
 interface ProjectsFile {
@@ -178,7 +182,14 @@ export class Projects {
       preset: p.preset ?? 'sporty',
       archived: !!p.archived,
       transition: p.transition ?? 'crossfade',
+      music: p.music ?? DEFAULT_MUSIC,
     };
+  }
+
+  setMusic(music: MusicSettings): void {
+    const p = this.active;
+    p.music = music;
+    this.touch(p);
   }
 
   setPreset(preset: PresetId): void {
@@ -290,6 +301,7 @@ export class Projects {
       exportedAt: new Date().toISOString(),
       clips: p.clips.filter((s) => this.library.has(s)).map((s) => ({ ...this.library.get(s) })),
       selections: {},
+      music: p.music,
     };
     for (const stem of p.clips) {
       const f = this.selectionFile(stem, p.id);
@@ -303,6 +315,7 @@ export class Projects {
   importFrom(file: string): { id: string; missing: string[] } {
     const data = projectFileSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
     const p = this.blank(data.name, []);
+    if (data.music) p.music = data.music;
     const missing: string[] = [];
     for (const c of data.clips) {
       // re-discover next to the recorded paths so a moved/renamed proxy is picked up too

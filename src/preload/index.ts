@@ -18,6 +18,7 @@ const api: ApexcutApi = {
     addGroups: (groups) => invoke('projects:addGroups', groups),
     archive: (id, archived) => invoke('projects:archive', id, archived),
     setTransition: (transition) => invoke('projects:setTransition', transition),
+    setMusic: (music) => invoke('projects:setMusic', music),
   },
   library: {
     list: () => invoke('library:list'),
@@ -30,6 +31,11 @@ const api: ApexcutApi = {
   },
   files: {
     pathOf: (file) => webUtils.getPathForFile(file),
+  },
+  music: {
+    pick: () => invoke('music:pick'),
+    add: (paths) => invoke('music:add', paths),
+    exists: (path) => invoke('music:exists', path),
   },
   analysis: {
     run: (stems, config) => invoke('analysis:run', stems, config),

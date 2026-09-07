@@ -17,10 +17,11 @@
  */
 import { basename, join } from 'node:path';
 import { mkdtempSync, rmSync, renameSync, statSync, writeFileSync } from 'node:fs';
-import { FORMAT_SPEC, type ExportFormat, type Transition } from '@shared/ipc';
+import { FORMAT_SPEC, type ExportFormat, type MusicSettings, type Transition } from '@shared/ipc';
 import { encoders, probe, runFfmpeg, type ProbeResult } from '../services/media';
 import type { JobContext } from '../services/jobs';
 import { CardAction } from './cards';
+import { MusicMixAction } from './music';
 
 /** Title / end cards around the movie (see cards.ts). */
 export interface Cards {
@@ -521,9 +522,11 @@ export async function compileMovie(
   ctx: JobContext,
   transition: Transition = 'crossfade',
   cards: Cards = { title: null, end: false },
+  music?: MusicSettings,
 ): Promise<string> {
   const tmp = mkdtempSync(join(outPath, '..', 'apexcut-'));
   const withCards = !!cards.title || cards.end;
+  const withMusic = !!music && music.tracks.some((t) => t.outS > t.inS);
   // cards are encoded clips: the movie must be encoded too so the pieces concatenate cleanly
   const encodeAll = withCards && items.some((it) => it.format === 'original');
   const { args: encArgs } = await videoArgsFor(
@@ -532,8 +535,23 @@ export async function compileMovie(
     items[0].quality ?? 18,
   );
   const finish = async (movie: string): Promise<string> => {
-    if (withCards) await addCards(movie, outPath, cards, encArgs, tmp, ctx);
-    else renameSync(movie, outPath);
+    // cards first (video), then the music mix on top of the finished picture (audio only)
+    const carded = withMusic ? join(tmp, 'carded.mp4') : outPath;
+    if (withCards) await addCards(movie, carded, cards, encArgs, tmp, ctx);
+    else renameSync(movie, carded);
+    if (withMusic && music) {
+      ctx.progress(0.99, 'Adding the music');
+      try {
+        const { skipped } = await new MusicMixAction().execute(carded, music, outPath, ctx);
+        for (const p of skipped) ctx.log(`music file missing, skipped: ${p}`);
+      } catch (e) {
+        if (ctx.signal.aborted) throw e;
+        ctx.log(
+          `music mix failed, movie kept without music: ${(e as Error).message.slice(0, 200)}`,
+        );
+        renameSync(carded, outPath);
+      }
+    }
     return outPath;
   };
   try {

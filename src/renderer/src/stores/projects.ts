@@ -3,7 +3,7 @@
  */
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { ProjectInfo, Transition } from '@shared/ipc';
+import type { MusicSettings, ProjectInfo, Transition } from '@shared/ipc';
 import { logger } from '@renderer/utils/logger';
 
 export type ProjectSort = 'edited' | 'name' | 'length';
@@ -91,6 +91,13 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  /** the music lane; optimistic so dragging feels instant, then persisted */
+  async function setMusic(m: MusicSettings): Promise<void> {
+    const p = projects.value.find((x) => x.id === activeId.value);
+    if (p) p.music = m;
+    await window.apexcut.projects.setMusic(JSON.parse(JSON.stringify(m)));
+  }
+
   async function exportFile(id: string): Promise<string | null> {
     const r = await window.apexcut.projects.exportFile(id);
     return r?.file ?? null;
@@ -119,6 +126,7 @@ export const useProjectsStore = defineStore('projects', () => {
     remove,
     archive,
     setTransition,
+    setMusic,
     exportFile,
     importFile,
   };

@@ -55,6 +55,31 @@ export interface ImportGroup {
   known: number;
 }
 
+/** A song under the movie: a file, the piece of it that plays (in/out), its own gain and fades. */
+export const musicTrackSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  name: z.string(),
+  durationS: z.number().nonnegative(),
+  inS: z.number().nonnegative(),
+  outS: z.number().positive(),
+  gain: z.number().min(0).max(1).default(1),
+  fadeInS: z.number().min(0).max(10).default(1),
+  fadeOutS: z.number().min(0).max(10).default(2),
+});
+export type MusicTrack = z.infer<typeof musicTrackSchema>;
+
+/** The music lane of a project: songs back to back plus the mix levels. */
+export const musicSettingsSchema = z.object({
+  tracks: z.array(musicTrackSchema).default([]),
+  /** overall music level 0..1 */
+  musicGain: z.number().min(0).max(1).default(0.8),
+  /** original (engine/wind) audio level 0..1 while music plays */
+  originalGain: z.number().min(0).max(1).default(0.35),
+});
+export type MusicSettings = z.infer<typeof musicSettingsSchema>;
+export const DEFAULT_MUSIC: MusicSettings = { tracks: [], musicGain: 0.8, originalGain: 0.35 };
+
 /** A project: a name plus an ordered set of videos with their own selections. */
 export interface ProjectInfo {
   id: string;
@@ -72,6 +97,7 @@ export interface ProjectInfo {
   archived: boolean;
   /** how parts are joined in this project's movie */
   transition: Transition;
+  music: MusicSettings;
 }
 
 export interface TimelinePayload {
@@ -125,6 +151,8 @@ export const exportRequestSchema = z.object({
       end: z.boolean(),
     })
     .default({ title: null, end: false }),
+  /** songs under the movie; missing files are skipped */
+  music: musicSettingsSchema.default(DEFAULT_MUSIC),
 });
 export type ExportRequest = z.infer<typeof exportRequestSchema>;
 
@@ -158,6 +186,7 @@ export const projectFileSchema = z.object({
     z.string(),
     z.object({ parts: z.array(partSchema), frozen: z.boolean().optional() }),
   ),
+  music: musicSettingsSchema.optional(),
 });
 export type ProjectFile = z.infer<typeof projectFileSchema>;
 
@@ -228,6 +257,8 @@ export interface ApexcutApi {
     archive(id: string, archived: boolean): Promise<void>;
     /** how the open project's parts are joined in the movie */
     setTransition(transition: Transition): Promise<void>;
+    /** the open project's music lane */
+    setMusic(music: MusicSettings): Promise<void>;
     /**
      * Add videos in groups: `name` null = into the open project, otherwise a new project with that
      * name. Returns the stems added, which of them still need a scan, and the first project created.
@@ -260,6 +291,14 @@ export interface ApexcutApi {
   files: {
     /** absolute path of a File dropped from Explorer (Electron webUtils) */
     pathOf(file: File): string;
+  };
+  music: {
+    /** file dialog for songs; returns them probed (name, length) and ready for the lane */
+    pick(): Promise<MusicTrack[]>;
+    /** probe files (e.g. dropped ones) the same way */
+    add(paths: string[]): Promise<MusicTrack[]>;
+    /** does the file still exist? */
+    exists(path: string): Promise<boolean>;
   };
   analysis: {
     run(stems: string[], config?: Partial<ScoreConfig>): Promise<string>;
