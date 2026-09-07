@@ -5,9 +5,11 @@ import log from 'electron-log/main';
 import { autoUpdater } from 'electron-updater';
 import icon from '../../resources/icon.png?asset';
 import type { Part } from '@core/types';
+import { existsSync } from 'node:fs';
+import { ThumbnailAction } from './actions/thumbs';
 import { createServices, registerIpc } from './ipc';
 import { installProtocol, registerScheme } from './services/protocol';
-import { readJson } from './services/store';
+import { paths, readJson } from './services/store';
 
 // same data folder in dev (unpackaged runs default to "Electron") and in the packaged app
 app.setPath('userData', join(app.getPath('appData'), 'ApexCut'));
@@ -96,6 +98,21 @@ app.whenReady().then(() => {
         }
         return { kind: 'analyze', stems: todo };
       });
+    }
+  }
+
+  // backfill card thumbnails for clips analysed before thumbnails existed (e.g. legacy imports)
+  for (const c of services.library.list()) {
+    if (c.analyzed && !existsSync(join(paths.clipDir(c.stem), 'thumb.jpg'))) {
+      new ThumbnailAction()
+        .execute(
+          c.stem,
+          services.library.proxyOf(c.stem),
+          (c.durationS ?? 0) * 0.1,
+          160,
+          'thumb.jpg',
+        )
+        .catch((e) => log.warn('thumbnail backfill:', e));
     }
   }
 
