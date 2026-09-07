@@ -82,6 +82,9 @@ into a collapsed “Archived · n” section at the bottom.
 - **Ride card**: 1080×1350 and 1200×630 PNG — dark or light ground (follows the theme) with the brand
   glow, mark + project name + date, three thumbnails of the best parts, four stat tiles, footer with the
   twistiest minute and “Made with ApexCut”.
+- **Export overlay**: while a movie is made, a centred `popover` card (520 px) with a 56 px percentage,
+  the step, elapsed/left, a brand-gradient bar and the note that the project is locked; × or Esc asks
+  “Stop the export?” inline before cancelling; when done the card shows Watch it / Open folder / Done.
 - **Focus**: every interactive element shows a 2 px `--sel` ring for keyboard focus only; timeline blocks
   are focusable (arrows move, Enter plays, Space toggles, Delete removes). `prefers-reduced-motion` turns
   transitions off.

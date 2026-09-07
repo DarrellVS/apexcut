@@ -3,6 +3,12 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.5
+
+- Exporting now takes over the window: a card with the percentage, the step and the time left. Closing
+  it asks first and then stops the export, so the project cannot change while a movie is being made.
+  The same card shows the result with Watch it / Open folder.
+
 ## 0.4.4
 
 - Part counts in the video list, the top bar and the Movie tab now follow every edit at once (they

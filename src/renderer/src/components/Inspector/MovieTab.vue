@@ -29,7 +29,7 @@ import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { friendlyError } from '@renderer/utils/errors';
-import { fmtDuration, fmtElapsed, shortName } from '@renderer/utils/format';
+import { fmtDuration, shortName } from '@renderer/utils/format';
 
 const scope = defineModel<'all' | 'current'>('scope', { default: 'all' });
 const editor = useEditorStore();
@@ -230,7 +230,6 @@ async function go(): Promise<void> {
 }
 const job = computed(() => jobs.exportJob);
 const emit = defineEmits<{ watch: [url: string] }>();
-const cancel = (id: string): Promise<void> => window.apexcut.exporter.cancel(id);
 const openFolder = (p: string): Promise<void> => window.apexcut.shell.openFolder(p);
 defineExpose({ format });
 </script>
@@ -426,23 +425,8 @@ defineExpose({ format });
     >
       {{ jobs.exporting ? 'Working…' : separate ? 'Make clips' : 'Make my movie' }}
     </button>
-    <div v-if="job && job.status === 'running'" class="card">
-      <progress class="h-3 w-full" :value="job.progress" max="1" />
-      <div class="mt-1.5 grid grid-cols-[auto_1fr] items-baseline gap-x-2.5 text-xs">
-        <span class="row-span-3 self-center text-[22px] font-bold text-fg"
-          >{{ Math.round(job.progress * 100) }}%</span
-        >
-        <span class="text-muted">{{ job.message }}</span>
-        <span class="text-muted">Running {{ fmtElapsed(jobs.elapsed(job)) }}</span>
-        <span v-if="jobs.eta(job) != null"
-          >About <b>{{ fmtElapsed(jobs.eta(job)!) }}</b> left</span
-        >
-        <span v-else class="text-muted">Estimating time…</span>
-      </div>
-      <button class="btn btn-mini mt-2" @click="cancel(job.id)">Cancel</button>
-    </div>
     <div
-      v-else-if="job && job.status === 'done' && job.result"
+      v-if="job && job.status === 'done' && job.result"
       class="card border-brake/40 bg-brake/10 text-sm break-all"
     >
       <b class="text-base text-fg"

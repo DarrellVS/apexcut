@@ -17,6 +17,7 @@ import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
 import TourOverlay from '@renderer/components/Onboarding/TourOverlay.vue';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
+import ExportOverlay from '@renderer/components/Export/ExportOverlay.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
 import { friendlyError } from '@renderer/utils/errors';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
@@ -336,6 +337,7 @@ function onKey(e: KeyboardEvent): void {
       @cancel="pendingGroups = null"
     />
     <SettingsModal />
+    <ExportOverlay @watch="stage?.watchResult($event)" />
     <TourOverlay />
     <ErrorScreen />
     <ToastHost />
