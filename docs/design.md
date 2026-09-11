@@ -57,6 +57,10 @@ projects / Rename (inline) / Export project…. With more than three projects a 
 segment (Last edited / Name / Movie length) appear; the card menu also has Archive, which moves the card
 into a collapsed “Archived · n” section at the bottom.
 
+- **How picky? (Parts tab)**: preset segment, the Fewer/More parts slider, then a checkbox “Count
+  acceleration pulls too” with a one-line plain-words explanation (per project; toggling rescoring
+  every video and toasting the new count), then “Add part at …”.
+
 ## Sheets, banners and the tour
 
 - **Import sheet**: a pick or drop that spans several recording days asks first — one row per day with a

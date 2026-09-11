@@ -66,6 +66,18 @@ Sporty preset. Only these keys differ; weights and smoothing stay.
 Choosing a preset rescoring every scanned video of the project from cached signals (no ffmpeg);
 manual and joined parts survive through `mergeSelection`.
 
+## Acceleration pulls (switch, off by default)
+
+Braking and acceleration only count near a corner (`accel_near_lean_s`, `accel_lean_lo/hi_deg`),
+so a stop at a traffic light or a launch on a straight never scores. Riders who want their
+straight-line pulls have a switch under “How picky?” (per project, `ProjectRecord.pulls`). With it
+on, `detectPulls` marks runs where forward acceleration stays above `pull_min_g` (0.12 g) for at
+least `pull_min_s` (2.5 s) **and** the run adds up to `pull_min_dv_mps` (6 m/s ≈ 22 km/h) of speed
+gain; inside such a run the acceleration gate is 1, so the pull scores like acceleration next to a
+corner and becomes an “Acceleration / braking” part. Braking on straights stays out (usually
+traffic). Off, the pipeline is unchanged, so the parity fixture is untouched; new scans and preset
+changes carry the project's switch (`projects.scoreConfig()`). Tests: `tests/core/pulls.test.ts`.
+
 ## Changing the rules
 
 Change `DEFAULT_CONFIG`/logic → regenerate the fixture from the Python oracle only if the change is

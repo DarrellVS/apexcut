@@ -11,7 +11,7 @@ import { z } from 'zod';
 import log from 'electron-log/main';
 import pkg from '../../package.json';
 import { edl } from '@core/edl';
-import { PRESET_IDS, PRESETS } from '@core/presets';
+import { PRESET_IDS } from '@core/presets';
 import type { Part, ScoreConfig } from '@core/types';
 import {
   exportRequestSchema,
@@ -191,9 +191,19 @@ export function registerIpc(s: Services): void {
     s.projects.setPreset(preset);
     // cached signals only, so this is quick even for a dozen videos
     for (const c of s.projects.clipInfos()) {
-      if (c.analyzed) s.analysis.rescore(c.stem, PRESETS[preset].config);
+      if (c.analyzed) s.analysis.rescore(c.stem, s.projects.scoreConfig());
     }
     log.info(`preset ${preset} applied to project ${s.projects.activeId}`);
+  });
+  ipcMain.handle('projects:setPulls', (_e, onRaw: unknown) => {
+    const on = z.boolean().parse(onRaw);
+    s.projects.setPulls(on);
+    // keep each video's own sliders; only the switch changes
+    for (const c of s.projects.clipInfos()) {
+      if (c.analyzed)
+        s.analysis.rescore(c.stem, { ...(s.analysis.configOf(c.stem) ?? {}), pulls: on });
+    }
+    log.info(`pulls ${on ? 'on' : 'off'} for project ${s.projects.activeId}`);
   });
 
   // ---- library (videos of the open project)
@@ -270,7 +280,8 @@ export function registerIpc(s: Services): void {
   // ---- analysis
   ipcMain.handle('analysis:run', (_e, stems: unknown, cfg: unknown) => {
     const list = z.array(z.string()).parse(stems);
-    const config = (cfg ?? undefined) as Partial<ScoreConfig> | undefined;
+    // a new scan follows the project's preset and pulls switch unless the caller says otherwise
+    const config = (cfg ?? s.projects.scoreConfig()) as Partial<ScoreConfig> | undefined;
     return s.jobs.start(
       'analyze',
       list.length === 1 ? `Scanning ${list[0]}` : `Scanning ${list.length} videos`,

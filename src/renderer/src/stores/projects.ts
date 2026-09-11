@@ -87,6 +87,12 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  async function setPulls(on: boolean): Promise<void> {
+    const p = projects.value.find((x) => x.id === activeId.value);
+    if (p) p.pulls = on;
+    await api.projects.setPulls(on);
+  }
+
   async function setTransition(t: Transition): Promise<void> {
     await api.projects.setTransition(t);
     await refresh();
@@ -132,6 +138,7 @@ export const useProjectsStore = defineStore('projects', () => {
     rename,
     remove,
     archive,
+    setPulls,
     setTransition,
     setMusic,
     setOverlay,

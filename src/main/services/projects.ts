@@ -9,9 +9,9 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import log from 'electron-log/main';
-import type { PresetId } from '@core/presets';
+import { PRESETS, type PresetId } from '@core/presets';
 import { autoToParts } from '@core/selection';
-import type { Part, Segment } from '@core/types';
+import type { Part, ScoreConfig, Segment } from '@core/types';
 import {
   projectFileSchema,
   type ClipInfo,
@@ -33,6 +33,8 @@ export interface ProjectRecord {
   clips: string[];
   /** sensitivity preset of the project (Sporty when absent) */
   preset?: PresetId;
+  /** straight-line acceleration pulls count as parts too */
+  pulls?: boolean;
   /** out of the way on the projects screen; never the open project */
   archived?: boolean;
   /** how parts are joined in the movie (crossfade when absent) */
@@ -183,6 +185,7 @@ export class Projects {
       highlightS: Math.round(highlightS),
       thumbStem,
       preset: p.preset ?? 'sporty',
+      pulls: !!p.pulls,
       archived: !!p.archived,
       transition: p.transition ?? 'crossfade',
       music: p.music ?? DEFAULT_MUSIC,
@@ -206,6 +209,18 @@ export class Projects {
     const p = this.active;
     p.preset = preset;
     this.touch(p);
+  }
+
+  setPulls(on: boolean): void {
+    const p = this.active;
+    p.pulls = on;
+    this.touch(p);
+  }
+
+  /** Scoring overrides of the open project: its preset plus the pulls switch. */
+  scoreConfig(): Partial<ScoreConfig> {
+    const p = this.active;
+    return { ...PRESETS[p.preset ?? 'sporty'].config, pulls: !!p.pulls };
   }
 
   setTransition(transition: Transition): void {

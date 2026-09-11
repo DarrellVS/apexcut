@@ -123,6 +123,8 @@ export interface ProjectInfo {
   thumbStem: string | null;
   /** sensitivity preset (see core/presets.ts) */
   preset: PresetId;
+  /** also count straight-line acceleration pulls */
+  pulls: boolean;
   archived: boolean;
   /** how parts are joined in this project's movie */
   transition: Transition;
@@ -292,6 +294,8 @@ export interface ApexcutApi {
     importFile(): Promise<{ id: string; missing: string[] } | null>;
     /** sensitivity preset of the open project; rescoring every scanned video of it */
     setPreset(preset: PresetId): Promise<void>;
+    /** count straight-line acceleration pulls in the open project; rescoring every scanned video */
+    setPulls(on: boolean): Promise<void>;
     /** move a project to / out of the Archived section; an archived open project closes */
     archive(id: string, archived: boolean): Promise<void>;
     /** how the open project's parts are joined in the movie */

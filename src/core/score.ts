@@ -23,6 +23,10 @@ export const DEFAULT_CONFIG: ScoreConfig = {
   accel_near_lean_s: 6.0,
   accel_lean_lo_deg: 8.0,
   accel_lean_hi_deg: 15.0,
+  pulls: false,
+  pull_min_g: 0.12,
+  pull_min_s: 2.5,
+  pull_min_dv_mps: 6.0,
   smooth_s: 4.0,
   threshold_pct: 75,
   threshold_abs: null,
@@ -154,6 +158,8 @@ export interface ScoreSignals {
   speedGate: Float64Array;
   leanYawGate: Float64Array;
   accelGate: Float64Array;
+  /** 1 inside a straight-line pull (only when `pulls` is on) */
+  pullGate: Float64Array;
   fLean: Float64Array;
   fYaw: Float64Array;
   fAccel: Float64Array;
@@ -224,11 +230,14 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
   const gate = fLean.map((v) => clip01(v / cfg.yaw_gate_lean_deg));
   const fYaw = roll(mul(mul(yawSust, gate), speedGate), win, 'mean');
 
-  // braking/acceleration only counts near a real corner
+  // braking/acceleration only counts near a real corner ...
   const near = roll(lean, Math.trunc(2 * cfg.accel_near_lean_s * fs), 'max');
-  const accelGate = near.map((v) =>
+  const nearGate = near.map((v) =>
     clip01((v - cfg.accel_lean_lo_deg) / (cfg.accel_lean_hi_deg - cfg.accel_lean_lo_deg)),
   );
+  // ... unless the rider asked for straight-line pulls as well
+  const pullGate = cfg.pulls ? detectPulls(aLon, fs, cfg) : new Float64Array(nGrid);
+  const accelGate = nearGate.map((v, i) => Math.max(v, pullGate[i]));
   const fAccel = roll(mul(abs(aLon), accelGate), win, 'mean');
 
   const w = cfg.weights;
@@ -265,6 +274,7 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
     speedGate,
     leanYawGate,
     accelGate,
+    pullGate,
     fLean,
     fYaw,
     fAccel,
@@ -277,6 +287,30 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
     accelPart,
   };
   return { signals, segments: buildSegments(signals, threshold, cfg), threshold, config: cfg };
+}
+
+/**
+ * Straight-line pulls: forward acceleration stays above `pull_min_g` for at least `pull_min_s`
+ * and the run adds up to a real speed gain (∫a·dt ≥ `pull_min_dv_mps`). Returns a 0/1 mask.
+ * Braking is not included on purpose: a hard stop on a straight is usually traffic.
+ */
+export function detectPulls(aLon: Float64Array, fs: number, cfg: ScoreConfig): Float64Array {
+  const n = aLon.length;
+  const mask = new Float64Array(n);
+  const minLen = Math.max(1, Math.round(cfg.pull_min_s * fs));
+  let i = 0;
+  while (i < n) {
+    if (!(aLon[i] > cfg.pull_min_g)) {
+      i++;
+      continue;
+    }
+    let j = i;
+    let dv = 0;
+    while (j < n && aLon[j] > cfg.pull_min_g) dv += (aLon[j++] * 9.81) / fs;
+    if (j - i >= minLen && dv >= cfg.pull_min_dv_mps) mask.fill(1, i, j);
+    i = j;
+  }
+  return mask;
 }
 
 export function buildSegments(s: ScoreSignals, thr: number, cfg: ScoreConfig): Segment[] {

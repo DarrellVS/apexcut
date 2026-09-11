@@ -217,6 +217,14 @@ export class Analysis {
     return this.timeline(stem);
   }
 
+  /** The config the clip was last scored with, or null when not analysed. */
+  configOf(stem: string): ScoreConfig | null {
+    return (
+      readJson<StoredHighlights | null>(join(this.dir(stem), 'highlights.json'), null)?.config ??
+      null
+    );
+  }
+
   timeline(stem: string): TimelinePayload {
     const dir = this.dir(stem);
     const hl = readJson<StoredHighlights | null>(join(dir, 'highlights.json'), null);

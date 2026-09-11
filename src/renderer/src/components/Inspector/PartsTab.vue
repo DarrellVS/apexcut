@@ -104,6 +104,25 @@ function onAmount(e: Event): void {
     .rescore({ threshold_pct: AMOUNT_LEVELS[idx] })
     .then(() => toast(`${editor.parts.length} parts (was ${before})`));
 }
+const pulls = computed(() => projects.active?.pulls ?? false);
+const togglingPulls = ref(false);
+async function togglePulls(on: boolean): Promise<void> {
+  if (togglingPulls.value) return;
+  togglingPulls.value = true;
+  try {
+    const before = editor.parts.length;
+    await projects.setPulls(on);
+    if (editor.stem) await editor.open(editor.stem);
+    await Promise.all([library.refresh(), projects.refresh()]);
+    toast(
+      on
+        ? `Pulls count too: ${editor.parts.length} parts in this video (was ${before})`
+        : `Pulls left out: ${editor.parts.length} parts in this video (was ${before})`,
+    );
+  } finally {
+    togglingPulls.value = false;
+  }
+}
 function addHere(): void {
   editor.addAt(editor.time);
   toast('Part added — drag the edges to fit');
@@ -150,6 +169,22 @@ function clickRow(p: Part, e: MouseEvent): void {
         :value="editor.amountIndex"
         @change="onAmount"
       />
+      <label class="mt-2.5 flex cursor-pointer items-start gap-2 text-xs">
+        <input
+          type="checkbox"
+          class="mt-0.5"
+          :checked="pulls"
+          :disabled="togglingPulls"
+          @change="togglePulls(($event.target as HTMLInputElement).checked)"
+        />
+        <span>
+          <b class="block text-fg">Count acceleration pulls too</b>
+          <span class="text-muted">
+            Straight-line pulls: opening up for a few seconds and gaining real speed. Normally only
+            braking and acceleration near a corner count.
+          </span>
+        </span>
+      </label>
       <button class="btn mt-2 flex w-full items-center justify-center gap-1.5" @click="addHere">
         <PhPlus :size="14" /> Add part at {{ fmtTime(editor.time) }}
       </button>

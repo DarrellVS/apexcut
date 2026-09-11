@@ -14,6 +14,7 @@ const api: ApexcutApi = {
     exportFile: (id) => invoke('projects:exportFile', id),
     importFile: () => invoke('projects:importFile'),
     setPreset: (preset) => invoke('projects:setPreset', preset),
+    setPulls: (on) => invoke('projects:setPulls', on),
     addGroups: (groups) => invoke('projects:addGroups', groups),
     archive: (id, archived) => invoke('projects:archive', id, archived),
     setTransition: (transition) => invoke('projects:setTransition', transition),

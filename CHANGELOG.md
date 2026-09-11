@@ -3,6 +3,12 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.16
+
+- New switch under “How picky?”: **Count acceleration pulls too**. Straight-line pulls (a few seconds
+  of opening up with real speed gain) become parts; normally only braking and acceleration near a
+  corner count. Off by default, per project; new scans and preset changes keep the choice.
+
 ## 0.4.15
 
 - Ride card: “corners” now counts actual corners (lean past 20°) inside the parts of the movie — it used

@@ -16,6 +16,14 @@ export interface ScoreConfig {
   accel_near_lean_s: number;
   accel_lean_lo_deg: number;
   accel_lean_hi_deg: number;
+  /** also count straight-line acceleration pulls (off = the Python parity behaviour) */
+  pulls: boolean;
+  /** a pull: forward acceleration above this ... */
+  pull_min_g: number;
+  /** ... for at least this long ... */
+  pull_min_s: number;
+  /** ... gaining at least this much speed (m/s) */
+  pull_min_dv_mps: number;
   smooth_s: number;
   threshold_pct: number;
   threshold_abs: number | null;
