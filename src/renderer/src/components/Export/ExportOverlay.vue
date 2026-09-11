@@ -75,25 +75,27 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
       :aria-label="title"
       @mousedown.self="requestClose"
     >
-      <div class="popover relative w-full max-w-[520px] rounded-[18px] p-7">
+      <div class="popover relative w-full max-w-[520px] p-6">
         <button
-          class="btn btn-ghost absolute top-4 right-4 grid h-9 w-9 place-items-center rounded-full border border-line p-0"
+          class="btn btn-ghost btn-icon absolute top-3 right-3"
           :title="running ? 'Stop the export (Esc)' : 'Close (Esc)'"
           :aria-label="running ? 'Stop the export' : 'Close'"
           @click="requestClose"
         >
-          <PhX :size="16" weight="bold" />
+          <PhX :size="15" weight="bold" />
         </button>
 
         <!-- running -->
         <template v-if="running">
           <div class="label-caps mb-1">{{ title }}</div>
-          <div class="truncate pr-10 text-lg font-bold text-fg">{{ job.label }}</div>
+          <div class="truncate pr-10 text-base font-semibold text-fg">{{ job.label }}</div>
           <div class="mt-5 flex items-end gap-4">
-            <span class="num text-[56px] leading-none font-extrabold text-fg">{{ pct }}%</span>
+            <span class="num text-[40px] leading-none font-semibold tracking-tight text-fg"
+              >{{ pct }}%</span
+            >
             <div class="mb-1.5 min-w-0 flex-1">
-              <div class="truncate text-sm text-fg">{{ job.message || 'Starting…' }}</div>
-              <div class="text-xs text-muted">
+              <div class="truncate text-[13px] text-fg">{{ job.message || 'Starting…' }}</div>
+              <div class="text-xs text-fg2">
                 Running {{ fmtClock(jobs.elapsed(job)) }}
                 <template v-if="jobs.eta(job) != null">
                   · about <b class="text-fg">{{ fmtClock(jobs.eta(job)!) }}</b> left
@@ -102,25 +104,23 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
               </div>
             </div>
           </div>
-          <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-s3">
+          <div class="mt-4 h-1 w-full overflow-hidden rounded-full bg-bg3">
             <div
-              class="h-full rounded-full bg-gradient-to-r from-acc1 to-acc2 transition-[width] duration-500"
+              class="h-full bg-ink transition-[width] duration-500"
               :style="{ width: `${pct}%` }"
             />
           </div>
           <div
             v-if="confirming"
-            class="mt-5 flex items-center gap-2 rounded-ctl border border-play/40 bg-play/10 p-3 text-sm"
+            class="mt-5 flex items-center gap-2 rounded-ctl border border-danger/40 bg-danger/10 p-3 text-[13px]"
           >
             <span class="min-w-0 flex-1 text-fg"
               >Stop the export? What is done so far is thrown away.</span
             >
-            <button class="btn btn-mini bg-play text-white hover:bg-play" @click="stop">
-              Stop
-            </button>
+            <button class="btn btn-mini btn-danger" @click="stop">Stop</button>
             <button class="btn btn-mini" autofocus @click="confirming = false">Keep going</button>
           </div>
-          <p v-else class="m-0 mt-5 text-xs text-muted">
+          <p v-else class="m-0 mt-5 text-xs text-fg2">
             Your originals are untouched. You can keep watching; the project is locked until this is
             done.
           </p>
@@ -129,12 +129,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
         <!-- done -->
         <template v-else-if="job.status === 'done' && job.result">
           <div class="flex items-center gap-3">
-            <PhCheckCircle :size="34" weight="fill" class="flex-none text-brake" />
+            <PhCheckCircle :size="28" weight="fill" class="flex-none text-fg" />
             <div class="min-w-0">
-              <div class="text-lg font-bold text-fg">
+              <div class="text-base font-semibold text-fg">
                 {{ job.result.kind === 'extract' ? 'Your clips are ready' : 'Your movie is ready' }}
               </div>
-              <div class="truncate text-xs text-muted">
+              <div class="truncate text-xs text-fg2">
                 <template v-if="job.result.kind === 'export'">
                   {{ job.result.sizeMb }} MB · {{ job.result.file }}
                 </template>
@@ -153,10 +153,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
                 dismissed = job.id;
               "
             >
-              <PhPlay :size="16" weight="fill" /> Watch it
+              <PhPlay :size="14" weight="fill" /> Watch it
             </button>
             <button class="btn flex items-center gap-1.5" @click="openFolder">
-              <PhFolderOpen :size="16" /> Open folder
+              <PhFolderOpen :size="14" /> Open folder
             </button>
             <button class="btn btn-ghost ml-auto" @click="dismissed = job.id">Done</button>
           </div>
@@ -164,19 +164,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
 
         <!-- error / cancelled -->
         <template v-else>
-          <div class="text-lg font-bold text-fg">
+          <div class="text-base font-semibold text-fg">
             {{ job.status === 'cancelled' ? 'Export stopped' : friendlyError(job.error).title }}
           </div>
-          <p class="m-0 mt-1 text-sm text-muted">
+          <p class="m-0 mt-1 text-sm text-fg2">
             {{
               job.status === 'cancelled'
                 ? 'Nothing was written. Your parts and picks are still here.'
                 : friendlyError(job.error).hint
             }}
           </p>
-          <details v-if="job.error" class="mt-3 rounded-ctl bg-s2 p-3 text-xs">
-            <summary class="cursor-pointer text-muted">Details</summary>
-            <pre class="m-0 mt-2 max-h-[160px] overflow-auto whitespace-pre-wrap text-muted">{{
+          <details v-if="job.error" class="mt-3 rounded-ctl bg-bg2 p-3 text-xs">
+            <summary class="cursor-pointer text-fg2">Details</summary>
+            <pre class="m-0 mt-2 max-h-[160px] overflow-auto whitespace-pre-wrap text-fg2">{{
               job.error
             }}</pre>
           </details>

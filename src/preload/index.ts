@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
-import type { ApexcutApi, JobState, UpdateStatus } from '@shared/ipc';
+import type { ApexcutApi, JobState, UpdateStatus, WindowState } from '@shared/ipc';
 const invoke = <T>(channel: string, ...args: unknown[]): Promise<T> =>
   ipcRenderer.invoke(channel, ...args) as Promise<T>;
 
@@ -82,6 +82,15 @@ const api: ApexcutApi = {
       ipcRenderer.on('updater:status', handler);
       return () => ipcRenderer.removeListener('updater:status', handler);
     },
+  },
+  window: {
+    setOverlay: (color, symbolColor) => invoke('window:setOverlay', color, symbolColor),
+    onState: (cb) => {
+      const handler = (_e: unknown, s: WindowState): void => cb(s);
+      ipcRenderer.on('window:state', handler);
+      return () => ipcRenderer.removeListener('window:state', handler);
+    },
+    titlebarDoubleClick: () => ipcRenderer.send('window:titlebarDoubleClick'),
   },
   app: {
     version: () => invoke('app:version'),

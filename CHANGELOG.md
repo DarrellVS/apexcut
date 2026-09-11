@@ -3,6 +3,24 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.17
+
+- New look. The window is one dark slab: panels sit edge to edge with hairlines between them, no
+  glass, gradients or glow; colour is kept for the data (corners, braking) and for delete/stop. Light
+  theme follows the same rules.
+- Custom title bar: the brand, project menu, active part, undo/redo, settings and “Make my movie” live
+  in the title bar; the Windows buttons stay native (snap layouts keep working).
+- The hairline between the panels can be dragged; the widths are remembered.
+- Timeline blocks show a colour stripe on their left edge and only as much label as fits, so narrow
+  parts no longer read “Con” or “C”. Ruler with minor ticks and a playhead head.
+- “Your ride in numbers” is now “This ride”, four rows that jump to the moment.
+- Scan screen lists the videos and ticks them off as they finish.
+- Light theme: the filmstrip under the parts is drawn as a real image (multiplied onto the light
+  ground) and the blocks are tinted more strongly, so the timeline reads as well as in dark.
+- Music plays whenever the playhead is inside a part that is in the movie, not only in Preview mode;
+  the ride sound ducks under it as it will in the movie. The music lane says it runs in movie time
+  (your parts back to back), which is why it does not line up with the recording above.
+
 ## 0.4.16
 
 - New switch under “How picky?”: **Count acceleration pulls too**. Straight-line pulls (a few seconds

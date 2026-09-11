@@ -9,20 +9,15 @@ const settings = useSettingsStore();
 <template>
   <div class="flex flex-col gap-3">
     <div class="card">
-      <b class="block text-sm text-fg">Transition for new projects</b>
-      <span class="text-xs text-muted">
+      <b class="block text-[13px] font-semibold text-fg">Transition for new projects</b>
+      <span class="text-xs text-fg2">
         Each project keeps its own choice in the Movie tab; this is where new projects start.
       </span>
-      <div class="mt-2 grid grid-cols-3 gap-1 rounded-ctl bg-s3/60 p-1" role="radiogroup">
+      <div class="seg mt-2" role="radiogroup">
         <button
           v-for="t in TRANSITIONS"
           :key="t"
-          class="rounded-lg py-1 text-xs font-semibold"
-          :class="
-            (settings.settings?.defaultTransition ?? 'crossfade') === t
-              ? 'bg-s3 text-fg shadow-sm'
-              : 'text-muted hover:text-fg'
-          "
+          class="seg-item"
           role="radio"
           :aria-checked="(settings.settings?.defaultTransition ?? 'crossfade') === t"
           :title="TRANSITION_LABEL[t].hint"
@@ -40,8 +35,8 @@ const settings = useSettingsStore();
         @change="settings.update({ snapping: ($event.target as HTMLInputElement).checked })"
       />
       <span>
-        <b class="block text-sm text-fg">Snap while dragging</b>
-        <span class="text-xs text-muted">
+        <b class="block text-[13px] font-semibold text-fg">Snap while dragging</b>
+        <span class="text-xs text-fg2">
           Part edges click onto the boundaries the scan found, quiet moments in the score, other
           parts and whole seconds. A thin blue line shows where it snapped. Hold <kbd>Alt</kbd> to
           get the opposite while dragging.

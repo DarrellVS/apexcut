@@ -36,17 +36,17 @@ const encoderLabel = (): string => {
       <BrandMark :size="44" />
       <div class="min-w-0">
         <b class="block text-fg">ApexCut {{ settings.version }}</b>
-        <span class="text-xs text-muted">Finds the fun parts of your helmet-cam videos.</span>
+        <span class="text-xs text-fg2">Finds the fun parts of your helmet-cam videos.</span>
       </div>
     </div>
-    <div class="card text-sm">
+    <div class="card text-[13px]">
       <div class="label-caps mb-1">Updates</div>
       <div class="flex items-center gap-3">
         <div class="min-w-0 flex-1 text-fg">
           <template v-if="updater.status.state === 'checking'">Checking…</template>
           <template v-else-if="updater.status.state === 'uptodate'">
             You have the latest version.
-            <span class="text-xs text-muted">Checked {{ fmtWhen(updater.status.checkedAt) }}</span>
+            <span class="text-xs text-fg2">Checked {{ fmtWhen(updater.status.checkedAt) }}</span>
           </template>
           <template v-else-if="updater.status.state === 'downloading'">
             Downloading
@@ -57,10 +57,10 @@ const encoderLabel = (): string => {
             ApexCut {{ updater.status.version }} is ready — installs when you restart.
           </template>
           <template v-else-if="updater.status.state === 'error'">
-            <span class="text-play">{{ updater.status.message }}</span>
+            <span class="text-danger">{{ updater.status.message }}</span>
           </template>
           <template v-else-if="updater.status.state === 'disabled'">
-            <span class="text-muted">Updates are checked in the installed app only.</span>
+            <span class="text-fg2">Updates are checked in the installed app only.</span>
           </template>
           <template v-else>Updates are checked when ApexCut starts.</template>
         </div>
@@ -81,20 +81,20 @@ const encoderLabel = (): string => {
         </button>
       </div>
       <details v-if="updater.status.state === 'ready' && updater.status.notes" class="mt-2 text-xs">
-        <summary class="cursor-pointer text-muted">What’s new</summary>
-        <pre class="m-0 mt-1 whitespace-pre-wrap text-muted">{{ updater.status.notes }}</pre>
+        <summary class="cursor-pointer text-fg2">What’s new</summary>
+        <pre class="m-0 mt-1 whitespace-pre-wrap text-fg2">{{ updater.status.notes }}</pre>
       </details>
     </div>
-    <div class="card text-sm">
+    <div class="card text-[13px]">
       <div class="label-caps mb-1">Exporting with</div>
       <div class="text-fg">{{ encoderLabel() }}</div>
-      <div v-if="settings.encoders" class="mt-1 text-xs text-muted">
+      <div v-if="settings.encoders" class="mt-1 text-xs text-fg2">
         ffmpeg {{ settings.encoders.ffmpegVersion }}
       </div>
     </div>
-    <div class="card text-sm">
+    <div class="card text-[13px]">
       <div class="label-caps mb-1">Something not right?</div>
-      <p class="m-0 mb-2 text-xs text-muted">
+      <p class="m-0 mb-2 text-xs text-fg2">
         Report a problem writes a zip to your Documents folder: the app log, your project list and
         settings (no videos, no picks). Send it along when you ask for help.
       </p>
@@ -102,7 +102,7 @@ const encoderLabel = (): string => {
         {{ reporting ? 'Writing report…' : 'Report a problem' }}
       </button>
     </div>
-    <p class="m-0 text-xs text-muted">
+    <p class="m-0 text-xs text-fg2">
       Open source on
       <a class="text-fg underline" href="https://github.com/DarrellVS/apexcut" target="_blank"
         >github.com/DarrellVS/apexcut</a

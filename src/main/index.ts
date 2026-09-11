@@ -10,6 +10,7 @@ import { ThumbnailAction } from './actions/thumbs';
 import { createServices, registerIpc } from './ipc';
 import { installProtocol, registerScheme } from './services/protocol';
 import { paths, readJson } from './services/store';
+import { TITLEBAR_HEIGHT } from '@shared/ipc';
 
 // same data folder in dev (unpackaged runs default to "Electron") and in the packaged app;
 // APEXCUT_USER_DATA points a test run at its own folder (also its own single-instance lock)
@@ -54,6 +55,14 @@ function createWindow(): void {
     autoHideMenuBar: true,
     backgroundColor: '#0d0d14',
     title: 'ApexCut',
+    // custom title bar: the renderer draws it; the OS keeps its own min / max / close buttons on
+    // top (Windows 11 snap layouts keep working), recoloured by the renderer on theme changes
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    trafficLightPosition: process.platform === 'darwin' ? { x: 14, y: 12 } : undefined,
+    titleBarOverlay:
+      process.platform === 'darwin'
+        ? { height: TITLEBAR_HEIGHT }
+        : { color: '#0d0d14', symbolColor: '#eeeef3', height: TITLEBAR_HEIGHT },
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -62,7 +71,31 @@ function createWindow(): void {
       nodeIntegration: false,
     },
   });
-  win.on('ready-to-show', () => win.show());
+  // with a title bar overlay 'ready-to-show' does not always fire: show after the first paint either way
+  let shown = false;
+  const showOnce = (): void => {
+    if (shown) return;
+    shown = true;
+    win.show();
+  };
+  win.on('ready-to-show', showOnce);
+  win.webContents.on('did-finish-load', showOnce);
+  // maximised / full screen / focus state for the title bar
+  const pushState = (): void => {
+    if (win.isDestroyed()) return;
+    win.webContents.send('window:state', {
+      maximized: win.isMaximized(),
+      fullscreen: win.isFullScreen(),
+      focused: win.isFocused(),
+    });
+  };
+  win.on('maximize', pushState);
+  win.on('unmaximize', pushState);
+  win.on('enter-full-screen', pushState);
+  win.on('leave-full-screen', pushState);
+  win.on('focus', pushState);
+  win.on('blur', pushState);
+  win.webContents.on('did-finish-load', pushState);
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: 'deny' };

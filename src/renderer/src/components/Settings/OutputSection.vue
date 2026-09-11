@@ -18,13 +18,13 @@ async function pickOutput(): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="m-0 text-sm text-muted">
+    <p class="m-0 text-[13px] text-fg2">
       Movies land in <b class="text-fg">movies</b>, separate clips in <b class="text-fg">clips</b>
       inside this folder. Your original recordings are never touched.
     </p>
     <div class="card flex items-center gap-3">
-      <PhFolderOpen :size="22" class="flex-none text-muted" />
-      <div class="min-w-0 flex-1 text-sm break-all text-fg">
+      <PhFolderOpen :size="22" class="flex-none text-fg2" />
+      <div class="min-w-0 flex-1 text-[13px] break-all text-fg">
         {{ settings.settings?.outputDir ?? 'Videos\\ApexCut (default)' }}
       </div>
       <button class="btn btn-mini" @click="pickOutput">Change…</button>

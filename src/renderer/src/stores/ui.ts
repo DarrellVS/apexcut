@@ -1,8 +1,11 @@
 /**
- * Cross-cutting UI state: the settings modal (open state + section).
+ * Cross-cutting UI state: the settings modal (open state + section) and the window state that the
+ * custom title bar needs (maximised, full screen, focused).
  */
+import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import type { WindowState } from '@shared/ipc';
 
 export type SettingsSection =
   | 'appearance'
@@ -26,8 +29,12 @@ export const useUiStore = defineStore('ui', () => {
   const fatal = ref<FatalError | null>(null);
   /** the three-step first-run tour is showing */
   const tourActive = ref(false);
+  /** pushed by the main process; the title bar dims when the window is not focused */
+  const win = ref<WindowState>({ maximized: false, fullscreen: false, focused: true });
   /** element that had focus before the modal opened; focus goes back there on close */
   let opener: HTMLElement | null = null;
+
+  api.window.onState((s) => (win.value = s));
 
   function openSettings(section?: SettingsSection): void {
     opener = document.activeElement as HTMLElement | null;
@@ -48,6 +55,7 @@ export const useUiStore = defineStore('ui', () => {
     settingsSection,
     fatal,
     tourActive,
+    win,
     openSettings,
     closeSettings,
     toggleSettings,

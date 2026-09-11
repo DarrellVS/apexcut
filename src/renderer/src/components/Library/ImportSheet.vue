@@ -48,36 +48,28 @@ function confirm(): void {
     aria-label="Add videos"
     @mousedown.self="emit('cancel')"
   >
-    <div class="popover flex w-full max-w-[560px] flex-col gap-4 rounded-[18px] p-6">
+    <div class="popover flex w-full max-w-[560px] flex-col gap-4 p-5">
       <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1">
-          <h2 class="m-0 text-lg font-bold text-fg">Videos from {{ groups.length }} days</h2>
-          <p class="m-0 text-sm text-muted">
+          <h2 class="m-0 text-base font-semibold text-fg">Videos from {{ groups.length }} days</h2>
+          <p class="m-0 text-[13px] text-fg2">
             A ride is usually a day. Keep them together in “{{ projects.active?.name }}” or make a
             project per day.
           </p>
         </div>
-        <button class="btn btn-ghost p-1.5" aria-label="Cancel" @click="emit('cancel')">
+        <button class="btn btn-ghost btn-icon" aria-label="Cancel" @click="emit('cancel')">
           <PhX :size="16" weight="bold" />
         </button>
       </div>
 
       <div class="grid grid-cols-2 gap-2">
-        <button
-          class="rounded-ctl border-[1.5px] p-2.5 text-left"
-          :class="mode === 'perDay' ? 'border-acc2 bg-acc2/10' : 'border-line bg-s2'"
-          @click="mode = 'perDay'"
-        >
+        <button class="tile p-2.5" :aria-pressed="mode === 'perDay'" @click="mode = 'perDay'">
           <b class="block text-[13px] text-fg">One project per day</b>
-          <span class="text-xs text-muted">recommended</span>
+          <span class="text-xs text-fg2">recommended</span>
         </button>
-        <button
-          class="rounded-ctl border-[1.5px] p-2.5 text-left"
-          :class="mode === 'one' ? 'border-acc2 bg-acc2/10' : 'border-line bg-s2'"
-          @click="mode = 'one'"
-        >
+        <button class="tile p-2.5" :aria-pressed="mode === 'one'" @click="mode = 'one'">
           <b class="block text-[13px] text-fg">All into this project</b>
-          <span class="text-xs text-muted">“{{ projects.active?.name }}”</span>
+          <span class="text-xs text-fg2">“{{ projects.active?.name }}”</span>
         </button>
       </div>
 
@@ -85,7 +77,7 @@ function confirm(): void {
         <li
           v-for="g in groups"
           :key="g.day"
-          class="flex items-center gap-3 rounded-ctl bg-s2 px-3 py-2"
+          class="flex items-center gap-3 rounded-ctl border border-line bg-bg2 px-3 py-1.5"
           :class="{ 'opacity-50': !checked[g.day] }"
         >
           <input
@@ -98,12 +90,12 @@ function confirm(): void {
             <input
               v-if="mode === 'perDay'"
               v-model="names[g.day]"
-              class="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-fg outline-none hover:border-line focus:border-sel"
+              class="h-6 w-full rounded-[3px] border border-transparent bg-transparent px-1 text-[13px] font-semibold text-fg outline-none hover:border-line focus:border-sel"
               maxlength="80"
               :disabled="!checked[g.day]"
             />
-            <b v-else class="block px-1 text-sm text-fg">{{ dayLabel(g.day) }}</b>
-            <span class="px-1 text-xs text-muted">
+            <b v-else class="block px-1 text-[13px] font-semibold text-fg">{{ dayLabel(g.day) }}</b>
+            <span class="px-1 text-xs text-fg2">
               {{ g.stems.length }} video{{ g.stems.length === 1 ? '' : 's' }}
               <template v-if="g.known"> · {{ g.known }} already scanned</template>
             </span>
@@ -112,7 +104,7 @@ function confirm(): void {
       </ul>
 
       <div class="flex items-center gap-2">
-        <span class="text-xs text-muted">{{ nVideos }} videos selected</span>
+        <span class="text-xs text-fg2">{{ nVideos }} videos selected</span>
         <button class="btn ml-auto" @click="emit('cancel')">Cancel</button>
         <button class="btn btn-pri" :disabled="!nVideos" @click="confirm">
           {{ mode === 'perDay' ? `Create ${selected.length} projects` : 'Add videos' }}

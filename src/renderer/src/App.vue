@@ -12,6 +12,7 @@ import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUiStore } from '@renderer/stores/ui';
 import { useUpdaterStore } from '@renderer/stores/updater';
+import { usePanelWidth } from '@renderer/composables/usePanelWidth';
 import type { ImportGroup } from '@shared/ipc';
 import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
 import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
@@ -37,6 +38,10 @@ const editor = useEditorStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
 const updater = useUpdaterStore();
+
+// side panels: drag the hairline between panels; widths are remembered
+const left = usePanelWidth('left', 280, 200, 480, 1);
+const right = usePanelWidth('right', 300, 240, 520, -1);
 
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
 const inspector = ref<InstanceType<typeof InspectorPanel> | null>(null);
@@ -306,17 +311,29 @@ function onKey(e: KeyboardEvent): void {
 
 <template>
   <div
-    class="relative flex h-full flex-col gap-2.5 p-2.5"
+    class="relative flex h-full flex-col bg-bg0"
     @dragover="onDragOver"
     @dragleave.self="dropping = false"
     @drop="onDrop"
   >
     <div
       v-if="dropping"
-      class="pointer-events-none absolute inset-2.5 z-40 grid place-items-center rounded-card border-2 border-dashed border-acc2 bg-acc2/10 text-lg font-semibold text-fg"
+      class="pointer-events-none absolute inset-2 z-40 grid place-items-center rounded-card border border-dashed border-line2 bg-bg0/80 text-sm font-semibold text-fg"
     >
       Drop your videos to add them to “{{ projects.active?.name }}”
     </div>
+    <TopBar
+      :in-editor="phase === 'editor'"
+      :title="
+        phase === 'projects'
+          ? 'Projects'
+          : phase === 'scanning'
+            ? 'Scanning'
+            : (projects.active?.name ?? '')
+      "
+      @make="inspector?.openMovie($event)"
+      @home="goHome"
+    />
     <UpdateBanner />
     <ProjectsHome v-if="phase === 'projects'" @open="openProject" />
     <EmptyState
@@ -327,10 +344,24 @@ function onKey(e: KeyboardEvent): void {
     />
     <ScanProgress v-else-if="phase === 'scanning'" />
     <template v-else>
-      <TopBar @make="inspector?.openMovie($event)" @home="goHome" />
-      <main class="grid min-h-0 flex-1 grid-cols-[300px_1fr_300px] gap-2.5">
+      <main
+        class="grid min-h-0 flex-1"
+        :style="{
+          gridTemplateColumns: `${left.width.value}px 1px minmax(0,1fr) 1px ${right.width.value}px`,
+        }"
+      >
         <VideoList @pick="pickAndScan" />
+        <div
+          class="splitter"
+          :class="{ 'is-dragging': left.dragging.value }"
+          @mousedown="left.start"
+        />
         <VideoStage ref="stage" :framing="inspector?.framingActive ?? false" />
+        <div
+          class="splitter"
+          :class="{ 'is-dragging': right.dragging.value }"
+          @mousedown="right.start"
+        />
         <InspectorPanel
           ref="inspector"
           @seek="stage?.seek($event)"

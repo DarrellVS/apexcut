@@ -1,110 +1,120 @@
-# Design system
+# Design system — "Slab"
 
-Influences: Flush (density, typography, colour-coded timeline blocks), CutCut (light theme, cards,
-top bar), jellyfish-style glass panels and floating transport. Goal: an editor a non-technical rider
-understands in one look, in light and dark.
+The window is one dark slab. Panels sit edge to edge, separated by 1 px hairlines; nothing floats,
+blurs or glows. The chrome is achromatic so that colour means data (which kind of part a block is) or
+danger (delete, stop). Goal unchanged: an editor a non-technical rider understands in one look, that
+still reads as a serious tool next to Resolve or Final Cut.
+
+Research behind it (Sept 2026): DaVinci Resolve, Premiere 25 / Spectrum 2, Final Cut Pro, CapCut,
+Descript, Runway, Frame.io V4, Screen Studio, Recut, plus the "AI-generated UI" checklists that call
+out gradients, glass, rounded-2xl, indigo accents, pill badges, glowing shadows and oversized friendly
+copy. What nearly all pro editors share: a 4–5 step neutral grey ladder, one accent spent only on
+state, square-ish clips, small tabular type, the same three-plus-one layout, a unified title bar.
 
 ## Layout
 
 ```
-┌ top bar (glass) ─────────────────────────────────────────────────────────────┐
-│ ◆ ApexCut  my-ride · Saved     [selected part: reason · time · why]   ↶ ↷  [Make my movie ▾] │
-├ Videos (300) ┬ stage (video, floating transport) ┬ inspector (300): Parts | Movie | This video ┤
-├ timeline (glass): ruler · Score lane · Parts lane (filmstrip bg, blocks, join bars, floating toolbar) · legend ┤
+┌ title bar 40 px (drag handle; native ─ ☐ ✕ drawn by the OS at the right) ───────────────────┐
+│ ⋀ ApexCut / Eifel test ▾  Video 24 · Saved     [Corners · 7:28 – 7:38 · 11 sec]   ↶ ↷ ⚙ [Make my movie ▾] │
+├ Videos (280, draggable) │ stage (video in an 8 px black inset) │ Parts | Movie | This video (300, draggable) ┤
+├ timeline 300: ruler 20 · score 40 · parts lane · music 28+32 · legend 28 ───────────────────────┤
 ```
 
-- Panels are floating glass cards with 10 px gaps on a soft two-tone radial gradient backdrop.
-- Sidebars are equal width (300 px). Left = videos. Right = tabs Parts / Movie / This video.
-- Settings open as a near-fullscreen rounded modal (gear in the top bar, `Ctrl+,`, Esc closes): left nav
-  grouped App / Editing / Advanced, one section at a time on the right, 680 px reading width. Nothing
-  global lives in the sidebar any more.
-- Top bar centre shows the active part (hover, selection or playing): `Corners · 7:28 – 7:38 · 11 sec · up to 27° lean`.
-- Actions on a part live in the floating toolbar above the block (Play · Leave out / Put back · Join /
-  Join with next · Delete). It must stay on one line and shift horizontally to remain inside the lane.
-- Empty state and scan progress are full-screen with one primary action.
+- **Title bar** (`Shell/TopBar.vue`): `titleBarStyle: 'hidden'` + `titleBarOverlay` so Windows keeps
+  its own buttons (and Windows 11 snap layouts). The bar is `app-region: drag`; every clickable child
+  is `no-drag`. Content stops at `env(titlebar-area-width)`. Double-click maximises. The renderer
+  recolours the native buttons on every theme change (`window:setOverlay` with `--bg0` / `--fg2`) and
+  the bar dims to 60 % when the window is not focused. Height is `TITLEBAR_HEIGHT` in `shared/ipc.ts`.
+- **Splitters**: the hairline between panels has a 6 px invisible grip; widths are remembered per
+  side (`composables/usePanelWidth.ts`, localStorage).
+- **Panels** are `.panel` (flat `--bg1`) with a 32 px `.panel-head` (11 px caps) or a 32 px tab strip
+  with a 2 px `--ink` underline under the open tab.
+- Title bar centre shows the active part (hover, selection or playing): `Corners · 7:28 – 7:38 ·
+11 sec · up to 27° lean`; otherwise the movie so far.
+- Actions on a part live in the chip toolbar above the block (Play · Leave out / Put back · Star ·
+  Join / Join with next · Delete). It stays on one line and shifts horizontally to remain in the lane.
+- Empty state and scan progress are single centred columns with one primary action.
 
-## Tokens (`src/renderer/src/assets/tokens.css`, exposed to Tailwind v4 via `@theme`)
+## Tokens (`src/renderer/src/assets/main.css`, exposed to Tailwind v4 via `@theme inline`)
 
-| token              | light                 | dark                      | use                                        |
-| ------------------ | --------------------- | ------------------------- | ------------------------------------------ |
-| `--bg` / `--bg2`   | #eef0f6 / #f7f3ff     | #0d0d14 / #1a1030         | page backdrop gradient                     |
-| `--glass`          | rgba(255,255,255,.72) | rgba(28,28,38,.72)        | panel fill (blur 18px)                     |
-| `--s2` / `--s3`    | rgba(0,0,0,.045/.08)  | rgba(255,255,255,.06/.10) | buttons, rows, hover                       |
-| `--line`           | rgba(20,20,40,.08)    | rgba(255,255,255,.09)     | 1 px borders                               |
-| `--fg` / `--muted` | #15161c / #6d6e7a     | #eeeef3 / #9394a3         | text                                       |
-| `--acc1 → --acc2`  | #ff7a3d → #ff3d81     | same                      | brand gradient: logo, primary button, Join |
-| `--corner`         | #f0862c               | #ffa04a                   | data: corners                              |
-| `--brake`          | #1fa3a3               | #4dd0d0                   | data: braking/acceleration                 |
-| `--both`           | #8b5cf6               | #b394ff                   | data: corners + braking                    |
-| `--manual`         | #8d8d98               | #a0a0ab                   | data: added / joined                       |
-| `--sel` / `--play` | #3b82f6 / #ff3d5a     | same                      | selection outline / playhead               |
-| `--r` / `--rs`     | 14 px / 10 px         |                           | card radius / control radius               |
+| token                                | dark                        | light                       | use                                     |
+| ------------------------------------ | --------------------------- | --------------------------- | --------------------------------------- |
+| `--bg0`                              | #0f1012                     | #e4e5e9                     | window ground: title bar, stage, ruler  |
+| `--bg1`                              | #16171a                     | #f3f3f5                     | panels, lanes                           |
+| `--bg2`                              | #1d1f23                     | #ffffff                     | raised: buttons, inputs, rows, popovers |
+| `--bg3`                              | #262931                     | #e9eaee                     | hover / pressed                         |
+| `--line` / `--line2`                 | #2a2d33 / #3d414a           | #d3d5db / #b9bcc5           | hairlines / stronger hairline           |
+| `--fg` / `--fg2` / `--fg3`           | #e8e9ec / #a0a4ac / #6c717b | #17181b / #5c6068 / #8a8e97 | text: primary / secondary / hint        |
+| `--ink` / `--ink-fg`                 | #e8e9ec / #111214           | #17181b / #ffffff           | the inverse: primary button, progress   |
+| `--sel` / `--play`                   | = `--ink`                   | = `--ink`                   | selection ring / playhead               |
+| `--danger`                           | #e5484d                     | #d23b3b                     | delete, stop, missing file              |
+| `--corner`                           | #d9a04a                     | #c98a2e                     | data: corners                           |
+| `--brake`                            | #4fb3ad                     | #2f9d97                     | data: braking / acceleration            |
+| `--both`                             | #9d8ce0                     | #7f6bcf                     | data: corners + braking                 |
+| `--manual`                           | #8b8f98                     | #7c8089                     | data: added / joined                    |
+| `--r-ctl` / `--r-card` / `--r-block` | 4 / 6 / 2 px                |                             | controls / cards, popovers / blocks     |
 
-Data colours are semantic and identical in meaning across themes. Primary buttons use the brand
-gradient; everything else is neutral. Theme: `data-theme="light|dark"` on `<html>`, "System" follows
-`prefers-color-scheme`; stored in settings.
+No gradients, no `backdrop-filter`, no glow. Shadows only on popovers (`--shadow`). Data colours are
+semantic and identical in meaning across themes. Theme: `data-theme="light|dark"` on `<html>`,
+"System" follows `prefers-color-scheme`; stored in settings.
 
-## Projects screen
+## Components (utilities in `main.css`)
 
-Shown before the editor (and via the brand button / project menu in the top bar). Header: logo, "Your
-projects" + one-line explanation, `Import project…` (neutral) and `New project` (primary). Cards in an
-auto-fill grid (min 280 px): 16:9 thumbnail of the first scanned video, name, `N videos · N parts · length`,
-last edit ("today 14:27", "yesterday", "Mon 7 Sep"). The open project has a `Open` pill and a selection
-ring. A `···` button on hover opens Rename / Export project… / Delete; delete confirms inline on the card
-("Your videos and their scans stay; only this project's picks go."). New project = an inline card with a
-name field. The top bar reads `ApexCut / <project> ▾ · Video 34 · Saved`; the project menu offers All
-projects / Rename (inline) / Export project…. With more than three projects a search field and a sort
-segment (Last edited / Name / Movie length) appear; the card menu also has Archive, which moves the card
-into a collapsed “Archived · n” section at the bottom.
+- `.btn` 28 px, hairline, `--bg2`; `.btn-pri` inverse (`--ink`); `.btn-ghost` transparent; `.btn-danger`;
+  `.btn-mini` 22 px; `.btn-icon` 28×28. No pill buttons, no scale on press.
+- `.input` 28 px; `.seg` / `.seg-item` segmented radio (the chosen item raised on `--bg2`);
+  `.tile` a bordered choice card (`aria-pressed` = selected, `--sel` border); `.card` for grouped
+  settings; `.row` / `.menu-item` 28 px rows.
+- `.popover` on the chrome (`--bg2`, `--line2`, shadow). `.chip` / `.chip-btn` for anything that sits
+  on video or the timeline (transport, toolbars, hover readout): dark in both themes because it is over
+  media.
+- `.label-caps` 11 px / 600 / 0.04em; `.num` tabular numerals — on every time, count and size.
 
-- **How picky? (Parts tab)**: preset segment, the Fewer/More parts slider, then a checkbox “Count
-  acceleration pulls too” with a one-line plain-words explanation (per project; toggling rescoring
-  every video and toasting the new count), then “Add part at …”.
+## Screens
 
-## Sheets, banners and the tour
-
-- **Import sheet**: a pick or drop that spans several recording days asks first — one row per day with a
-  checkbox and an editable name, and the choice One project per day (recommended) / All into this project.
-- **Update banner**: a slim glass bar above the top bar once a new version has downloaded: “ApexCut 0.3.0 It appears already while the update downloads (icon pulses, percentage, a 2 px gradient progress line along the bottom edge) and turns into the ready state in place.
-  is ready · What’s new · Restart to update · ×”.
-- **Error card**: a centred `popover` card for anything we could not recover from — plain title and hint
-  from `utils/errors.ts`, Details disclosure with the raw text, Restart ApexCut, Report a problem (zip in
-  Documents), Continue anyway.
-- **Quick tour**: three steps with a spotlight (a rounded hole in a 60 % black overlay) on the parts lane,
-  Preview and Make my movie; a 340 px card that clamps to the window. Shown once, replayable from Settings.
-- **Music lane**: under the parts lane, in movie time (all enabled parts back to back): songs as teal
-  blocks laid end to end with trim handles, a dashed line where the movie ends, a floating toolbar for
-  the selected song (volume, fade in/out, earlier/later, remove), and Music / Ride sound sliders in the
-  lane header. Missing files show dashed in `--play`. Preview plays the song that covers the playhead
-  and ducks the ride sound to the chosen level.
-- **Movie tab**: transition segment (Crossfade / Cut / Dip to black) with a plain-words hint,
-  title card and end card toggles, “Only the starred parts”.
-- **Telemetry overlay**: white bike silhouette and angle number (Lean angle) or dial + orange needle +
-  teal/orange g-bar (Dashboard) in a chosen corner, sizes S/M/L as a share of the frame height; drawn
-  live on the stage inside the export crop so it lands where it will be. Colours are fixed (white,
-  `#ff7a3d`, `#4dd0d0`) because they sit on video, not on the app theme.
-- **Ride card**: 1080×1350 and 1200×630 PNG — dark or light ground (follows the theme) with the brand
-  glow, mark + project name + date, three thumbnails of the best parts, four stat tiles, footer with the
-  twistiest minute and “Made with ApexCut”. Every number is measured inside the parts that are in the
-  movie (`src/core/stats.ts`): corners = lean excursions past 20° (ending under 12°, same-side dips
-  under 0.6 s merged, blips under 0.4 s dropped); sharpest lean / hardest braking are the extremes in
-  those parts; the twistiest minute is the 60 s window with the most time above 10° of lean.
-- **Export overlay**: while a movie is made, a centred `popover` card (520 px) with a 56 px percentage,
-  the step, elapsed/left, a brand-gradient bar and the note that the project is locked; × or Esc asks
-  “Stop the export?” inline before cancelling; when done the card shows Watch it / Open folder / Done.
-- **Focus**: every interactive element shows a 2 px `--sel` ring for keyboard focus only; timeline blocks
-  are focusable (arrows move, Enter plays, Space toggles, Delete removes). `prefers-reduced-motion` turns
-  transitions off.
+- **Projects**: left-aligned page header, `Import project…` (neutral) and `New project` (primary).
+  Cards (min 280 px) with a 16:9 thumbnail, name, `N videos · N parts · length`, last edit. The open
+  project has an `Open` tag and an `--sel` border; `···` opens Rename / Export project… / Archive /
+  Delete (inline confirm). New project is an inline card. Search + sort appear with more than three
+  projects; archived ones collapse at the bottom.
+- **Empty project**: a dashed drop zone with `Choose videos…` (primary) and `Whole memory card…`.
+- **Scanning**: title + percentage, a 4 px `--ink` bar, the stage text and `n of m videos done`, then
+  the list of videos ticking off.
+- **Parts tab**: How picky? (preset segment, Fewer/More slider, “Count acceleration pulls too”
+  checkbox with a one-line explanation, “Add part at …”), **This ride** (four label/value rows that
+  jump to the moment), the part list (checkbox, colour tick, time, reason, length, star).
+- **Movie tab**: 11 px caps labels over tiles (`One movie` / `Separate clips`; four formats),
+  segments for transition and riding-data overlay, title/end card checkboxes, one primary button.
+- **Settings**: near-fullscreen popover, left nav grouped App / Editing / Advanced, 640 px reading
+  width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned.
+- **Import sheet**, **Export overlay**, **Error card**, **Quick tour**: centred popovers, base
+  16 px titles, mini progress dots for the tour.
+- **Update banner**: 32 px bar under the title bar; downloading shows the percentage and a 1 px
+  `--ink` line along the bottom edge, then turns into “ready · What’s new · Restart to update · ×”.
+- **Toast**: a popover under the title bar, centred, 3 s.
+- **Ride card** / **telemetry overlay** draw on video, not on the theme: their colours are fixed
+  (white, orange, teal) — see `src/core/overlay.ts` and `utils/rideCard.ts`.
 
 ## Type & shape
 
-Inter (self-hosted), 14 px base, 12 px timeline/tables, 11 px uppercase section labels with 0.06em
-tracking, `tabular-nums` for times. Radii: cards 14, controls 10, blocks 8, floating bars 12. Shadows
-only on floating elements. Motion: opacity/transform only, 150–200 ms.
+System UI (Segoe UI Variable on Windows, SF on macOS), 13 px base / 1.45, 12 px secondary and
+timeline, 11 px caps labels, 16–18 px page titles; weights 400 / 500 / 600 carry the hierarchy, not
+colour. `tabular-nums` on every number. Radii: controls 4, cards and popovers 6, timeline blocks 2,
+panels 0. Motion: opacity/colour only, 120–150 ms; `prefers-reduced-motion` turns it off. Focus:
+1.5 px `--sel` outline for keyboard focus only.
 
 ## Timeline
 
-Ruler → Score lane (white overall score, orange leaning, teal braking, dashed threshold) → Parts lane
-with the filmstrip as a dimmed background (opacity ≈ .28), blocks as 8 px-radius solid colour with
-white label text and edge grips, dashed join bars above chains that likely belong together, hover
-popover with values, legend row below.
+Ruler (20 px, `--bg0`, minor + major ticks, clock labels, a triangular playhead head) → Score lane
+(40 px: `--fg` overall score with a faint area fill, `--corner` leaning, `--brake` braking, dashed
+`--fg3` “fun enough” line) → Parts lane with the filmstrip as a dimmed background (`--strip-alpha` /
+`--strip-blend`: .22 normal in dark, .45 multiply in light; saturation .6). Blocks (`.block`,
+`.block-corner` …): 2 px radius, a 3 px solid stripe in the data colour on the left edge and a
+`--block-mix` tint of the same colour as fill (40 % dark, 60 % light), `--fg` label + tabular length; left-out parts are 45 % with a
+dashed stripe; the selection is a 1 px inset `--sel` ring. Join suggestions are 10 px dashed
+`--corner` bars above chains that belong together. The playhead is a 1 px `--play` line in every
+lane. Music lane: 28 px header (Music · Add music… · Music / Ride sound sliders · a hint that the lane
+runs in movie time) and a 32 px lane with `--brake` blocks (dashed `--danger` when the file is
+missing). The song under the playhead plays whenever the playhead is inside a kept part, preview or
+not, with the ride sound ducked. Legend row: swatches, the movie
+length, Zoom slider, Fit, help.

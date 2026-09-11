@@ -127,11 +127,9 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
 
 <template>
   <div class="flex flex-col border-t border-line" data-tour="music">
-    <div class="flex items-center gap-3 px-3 py-1 text-[11px] text-muted">
-      <span class="label-caps flex items-center gap-1"><PhMusicNotes :size="12" /> Music</span>
-      <button class="btn btn-mini flex items-center gap-1" @click="pick">
-        <PhPlus :size="11" /> Add music…
-      </button>
+    <div class="num flex h-7 items-center gap-3 px-3 text-[11px] text-fg2">
+      <span class="label-caps flex items-center gap-1.5"><PhMusicNotes :size="12" /> Music</span>
+      <button class="btn btn-mini" @click="pick"><PhPlus :size="11" /> Add music…</button>
       <template v-if="music.tracks.length">
         <label class="ml-auto flex items-center gap-1.5" title="How loud the songs play">
           Music
@@ -163,55 +161,61 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
           />
         </label>
       </template>
-      <span v-else class="ml-auto"
-        >Songs play back to back under your movie; drop music files here too.</span
-      >
+      <span class="truncate text-fg3" :class="{ 'ml-auto': !music.tracks.length }">
+        <template v-if="music.tracks.length">
+          Movie time: your parts back to back ({{ fmtDuration(movieLen) }}), so this lane does not
+          line up with the recording above.
+        </template>
+        <template v-else
+          >Songs play back to back under your movie; drop music files here too.</template
+        >
+      </span>
     </div>
-    <div ref="lane" class="relative h-9 bg-s2/40" data-music-keep>
+    <div ref="lane" class="relative h-8 border-t border-line bg-bg1" data-music-keep>
       <div
         v-if="movieLen > 0"
-        class="pointer-events-none absolute inset-y-0 border-r border-dashed border-line"
+        class="pointer-events-none absolute inset-y-0 border-r border-dashed border-line2"
         :style="{ left: 0, width: `${pct(movieLen)}%` }"
         title="end of the movie"
       />
       <div
         v-for="p in placed"
         :key="p.track.id"
-        class="absolute top-1 bottom-1 flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-md border px-3 text-[11px] font-semibold whitespace-nowrap text-fg select-none"
+        class="absolute top-1 bottom-1 flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-block border-l-[3px] pr-2 pl-2 text-[11px] whitespace-nowrap text-fg select-none"
         :class="[
           missing[p.track.id]
-            ? 'border-dashed border-play/60 bg-play/10'
-            : 'border-brake/50 bg-brake/25 hover:bg-brake/35',
-          { 'outline-2 outline-offset-1 outline-sel': selected === p.track.id },
+            ? 'border-danger bg-danger/10 [border-left-style:dashed]'
+            : 'border-brake bg-brake/25 hover:bg-brake/35',
+          { 'ring-1 ring-sel ring-inset': selected === p.track.id },
         ]"
         :style="{ left: `${pct(p.offsetS)}%`, width: `${Math.max(0.5, pct(p.lengthS))}%` }"
         :title="`${p.track.name} · ${fmtTime(p.track.inS)}–${fmtTime(p.track.outS)} of ${fmtTime(p.track.durationS)}`"
         @mousedown.stop="selected = p.track.id"
       >
         <div
-          class="absolute inset-y-0 left-0 w-2.5 cursor-ew-resize hover:bg-white/20"
+          class="absolute inset-y-0 left-0 w-2.5 cursor-ew-resize"
           title="Drag: where the song starts"
           @mousedown="trim($event, p.track, 'inS')"
         />
-        <PhWarning v-if="missing[p.track.id]" :size="12" class="text-play" />
+        <PhWarning v-if="missing[p.track.id]" :size="12" class="text-danger" />
         <PhMusicNotes v-else :size="12" />
-        <span class="truncate">{{ p.track.name }}</span>
-        <span class="text-muted">{{ fmtDuration(p.lengthS) }}</span>
-        <span v-if="missing[p.track.id]" class="text-play">file missing</span>
+        <b class="truncate font-semibold">{{ p.track.name }}</b>
+        <span class="num text-fg2">{{ fmtDuration(p.lengthS) }}</span>
+        <span v-if="missing[p.track.id]" class="text-danger">file missing</span>
         <div
-          class="absolute inset-y-0 right-0 w-2.5 cursor-ew-resize hover:bg-white/20"
+          class="absolute inset-y-0 right-0 w-2.5 cursor-ew-resize"
           title="Drag: where the song stops"
           @mousedown="trim($event, p.track, 'outS')"
         />
       </div>
       <div
-        class="pointer-events-none absolute inset-y-0 w-0.5 bg-play"
+        class="pointer-events-none absolute inset-y-0 w-px bg-play"
         :style="{ left: `${playheadPct}%` }"
       />
       <!-- toolbar for the selected song: one line, clamped inside the lane -->
       <div
         v-if="sel && selPlaced"
-        class="floating absolute -top-2 z-[6] flex -translate-y-full items-center gap-2 px-2 py-1 text-xs whitespace-nowrap"
+        class="chip absolute -top-1 z-[6] flex -translate-y-full items-center gap-2 px-2 py-1 text-xs whitespace-nowrap"
         :style="{
           left: `min(max(0px, ${pct(selPlaced.offsetS + selPlaced.lengthS / 2)}% - 190px), calc(100% - 380px))`,
         }"
@@ -242,7 +246,7 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
           In
           <input
             type="number"
-            class="w-12 rounded border border-white/20 bg-transparent px-1 text-white"
+            class="num h-5 w-11 rounded-[3px] border border-white/20 bg-transparent px-1 text-xs text-white"
             min="0"
             max="10"
             step="0.5"
@@ -261,7 +265,7 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
           Out
           <input
             type="number"
-            class="w-12 rounded border border-white/20 bg-transparent px-1 text-white"
+            class="num h-5 w-11 rounded-[3px] border border-white/20 bg-transparent px-1 text-xs text-white"
             min="0"
             max="10"
             step="0.5"
@@ -277,7 +281,7 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
           />
         </label>
         <button
-          class="rounded px-1.5 py-0.5 hover:bg-white/10"
+          class="chip-btn px-1.5"
           title="Play earlier"
           aria-label="Move song earlier"
           @click="move(sel.id, -1)"
@@ -285,17 +289,14 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
           <PhCaretLeft :size="12" weight="bold" />
         </button>
         <button
-          class="rounded px-1.5 py-0.5 hover:bg-white/10"
+          class="chip-btn px-1.5"
           title="Play later"
           aria-label="Move song later"
           @click="move(sel.id, 1)"
         >
           <PhCaretRight :size="12" weight="bold" />
         </button>
-        <button
-          class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[#ff8a8a] hover:bg-white/10"
-          @click="remove(sel.id)"
-        >
+        <button class="chip-btn text-[#ff8080]" @click="remove(sel.id)">
           <PhTrash :size="12" /> Remove
         </button>
       </div>

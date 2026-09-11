@@ -13,30 +13,23 @@ const OPTIONS: { id: Theme; label: string; hint: string }[] = [
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="m-0 text-sm text-muted">
+    <p class="m-0 text-[13px] text-fg2">
       Colours of the app. Your videos and the timeline data look the same in both.
     </p>
     <div class="grid grid-cols-3 gap-2.5">
       <button
         v-for="o in OPTIONS"
         :key="o.id"
-        class="card flex flex-col gap-1 text-left transition-colors hover:bg-s3"
-        :class="{ 'ring-2 ring-sel': settings.settings?.theme === o.id }"
+        class="tile flex flex-col gap-1 p-2.5"
         :aria-pressed="settings.settings?.theme === o.id"
         @click="settings.update({ theme: o.id })"
       >
-        <span
-          class="mb-1 h-14 w-full rounded-lg border border-line"
-          :class="
-            o.id === 'light'
-              ? 'bg-swatch-light'
-              : o.id === 'dark'
-                ? 'bg-swatch-dark'
-                : 'bg-gradient-to-r from-swatch-light to-swatch-dark'
-          "
-        />
-        <b class="text-sm text-fg">{{ o.label }}</b>
-        <span class="text-xs text-muted">{{ o.hint }}</span>
+        <span class="mb-1 flex h-12 w-full overflow-hidden rounded-[3px] border border-line">
+          <span class="flex-1" :class="o.id === 'dark' ? 'bg-swatch-dark' : 'bg-swatch-light'" />
+          <span class="flex-1" :class="o.id === 'light' ? 'bg-swatch-light' : 'bg-swatch-dark'" />
+        </span>
+        <b class="text-[13px] font-semibold text-fg">{{ o.label }}</b>
+        <span class="text-xs text-fg2">{{ o.hint }}</span>
       </button>
     </div>
   </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The video with a floating glass transport, preview mode (plays only enabled parts back to back)
+ * The video with a floating panel transport, preview mode (plays only enabled parts back to back)
  * and the draggable framing window shown while a cropped format is being chosen.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
@@ -150,8 +150,9 @@ function measure(): void {
   const v = video.value;
   const st = stage.value;
   if (!v || !st || !v.videoWidth) return;
-  const W = st.clientWidth;
-  const H = st.clientHeight;
+  const PAD = 8; // the black video box sits 8 px inside the stage
+  const W = st.clientWidth - 2 * PAD;
+  const H = st.clientHeight - 2 * PAD;
   const ar = v.videoWidth / v.videoHeight;
   let w = W;
   let h = W / ar;
@@ -159,7 +160,7 @@ function measure(): void {
     h = H;
     w = H * ar;
   }
-  box.value = { left: (W - w) / 2, top: (H - h) / 2, width: w, height: h };
+  box.value = { left: PAD + (W - w) / 2, top: PAD + (H - h) / 2, width: w, height: h };
 }
 const format = computed(() => settings.settings?.lastFormat ?? '16x9');
 const framePos = computed(() => settings.settings?.lastFramePos ?? 0.5);
@@ -209,7 +210,7 @@ onMounted(() => {
   if (src.value && video.value) video.value.src = src.value;
 });
 
-// ---- music under the preview: the song that covers the movie time plays in sync, the ride sound ducks
+// ---- music under the video: the song that covers the movie time plays in sync, the ride sound ducks
 const music = ref<HTMLAudioElement | null>(null);
 const { movieTimeOf, trackAt } = useMovieTime();
 let musicSrc = '';
@@ -218,8 +219,12 @@ function syncMusic(): void {
   const a = music.value;
   if (!v || !a) return;
   const settings = projects.active?.music;
-  const active = previewOn.value && !v.paused && !watchingResult.value && settings?.tracks.length;
-  const hit = active ? trackAt(movieTimeOf(v.currentTime)) : null;
+  // the song plays whenever the playhead is inside a part that is in the movie (preview or not);
+  // between parts, and when watching a finished movie, the ride sound is on its own
+  const t = v.currentTime;
+  const inPart = editor.enabledParts.some((p) => t >= p.start_s && t < p.end_s);
+  const active = inPart && !v.paused && !watchingResult.value && settings?.tracks.length;
+  const hit = active ? trackAt(movieTimeOf(t)) : null;
   if (!hit) {
     if (!a.paused) a.pause();
     v.volume = 1;
@@ -309,23 +314,22 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
 </script>
 
 <template>
-  <section
-    ref="stage"
-    class="relative grid min-h-0 place-items-center overflow-hidden rounded-card border border-line bg-black shadow-float"
-  >
-    <video
-      ref="video"
-      class="absolute inset-0 h-full w-full object-contain"
-      preload="metadata"
-      @timeupdate="onTime"
-      @loadedmetadata="
-        onTime();
-        measure();
-      "
-      @play="onPlay"
-      @pause="onPause"
-      @click="togglePlay"
-    />
+  <section ref="stage" class="relative grid min-h-0 place-items-center overflow-hidden bg-bg0">
+    <div class="absolute inset-2 overflow-hidden rounded-[3px] bg-black">
+      <video
+        ref="video"
+        class="absolute inset-0 h-full w-full object-contain"
+        preload="metadata"
+        @timeupdate="onTime"
+        @loadedmetadata="
+          onTime();
+          measure();
+        "
+        @play="onPlay"
+        @pause="onPause"
+        @click="togglePlay"
+      />
+    </div>
     <audio ref="music" preload="auto" />
     <!-- telemetry overlay preview, same drawing as the export, over the video box -->
     <canvas
@@ -347,11 +351,10 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
     >
       <div
         v-if="previewOn && !framing"
-        class="floating absolute top-3 left-3 flex items-center gap-2 rounded-full px-3 py-1.5 text-xs"
+        class="chip absolute top-4 left-4 flex h-7 items-center gap-2 pr-1 pl-2.5 text-xs"
       >
-        <span class="h-2 w-2 animate-pulse rounded-full bg-acc1" /> Preview: only your selected
-        parts
-        <button class="btn btn-ghost btn-mini text-white" @click="previewOn = false">stop</button>
+        <span class="h-1.5 w-1.5 rounded-full bg-white" /> Preview: only your selected parts
+        <button class="chip-btn h-5" @click="previewOn = false">Stop</button>
       </div>
     </Transition>
     <div
@@ -365,7 +368,7 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
       }"
     >
       <div
-        class="pointer-events-auto absolute rounded border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,.62)]"
+        class="pointer-events-auto absolute border border-white shadow-[0_0_0_9999px_rgba(0,0,0,.62)]"
         :class="isVertical ? 'cursor-ew-resize' : 'cursor-ns-resize'"
         :style="winStyle"
         @mousedown="frameDrag"
@@ -373,55 +376,54 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
         @contextmenu.prevent="resetFrame"
       >
         <div
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/55 px-3 py-1.5 text-center text-sm whitespace-nowrap text-white"
+          class="chip absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 text-center text-xs whitespace-nowrap"
         >
-          {{ isVertical ? '↔ Drag left or right' : '↕ Drag to place the horizon' }}
-          <small class="block text-xs opacity-70">Double-click to reset</small>
+          {{ isVertical ? 'Drag left or right' : 'Drag to place the horizon' }}
+          <small class="block text-[11px] opacity-70">Double-click to reset</small>
         </div>
       </div>
     </div>
-    <div
-      class="floating absolute bottom-3.5 left-1/2 flex -translate-x-1/2 items-center gap-1 px-2 py-1"
-    >
+    <div class="chip absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-0.5 p-1">
       <button
-        class="rounded-lg px-2.5 py-1.5 hover:bg-white/10"
+        class="chip-btn w-8 justify-center"
         title="Previous part ["
         aria-label="Previous part"
         @click="seekPart(-1)"
       >
-        <PhSkipBack :size="18" weight="fill" />
+        <PhSkipBack :size="14" weight="fill" />
       </button>
       <button
-        class="min-w-11 rounded-[10px] bg-white px-2.5 py-1.5 text-black"
+        class="chip-btn w-9 justify-center bg-white text-black hover:bg-white/90"
         title="Play / pause (space)"
         :aria-label="editor.playing ? 'Pause' : 'Play'"
         @click="togglePlay"
       >
-        <PhPause v-if="editor.playing" :size="18" weight="fill" class="mx-auto" />
-        <PhPlay v-else :size="18" weight="fill" class="mx-auto" />
+        <PhPause v-if="editor.playing" :size="14" weight="fill" />
+        <PhPlay v-else :size="14" weight="fill" />
       </button>
       <button
-        class="rounded-lg px-2.5 py-1.5 hover:bg-white/10"
+        class="chip-btn w-8 justify-center"
         title="Next part ]"
         aria-label="Next part"
         @click="seekPart(1)"
       >
-        <PhSkipForward :size="18" weight="fill" />
+        <PhSkipForward :size="14" weight="fill" />
       </button>
-      <span class="num min-w-[120px] text-center text-[15px] font-semibold"
-        >{{ fmtTime(editor.time, true) }}
-        <span class="opacity-60">/ {{ fmtTime(editor.duration) }}</span></span
-      >
+      <span class="num min-w-[112px] px-2 text-center text-[13px] font-semibold">
+        {{ fmtTime(editor.time, true) }}
+        <span class="font-normal opacity-50">/ {{ fmtTime(editor.duration) }}</span>
+      </span>
       <button
-        class="rounded-lg px-2.5 py-1.5 text-sm hover:bg-white/10"
+        class="chip-btn"
         :class="{ 'bg-white/15': previewOn }"
+        :aria-pressed="previewOn"
         title="Play only the selected parts back to back"
         data-tour="preview"
         @click="togglePreview"
       >
-        {{ previewOn ? '● Preview on' : 'Preview' }}
+        Preview
       </button>
-      <span v-if="jobs.exporting" class="ml-1 text-xs opacity-70">exporting…</span>
+      <span v-if="jobs.exporting" class="px-2 text-xs opacity-60">exporting…</span>
     </div>
   </section>
 </template>

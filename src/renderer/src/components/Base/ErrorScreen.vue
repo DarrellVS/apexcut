@@ -33,27 +33,25 @@ function restart(): void {
     role="alertdialog"
     aria-labelledby="fatal-title"
   >
-    <div class="popover flex w-full max-w-[560px] flex-col gap-4 rounded-[18px] p-7">
+    <div class="popover flex w-full max-w-[560px] flex-col gap-4 p-6">
       <div class="flex items-center gap-3">
-        <div
-          class="grid h-11 w-11 flex-none place-items-center rounded-[12px] bg-play/15 text-play"
-        >
-          <PhLifebuoy :size="24" weight="fill" />
+        <div class="grid h-9 w-9 flex-none place-items-center rounded-ctl bg-danger/15 text-danger">
+          <PhLifebuoy :size="20" weight="fill" />
         </div>
         <div>
-          <h2 id="fatal-title" class="m-0 text-lg font-bold text-fg">
+          <h2 id="fatal-title" class="m-0 text-base font-semibold text-fg">
             {{ friendlyError(ui.fatal.message).title }}
           </h2>
-          <p class="m-0 text-sm text-muted">
+          <p class="m-0 text-[13px] text-fg2">
             {{
               friendlyError(ui.fatal.message).hint || 'Your projects and picks are saved on disk.'
             }}
           </p>
         </div>
       </div>
-      <details class="rounded-ctl bg-s2 p-3 text-xs">
-        <summary class="cursor-pointer text-muted">Details</summary>
-        <pre class="m-0 mt-2 max-h-[200px] overflow-auto whitespace-pre-wrap text-muted"
+      <details class="rounded-ctl bg-bg2 p-3 text-xs">
+        <summary class="cursor-pointer text-fg2">Details</summary>
+        <pre class="m-0 mt-2 max-h-[200px] overflow-auto whitespace-pre-wrap text-fg2"
           >{{ ui.fatal.message }}{{ ui.fatal.stack ? '\n\n' + ui.fatal.stack : '' }}</pre>
       </details>
       <div class="flex flex-wrap items-center gap-2">
@@ -65,7 +63,7 @@ function restart(): void {
         </button>
         <button class="btn btn-ghost ml-auto" @click="ui.fatal = null">Continue anyway</button>
       </div>
-      <p class="m-0 text-[11px] text-muted">
+      <p class="m-0 text-[11px] text-fg2">
         Report a problem writes a zip to your Documents folder with the app log, your project list
         and settings (no videos, no picks) — you decide whether to send it.
       </p>

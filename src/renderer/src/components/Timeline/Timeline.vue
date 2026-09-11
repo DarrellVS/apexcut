@@ -4,7 +4,7 @@
  * join-suggestion bars, floating toolbar clamped to the lane) · legend row with zoom.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { PhStar } from '@phosphor-icons/vue';
+import { PhQuestion, PhStar } from '@phosphor-icons/vue';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useTimelineView } from '@renderer/composables/useTimelineView';
@@ -28,14 +28,22 @@ const toolbar = ref<HTMLElement | null>(null);
 const dragging = ref(false);
 const hoverT = ref<number | null>(null);
 const stripImg = ref<HTMLImageElement | null>(null);
+/** lane width in px, for deciding how much label fits in a block */
+const laneW = ref(0);
+/** what fits: nothing under 44 px, the reason under 120 px, reason + length above */
+function label(p: Part): 'none' | 'short' | 'full' {
+  const px = ((view.xPct(p.end_s) - view.xPct(p.start_s)) / 100) * laneW.value;
+  return px < 44 ? 'none' : px < 120 ? 'short' : 'full';
+}
 
+/** block look per reason: a solid stripe on the left edge, a tint of the same colour as the fill */
 const cls = (p: Part): string =>
   ({
-    bochten: 'bg-corner',
-    'accel/rem': 'bg-brake',
-    beide: 'bg-both',
-    handmatig: 'bg-manual',
-    samengeplakt: 'bg-manual',
+    bochten: 'block block-corner',
+    'accel/rem': 'block block-brake',
+    beide: 'block block-both',
+    handmatig: 'block block-manual',
+    samengeplakt: 'block block-manual',
   })[reasonOf(p)];
 
 // ---- drawing
@@ -56,12 +64,17 @@ function drawRuler(): void {
   const span = view.span.value;
   const step =
     span > 900 ? 120 : span > 400 ? 60 : span > 150 ? 30 : span > 60 ? 10 : span > 20 ? 5 : 1;
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
-  ctx.font = `${11 * dpr}px Inter, system-ui`;
-  for (let t = Math.ceil(view.t0.value / step) * step; t <= view.t1.value; t += step) {
-    const x = (view.xPct(t) / 100) * W;
-    ctx.fillRect(x, H - 5 * dpr, 1, 5 * dpr);
-    ctx.fillText(fmtTime(t), x + 3, H - 7 * dpr);
+  const css = getComputedStyle(document.documentElement);
+  ctx.fillStyle = css.getPropertyValue('--fg3').trim();
+  ctx.font = `${10 * dpr}px ${css.getPropertyValue('--font-sans')}`;
+  ctx.textBaseline = 'middle';
+  // minor ticks between the labelled ones
+  const minor = step / (step % 3 === 0 ? 3 : step % 2 === 0 ? 2 : 1);
+  for (let t = Math.ceil(view.t0.value / minor) * minor; t <= view.t1.value; t += minor) {
+    const x = Math.round((view.xPct(t) / 100) * W);
+    const major = Math.abs(t / step - Math.round(t / step)) < 1e-6;
+    ctx.fillRect(x, H - (major ? 6 : 3) * dpr, dpr, (major ? 6 : 3) * dpr);
+    if (major) ctx.fillText(fmtTime(t), x + 4 * dpr, H / 2 - 1 * dpr);
   }
 }
 function drawScore(): void {
@@ -76,13 +89,15 @@ function drawScore(): void {
   const stride = Math.max(1, Math.floor((i1 - i0) / W));
   const yOf = (v: number): number => H - Math.min(1, v / 3.5) * H * 0.95;
   const css = getComputedStyle(document.documentElement);
-  ctx.strokeStyle = 'rgba(128,128,128,.4)';
-  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = css.getPropertyValue('--fg3').trim();
+  ctx.globalAlpha = 0.6;
+  ctx.setLineDash([4 * dpr, 4 * dpr]);
   ctx.beginPath();
   ctx.moveTo(0, yOf(editor.threshold));
   ctx.lineTo(W, yOf(editor.threshold));
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
   const score = editor.data.score;
   if (score) {
     ctx.beginPath();
@@ -91,11 +106,11 @@ function drawScore(): void {
       ctx.lineTo((view.xPct(T[i]) / 100) * W, yOf(score[i] ?? 0));
     ctx.lineTo((view.xPct(T[i1]) / 100) * W, H);
     ctx.closePath();
-    ctx.fillStyle = css.getPropertyValue('--fg').trim() + '12';
+    ctx.fillStyle = css.getPropertyValue('--fg').trim() + '10';
     ctx.fill();
   }
   const series: [string, string, number][] = [
-    ['score', css.getPropertyValue('--fg'), 1.5],
+    ['score', css.getPropertyValue('--fg'), 1.25],
     ['nLean', css.getPropertyValue('--corner'), 1],
     ['nAccel', css.getPropertyValue('--brake'), 1],
   ];
@@ -103,7 +118,7 @@ function drawScore(): void {
     const arr = editor.data[key];
     if (!arr) continue;
     ctx.strokeStyle = color;
-    ctx.globalAlpha = key === 'score' ? 0.6 : 0.5;
+    ctx.globalAlpha = key === 'score' ? 0.7 : 0.75;
     ctx.lineWidth = w * dpr;
     ctx.beginPath();
     let started = false;
@@ -195,7 +210,10 @@ function onGlobalDown(e: MouseEvent): void {
 }
 onMounted(() => {
   document.addEventListener('mousedown', onGlobalDown);
-  new ResizeObserver(drawAll).observe(lane.value as Element);
+  new ResizeObserver(() => {
+    laneW.value = lane.value?.clientWidth ?? 0;
+    drawAll();
+  }).observe(lane.value as Element);
   new MutationObserver(drawAll).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
@@ -364,40 +382,45 @@ const zoomInput = computed({
 </script>
 
 <template>
-  <footer class="glass flex h-[314px] flex-none flex-col overflow-hidden select-none">
+  <footer
+    class="panel flex h-[300px] flex-none flex-col overflow-hidden border-t border-line select-none"
+  >
     <!-- ruler -->
-    <div class="relative h-5 cursor-pointer bg-s2" @mousedown="scrub">
+    <div class="relative h-5 cursor-pointer border-b border-line bg-bg0" @mousedown="scrub">
       <canvas ref="rulerCv" class="block h-full w-full" />
+      <!-- playhead head -->
       <div
-        class="pointer-events-none absolute inset-y-0 w-0.5 bg-play shadow-[0_0_8px_var(--play)]"
+        class="pointer-events-none absolute top-0 z-[3] -translate-x-1/2"
         :style="{ left: `${view.xPct(editor.time)}%` }"
-      />
+      >
+        <div class="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-play" />
+      </div>
     </div>
     <!-- score lane -->
     <div
-      class="relative h-11 border-t border-line"
+      class="relative h-10 border-b border-line bg-bg1"
       @mousedown="scrub"
       @mousemove="hoverT = view.tOfEvent($event, lane!)"
       @mouseleave="hoverT = null"
     >
       <canvas ref="scoreCv" class="block h-full w-full" />
       <div
-        class="pointer-events-none absolute inset-y-0 w-0.5 bg-play"
+        class="pointer-events-none absolute inset-y-0 w-px bg-play"
         :style="{ left: `${view.xPct(editor.time)}%` }"
       />
       <template v-if="hoverT !== null && hoverVals">
         <div
-          class="pointer-events-none absolute inset-y-0 w-px bg-fg/60"
+          class="pointer-events-none absolute inset-y-0 w-px bg-fg/40"
           :style="{ left: `${view.xPct(hoverT)}%` }"
         />
         <div
-          class="floating pointer-events-none absolute top-[calc(100%+6px)] z-10 -translate-x-1/2 px-2.5 py-1 text-xs leading-relaxed whitespace-nowrap"
+          class="chip num pointer-events-none absolute top-[calc(100%+6px)] z-10 -translate-x-1/2 px-2 py-1 text-[11px] leading-[1.5] whitespace-nowrap"
           :style="{ left: `${Math.min(85, Math.max(8, view.xPct(hoverT)))}%` }"
         >
-          <b class="num">{{ fmtTime(hoverT) }}</b> · score {{ hoverVals.score }}<br />
-          <span class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-corner align-[-1px]" />lean
+          <b>{{ fmtTime(hoverT) }}</b> · score {{ hoverVals.score }}<br />
+          <span class="mr-1 inline-block h-2 w-2 rounded-[1px] bg-corner align-[-1px]" />lean
           {{ hoverVals.lean }}°
-          <span class="mr-1 ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-brake align-[-1px]" />{{
+          <span class="mr-1 ml-2 inline-block h-2 w-2 rounded-[1px] bg-brake align-[-1px]" />{{
             hoverVals.accLabel
           }}
           {{ hoverVals.acc }} g
@@ -407,24 +430,24 @@ const zoomInput = computed({
     <!-- parts lane -->
     <div
       ref="lane"
-      class="relative flex-1 border-t border-line"
+      class="relative flex-1 bg-bg1"
       data-tour="parts"
       @mousedown.self="laneDown"
       @wheel="view.onWheel($event, lane!)"
     >
       <canvas
         ref="stripCv"
-        class="pointer-events-none absolute inset-0 h-full w-full opacity-[.28] saturate-[.7]"
+        class="strip pointer-events-none absolute inset-0 h-full w-full saturate-[.6]"
       />
       <div
         v-for="p in editor.parts"
         :key="p.id"
-        class="absolute top-3 bottom-3 z-[1] flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg border border-white/30 px-3 text-xs font-semibold whitespace-nowrap text-white shadow-[0_4px_14px_rgba(0,0,0,.18)] [text-shadow:0_1px_2px_#000]"
+        class="absolute top-2.5 bottom-2.5 z-[1] flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-block pr-2 pl-2 text-xs whitespace-nowrap text-fg [mask-image:linear-gradient(90deg,#000_calc(100%-10px),transparent)]"
         :class="[
           cls(p),
           {
-            'opacity-40 border-dashed shadow-none': !p.enabled,
-            'outline-2 outline-offset-2 outline-sel': editor.selection.includes(p.id),
+            'opacity-45 [border-left-style:dashed]': !p.enabled,
+            'ring-1 ring-sel ring-inset': editor.selection.includes(p.id),
           },
         ]"
         :style="{
@@ -445,20 +468,26 @@ const zoomInput = computed({
         @mouseleave="editor.hoverId = null"
       >
         <div
-          class="absolute inset-y-0 left-0 w-3 cursor-ew-resize before:absolute before:top-[28%] before:bottom-[28%] before:left-1 before:w-0.5 before:rounded before:bg-white/60"
+          class="absolute inset-y-0 left-0 w-2.5 cursor-ew-resize"
           @mousedown.stop="dragEdge($event, p, 'start_s')"
         />
-        <PhStar v-if="p.starred" :size="12" weight="fill" class="flex-none" />
-        <b>{{ REASON_LABEL[reasonOf(p)] }}</b> · {{ fmtDuration(p.end_s - p.start_s) }}
+        <template v-if="label(p) !== 'none'">
+          <PhStar v-if="p.starred" :size="11" weight="fill" class="flex-none" />
+          <b class="font-semibold">{{ REASON_LABEL[reasonOf(p)] }}</b>
+          <span v-if="label(p) === 'full'" class="num text-fg2">
+            {{ fmtDuration(p.end_s - p.start_s) }}
+          </span>
+        </template>
+        <PhStar v-else-if="p.starred" :size="9" weight="fill" class="absolute top-1 right-1" />
         <div
-          class="absolute inset-y-0 right-0 w-3 cursor-ew-resize before:absolute before:top-[28%] before:right-1 before:bottom-[28%] before:w-0.5 before:rounded before:bg-white/60"
+          class="absolute inset-y-0 right-0 w-2.5 cursor-ew-resize before:absolute before:top-[30%] before:right-[3px] before:bottom-[30%] before:w-px before:bg-fg/40 before:content-['']"
           @mousedown.stop="dragEdge($event, p, 'end_s')"
         />
       </div>
       <div
         v-for="g in editor.suggestions"
         :key="g.id"
-        class="absolute top-0.5 z-[4] flex h-[11px] cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-corner bg-corner/20 text-[10px] leading-none whitespace-nowrap text-fg transition-colors hover:bg-corner/85 hover:text-black"
+        class="absolute top-0.5 z-[4] flex h-[10px] cursor-pointer items-center justify-center overflow-hidden rounded-[2px] border border-dashed border-corner/70 text-[10px] leading-none whitespace-nowrap text-fg2 transition-colors hover:bg-corner hover:text-black"
         :style="{
           left: `${view.xPct(g.from)}%`,
           width: `${Math.max(0.3, view.xPct(g.to) - view.xPct(g.from))}%`,
@@ -467,34 +496,31 @@ const zoomInput = computed({
         @mousedown.stop
         @click.stop="editor.join(g.parts) && toast(`Joined ${g.parts.length} parts`)"
       >
-        Join {{ g.parts.length }} parts
+        Join {{ g.parts.length }}
       </div>
       <div
-        class="pointer-events-none absolute inset-y-0 z-[3] w-0.5 bg-play shadow-[0_0_8px_var(--play)]"
+        class="pointer-events-none absolute inset-y-0 z-[3] w-px bg-play"
         :style="{ left: `${view.xPct(editor.time)}%` }"
       />
       <!-- snap guide: where the dragged edge clicked into place -->
       <div
         v-if="snapT !== null"
-        class="pointer-events-none absolute inset-y-0 z-[3] w-px bg-sel shadow-[0_0_6px_var(--sel)]"
+        class="pointer-events-none absolute inset-y-0 z-[3] w-px bg-fg/70"
         :style="{ left: `${view.xPct(snapT)}%` }"
       />
       <div
         v-if="sel.length && !dragging"
         ref="toolbar"
-        class="floating absolute top-3 z-[5] flex -translate-x-1/2 -translate-y-[115%] gap-1 p-1 whitespace-nowrap"
+        class="chip absolute top-2.5 z-[5] flex -translate-x-1/2 -translate-y-[115%] gap-0.5 p-0.5 whitespace-nowrap"
         :style="{ left: `${toolbarLeft}px` }"
         data-keep-selection
         @mousedown.stop
       >
-        <button
-          class="rounded-lg px-2.5 py-1 text-xs hover:bg-white/10"
-          @click="emit('play', Math.min(...sel.map((p) => p.start_s)))"
-        >
+        <button class="chip-btn" @click="emit('play', Math.min(...sel.map((p) => p.start_s)))">
           Play
         </button>
         <button
-          class="rounded-lg px-2.5 py-1 text-xs hover:bg-white/10"
+          class="chip-btn"
           :title="
             allOn
               ? 'Skip this part; it turns grey and is left out of the movie'
@@ -505,7 +531,7 @@ const zoomInput = computed({
           {{ allOn ? 'Leave out' : 'Put back in' }}
         </button>
         <button
-          class="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs hover:bg-white/10"
+          class="chip-btn"
           :title="
             sel.every((p) => p.starred)
               ? 'Remove the star'
@@ -513,74 +539,72 @@ const zoomInput = computed({
           "
           @click="editor.toggleStar(sel)"
         >
-          <PhStar :size="13" :weight="sel.every((p) => p.starred) ? 'fill' : 'regular'" />
+          <PhStar :size="12" :weight="sel.every((p) => p.starred) ? 'fill' : 'regular'" />
           {{ sel.every((p) => p.starred) ? 'Unstar' : 'Star' }}
         </button>
         <button
           v-if="sel.length > 1"
-          class="btn-pri rounded-lg px-2.5 py-1 text-xs"
+          class="chip-btn bg-white font-semibold text-black hover:bg-white/90"
           @click="joinSel"
         >
           Join
         </button>
         <button
           v-else-if="editor.nextOf(sel[0])"
-          class="rounded-lg px-2.5 py-1 text-xs hover:bg-white/10"
+          class="chip-btn"
           title="Join with the next part (including the gap)"
           @click="joinNext(sel[0])"
         >
           Join with next
         </button>
-        <button
-          class="rounded-lg px-2.5 py-1 text-xs text-[#ff8a8a] hover:bg-white/10"
-          @click="del"
-        >
-          Delete
-        </button>
+        <button class="chip-btn text-[#ff8080]" @click="del">Delete</button>
       </div>
     </div>
     <MusicLane />
     <!-- legend / zoom -->
-    <div class="flex items-center gap-3.5 border-t border-line px-3.5 py-1.5 text-xs text-muted">
+    <div
+      class="num flex h-7 flex-none items-center gap-3.5 border-t border-line px-3 text-[11px] text-fg2"
+    >
       <span
-        ><span class="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-fg align-[-1px]" />overall
-        score</span
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-fg align-[-1px]" />score</span
       >
       <span
         ><span
-          class="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-corner align-[-1px]"
+          class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-corner align-[-1px]"
         />leaning</span
       >
       <span
-        ><span class="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-brake align-[-1px]" />braking
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-brake align-[-1px]" />braking
         &amp; acceleration</span
       >
       <span
-        ><span
-          class="mr-1.5 inline-block w-3.5 border-t-2 border-dashed border-muted align-[2px]"
-        />"fun enough" line</span
+        ><span class="mr-1.5 inline-block w-3 border-t border-dashed border-fg3 align-[2px]" />“fun
+        enough” line</span
       >
       <span class="flex-1" />
-      <b class="num text-fg"
+      <b class="font-semibold text-fg"
         >{{ plural(editor.enabledParts.length, 'part') }} · movie
         {{ fmtDuration(editor.movieLength) }}</b
       >
-      <span>zoom</span>
-      <input
-        v-model.number="zoomInput"
-        type="range"
-        min="0"
-        max="0.98"
-        step="0.01"
-        class="w-[120px]"
-      />
+      <label class="flex items-center gap-1.5">
+        Zoom
+        <input
+          v-model.number="zoomInput"
+          type="range"
+          min="0"
+          max="0.98"
+          step="0.01"
+          class="w-[100px]"
+          aria-label="Zoom"
+        />
+      </label>
       <button class="btn btn-mini" @click="view.fit()">Fit</button>
       <button
-        class="rounded px-1"
+        class="btn btn-ghost btn-mini px-1"
         title="click a block = select · shift+click = select more · drag the edges · scroll = zoom · shift+scroll = pan"
         aria-label="Timeline help: click a block to select, shift-click to select more, drag the edges, scroll to zoom, shift-scroll to pan"
       >
-        ⓘ
+        <PhQuestion :size="13" />
       </button>
     </div>
   </footer>

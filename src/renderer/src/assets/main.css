@@ -1,74 +1,100 @@
 @import 'tailwindcss';
 
-/* Design tokens — see docs/design.md. Components use these only, never raw hex. */
+/*
+ * Design tokens — see docs/design.md ("Slab"). Components use these only, never raw hex.
+ * One dark slab: a four-step neutral grey ladder, 1 px hairlines, no gradients, no blur, no glow.
+ * Chrome is achromatic; colour is reserved for data (timeline blocks) and destructive actions.
+ */
 :root {
-  --bg: #eef0f6;
-  --bg2: #f7f3ff;
-  --glass: rgba(255, 255, 255, 0.72);
-  --s2: rgba(0, 0, 0, 0.045);
-  --s3: rgba(0, 0, 0, 0.08);
-  --line: rgba(20, 20, 40, 0.08);
-  --fg: #15161c;
-  --muted: #6d6e7a;
-  --acc1: #ff7a3d;
-  --acc2: #ff3d81;
-  --sel: #3b82f6;
-  --play: #ff3d5a;
-  --corner: #f0862c;
-  --brake: #1fa3a3;
-  --both: #8b5cf6;
-  --manual: #8d8d98;
-  --pop: #ffffff;
+  /* surfaces, darkest → lightest (light theme: the other way round) */
+  --bg0: #e4e5e9; /* window ground: title bar, splitters, stage surround */
+  --bg1: #f3f3f5; /* panels */
+  --bg2: #ffffff; /* raised: inputs, rows, cards, popovers */
+  --bg3: #e9eaee; /* hover / pressed */
+  --line: #d3d5db; /* hairlines */
+  --line2: #b9bcc5; /* stronger hairline: focused input, selected tile */
+  /* text */
+  --fg: #17181b;
+  --fg2: #5c6068; /* secondary */
+  --fg3: #8a8e97; /* tertiary: hints, disabled */
+  /* the one "hot" colour of the chrome: the inverse of the ground — primary button, playhead, selection */
+  --ink: #17181b;
+  --ink-fg: #ffffff;
+  --sel: #17181b;
+  --danger: #d23b3b;
+  /* data colours: semantic, the same meaning in both themes, desaturated for long sessions */
+  --corner: #c98a2e;
+  --brake: #2f9d97;
+  --both: #7f6bcf;
+  --manual: #7c8089;
+  --play: #17181b; /* playhead */
   /* theme swatches in Settings → Appearance: fixed, whatever theme is active */
-  --swatch-light: #eef0f6;
-  --swatch-dark: #0d0d14;
-  --shadow: 0 10px 40px rgba(40, 40, 80, 0.14);
-  --r: 14px;
-  --rs: 10px;
+  --swatch-light: #f3f3f5;
+  --swatch-dark: #16171a;
+  --shadow: 0 4px 16px rgba(20, 20, 30, 0.14);
+  --r-ctl: 4px;
+  --r-card: 6px;
+  --r-block: 2px;
+  --titlebar-h: 40px;
+  /* timeline: how strong the block tint is, how the filmstrip sits under the blocks */
+  --block-mix: 60%;
+  --strip-alpha: 0.45;
+  --strip-blend: multiply;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --bg: #0d0d14;
-  --bg2: #1a1030;
-  --glass: rgba(28, 28, 38, 0.72);
-  --s2: rgba(255, 255, 255, 0.06);
-  --s3: rgba(255, 255, 255, 0.1);
-  --line: rgba(255, 255, 255, 0.09);
-  --fg: #eeeef3;
-  --muted: #9394a3;
-  --corner: #ffa04a;
-  --brake: #4dd0d0;
-  --both: #b394ff;
-  --manual: #a0a0ab;
-  --pop: #1e1e26;
-  --shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
+  --bg0: #0f1012;
+  --bg1: #16171a;
+  --bg2: #1d1f23;
+  --bg3: #262931;
+  --line: #2a2d33;
+  --line2: #3d414a;
+  --fg: #e8e9ec;
+  --fg2: #a0a4ac;
+  --fg3: #6c717b;
+  --ink: #e8e9ec;
+  --ink-fg: #111214;
+  --sel: #e8e9ec;
+  --danger: #e5484d;
+  --corner: #d9a04a;
+  --brake: #4fb3ad;
+  --both: #9d8ce0;
+  --manual: #8b8f98;
+  --play: #e8e9ec;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --block-mix: 40%;
+  --strip-alpha: 0.22;
+  --strip-blend: normal;
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
+  --color-bg0: var(--bg0);
+  --color-bg1: var(--bg1);
   --color-bg2: var(--bg2);
-  --color-glass: var(--glass);
-  --color-pop: var(--pop);
-  --color-swatch-light: var(--swatch-light);
-  --color-swatch-dark: var(--swatch-dark);
-  --color-s2: var(--s2);
-  --color-s3: var(--s3);
+  --color-bg3: var(--bg3);
   --color-line: var(--line);
+  --color-line2: var(--line2);
   --color-fg: var(--fg);
-  --color-muted: var(--muted);
-  --color-acc1: var(--acc1);
-  --color-acc2: var(--acc2);
+  --color-fg2: var(--fg2);
+  --color-fg3: var(--fg3);
+  --color-ink: var(--ink);
+  --color-ink-fg: var(--ink-fg);
   --color-sel: var(--sel);
-  --color-play: var(--play);
+  --color-danger: var(--danger);
   --color-corner: var(--corner);
   --color-brake: var(--brake);
   --color-both: var(--both);
   --color-manual: var(--manual);
-  --radius-card: var(--r);
-  --radius-ctl: var(--rs);
+  --color-play: var(--play);
+  --color-swatch-light: var(--swatch-light);
+  --color-swatch-dark: var(--swatch-dark);
+  --radius-ctl: var(--r-ctl);
+  --radius-card: var(--r-card);
+  --radius-block: var(--r-block);
   --shadow-float: var(--shadow);
-  --font-sans: Inter, system-ui, 'Segoe UI', sans-serif;
+  --font-sans:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
 }
 
 @layer base {
@@ -79,37 +105,46 @@
     margin: 0;
   }
   body {
-    font: 14px/1.4 var(--font-sans);
+    font: 13px/1.45 var(--font-sans);
     color: var(--fg);
+    background: var(--bg0);
     overflow: hidden;
-    background:
-      radial-gradient(1200px 700px at 15% -10%, var(--bg2), transparent 60%),
-      radial-gradient(
-        900px 600px at 100% 110%,
-        color-mix(in srgb, var(--acc2) 22%, var(--bg)),
-        transparent 55%
-      ),
-      var(--bg);
+    -webkit-font-smoothing: antialiased;
   }
   button {
     cursor: pointer;
+    font: inherit;
+    color: inherit;
   }
   button:disabled {
     cursor: default;
     opacity: 0.4;
   }
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
   input[type='range'] {
-    accent-color: var(--acc2);
+    accent-color: var(--ink);
+  }
+  input[type='checkbox'] {
+    accent-color: var(--ink);
+    width: 14px;
+    height: 14px;
   }
   ::selection {
-    background: color-mix(in srgb, var(--acc2) 35%, transparent);
+    background: color-mix(in srgb, var(--ink) 25%, transparent);
+  }
+  kbd {
+    font-family: inherit;
   }
 }
 
 /* keyboard users see where they are; mouse clicks do not draw the ring */
 :focus-visible {
-  outline: 2px solid var(--sel);
-  outline-offset: 2px;
+  outline: 1.5px solid var(--sel);
+  outline-offset: 1px;
 }
 :focus:not(:focus-visible) {
   outline: none;
@@ -127,79 +162,287 @@
   }
 }
 
-@utility glass {
-  background: var(--glass);
-  backdrop-filter: blur(18px) saturate(1.2);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-}
-@utility btn {
-  border-radius: var(--rs);
-  padding: 7px 14px;
-  background: var(--s2);
+/* ---- panels: flat, hairline-separated slabs */
+@utility panel {
+  background: var(--bg1);
   color: var(--fg);
-  font-size: 14px;
+}
+@utility panel-head {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg2);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ---- buttons: 28 px controls; .btn-pri is the inverse of the ground, .btn-mini is 22 px */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--bg2);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
   white-space: nowrap;
   transition:
-    background 0.15s,
-    transform 0.1s;
+    background 0.12s,
+    border-color 0.12s;
   &:hover:not(:disabled) {
-    background: var(--s3);
+    background: var(--bg3);
+    border-color: var(--line2);
   }
   &:active:not(:disabled) {
-    transform: scale(0.98);
+    background: var(--bg3);
   }
 }
 @utility btn-pri {
-  background: linear-gradient(135deg, var(--acc1), var(--acc2));
-  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--ink-fg);
   font-weight: 600;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--acc2) 35%, transparent);
   &:hover:not(:disabled) {
-    filter: brightness(1.06);
-    background: linear-gradient(135deg, var(--acc1), var(--acc2));
+    background: color-mix(in srgb, var(--ink) 88%, var(--bg0));
+    border-color: color-mix(in srgb, var(--ink) 88%, var(--bg0));
   }
 }
 @utility btn-ghost {
   background: transparent;
-  color: var(--muted);
+  border-color: transparent;
+  color: var(--fg2);
   &:hover:not(:disabled) {
-    background: var(--s2);
+    background: var(--bg3);
+    border-color: transparent;
     color: var(--fg);
   }
 }
+@utility btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 85%, #000);
+    border-color: color-mix(in srgb, var(--danger) 85%, #000);
+  }
+}
 @utility btn-mini {
-  padding: 3px 9px;
+  height: 22px;
+  padding: 0 7px;
   font-size: 12px;
-  border-radius: 8px;
+  gap: 4px;
 }
-@utility card {
-  background: var(--s2);
+@utility btn-icon {
+  width: 28px;
+  padding: 0;
+}
+
+/* ---- inputs */
+@utility input {
+  height: 28px;
+  padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: var(--rs);
-  padding: 12px;
+  border-radius: var(--r-ctl);
+  background: var(--bg2);
+  color: var(--fg);
+  font-size: 13px;
+  outline: none;
+  &::placeholder {
+    color: var(--fg3);
+  }
+  &:hover {
+    border-color: var(--line2);
+  }
+  &:focus {
+    border-color: var(--sel);
+  }
 }
+
+/* ---- segmented control: one row of radio buttons, the chosen one raised */
+@utility seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--bg1);
+}
+@utility seg-item {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg2);
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  &:hover:not(:disabled) {
+    color: var(--fg);
+  }
+  &[aria-checked='true'],
+  &[aria-selected='true'],
+  &[aria-pressed='true'] {
+    background: var(--bg2);
+    color: var(--fg);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+}
+
+/* ---- cards and rows */
+@utility card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 10px 12px;
+}
+@utility tile {
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--bg2);
+  text-align: left;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+  &:hover:not(:disabled) {
+    border-color: var(--line2);
+  }
+  &[aria-pressed='true'],
+  &[aria-checked='true'] {
+    border-color: var(--sel);
+    box-shadow: inset 0 0 0 1px var(--sel);
+  }
+}
+@utility row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: var(--r-ctl);
+  &:hover {
+    background: var(--bg3);
+  }
+}
+@utility menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 3px;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  &:hover {
+    background: var(--bg3);
+  }
+}
+
+/* ---- labels and numbers */
 @utility label-caps {
   font-size: 11px;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--fg2);
 }
 @utility num {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- floating things: popovers on the chrome, chips over video */
 @utility popover {
-  background: var(--pop);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
   box-shadow: var(--shadow);
 }
-@utility floating {
-  background: rgba(18, 18, 26, 0.78);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  color: #fff;
+/* sits on top of video or the timeline: dark in both themes because it is over media */
+@utility chip {
+  background: rgba(16, 17, 19, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-ctl);
+  color: #f2f2f4;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+@utility chip-btn {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ---- timeline blocks: a solid stripe on the left, a tint of the same colour as the fill */
+@utility block {
+  border-left: 3px solid var(--blk);
+  background: color-mix(in srgb, var(--blk) var(--block-mix), transparent);
+  &:hover {
+    background: color-mix(in srgb, var(--blk) calc(var(--block-mix) + 10%), transparent);
+  }
+}
+@utility block-corner {
+  --blk: var(--corner);
+}
+@utility block-brake {
+  --blk: var(--brake);
+}
+@utility block-both {
+  --blk: var(--both);
+}
+@utility block-manual {
+  --blk: var(--manual);
+}
+@utility strip {
+  opacity: var(--strip-alpha);
+  mix-blend-mode: var(--strip-blend);
+}
+
+/* ---- splitter: a hairline with a fat invisible grip */
+@utility splitter {
+  position: relative;
+  background: var(--line);
+  cursor: col-resize;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 -3px;
+  }
+  &:hover,
+  &.is-dragging {
+    background: var(--line2);
+  }
+}
+
+/* ---- window: the title bar is the drag handle, everything clickable in it is not */
+@utility drag-region {
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+@utility no-drag {
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
 }

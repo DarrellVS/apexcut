@@ -55,15 +55,15 @@ async function reset(): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="m-0 text-sm text-muted">
+    <p class="m-0 text-[13px] text-fg2">
       How ApexCut decides what counts as a fun part. Changes apply to the open video; your own added
       and joined parts stay.
     </p>
-    <div v-if="!editor.config" class="card text-sm text-muted">Open a scanned video first.</div>
+    <div v-if="!editor.config" class="card text-[13px] text-fg2">Open a scanned video first.</div>
     <template v-else>
       <div class="card grid grid-cols-[1fr_72px] items-center gap-x-3 gap-y-1 text-xs">
         <template v-for="[path, label, min, max, step] in FIELDS" :key="path">
-          <label :for="`cfg-${path}`" class="col-span-2 mt-1.5 text-muted">{{ label }}</label>
+          <label :for="`cfg-${path}`" class="col-span-2 mt-1.5 text-fg2">{{ label }}</label>
           <input
             :id="`cfg-${path}`"
             type="range"
@@ -75,7 +75,7 @@ async function reset(): Promise<void> {
           />
           <input
             type="number"
-            class="w-[72px] rounded border border-line bg-s2 px-1.5 py-0.5 text-fg"
+            class="w-[72px] rounded border border-line bg-bg2 px-1.5 py-0.5 text-fg"
             :step="step"
             :value="get(path)"
             :aria-label="label"

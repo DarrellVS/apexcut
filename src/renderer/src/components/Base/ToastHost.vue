@@ -18,14 +18,15 @@ const msg = message;
 
 <template>
   <Transition
-    enter-active-class="transition-opacity duration-200"
-    leave-active-class="transition-opacity duration-200"
+    enter-active-class="transition-opacity duration-150"
+    leave-active-class="transition-opacity duration-150"
     enter-from-class="opacity-0"
     leave-to-class="opacity-0"
   >
     <div
       v-if="msg"
-      class="floating pointer-events-none fixed bottom-[270px] left-1/2 z-50 -translate-x-1/2 px-4 py-2.5 text-sm"
+      class="popover pointer-events-none fixed top-[calc(var(--titlebar-h)+12px)] left-1/2 z-50 max-w-[560px] -translate-x-1/2 px-3.5 py-2 text-[13px] text-fg"
+      role="status"
     >
       {{ msg }}
     </div>

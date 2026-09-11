@@ -231,6 +231,15 @@ export const projectFileSchema = z.object({
 });
 export type ProjectFile = z.infer<typeof projectFileSchema>;
 
+/** height of the custom title bar in CSS px; the native window buttons are drawn at this height too */
+export const TITLEBAR_HEIGHT = 40;
+
+export interface WindowState {
+  maximized: boolean;
+  fullscreen: boolean;
+  focused: boolean;
+}
+
 export const themeSchema = z.enum(['system', 'light', 'dark']);
 export type Theme = z.infer<typeof themeSchema>;
 
@@ -387,6 +396,14 @@ export interface ApexcutApi {
     /** quit and install a downloaded update */
     install(): Promise<void>;
     onStatus(cb: (s: UpdateStatus) => void): () => void;
+  };
+  window: {
+    /** colours of the native window buttons drawn over the custom title bar (Windows / Linux) */
+    setOverlay(color: string, symbolColor: string): Promise<void>;
+    /** maximised / full screen / focused, pushed by main on every change and once after load */
+    onState(cb: (s: WindowState) => void): () => void;
+    /** double-click on the title bar: maximise or restore (macOS follows the system preference) */
+    titlebarDoubleClick(): void;
   };
   app: {
     version(): Promise<string>;

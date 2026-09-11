@@ -3,7 +3,17 @@
  */
 import { countCorners, rangeStats, twistiestMinute } from '@core/stats';
 import { fmtClock } from '@shared/format';
-import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  nativeImage,
+  shell,
+  systemPreferences,
+} from 'electron';
+import { TITLEBAR_HEIGHT } from '@shared/ipc';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -450,6 +460,29 @@ export function registerIpc(s: Services): void {
     if (!existsSync(path)) return;
     if (statSync(path).isDirectory()) shell.openPath(path);
     else shell.showItemInFolder(path);
+  });
+  // ---- custom title bar: the renderer draws the bar, the OS draws the window buttons over it
+  ipcMain.handle('window:setOverlay', (e, colorRaw: unknown, symbolRaw: unknown) => {
+    const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+    const color = hex.parse(colorRaw);
+    const symbolColor = hex.parse(symbolRaw);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (!win) return;
+    win.setBackgroundColor(color);
+    if (process.platform !== 'darwin')
+      win.setTitleBarOverlay({ color, symbolColor, height: TITLEBAR_HEIGHT });
+  });
+  ipcMain.on('window:titlebarDoubleClick', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (!win) return;
+    if (process.platform === 'darwin') {
+      const action = systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string');
+      if (action === 'Minimize') {
+        win.minimize();
+        return;
+      }
+    }
+    win.isMaximized() ? win.unmaximize() : win.maximize();
   });
   // unpackaged runs report Electron's own version; the package version is what the UI should show
   ipcMain.handle('app:version', () => (app.isPackaged ? app.getVersion() : pkg.version));

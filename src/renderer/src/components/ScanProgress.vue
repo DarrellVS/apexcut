@@ -1,55 +1,60 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+/** Full-screen scan progress: what is happening, how far, and which videos are done. */
+import { computed } from 'vue';
+import { PhCheck } from '@phosphor-icons/vue';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
+import { shortName } from '@renderer/utils/format';
 
 const jobs = useJobsStore();
 const library = useLibraryStore();
 const progress = computed(() => jobs.analyzeJob?.progress ?? 0);
 const done = computed(() => library.analyzed.length);
-const storyIdx = ref(0);
-const blips = ref<number[]>([]);
-const STORIES = [
-  'Reading your camera’s motion sensor…',
-  'Looking for corners…',
-  'Where did you open the throttle?',
-  'Dropping the boring straight bits…',
-];
-const story = computed(() => {
+const stage = computed(() => {
   const m = jobs.analyzeJob?.message ?? '';
-  if (/metadata/i.test(m)) return 'Reading the video…';
-  if (/scor/i.test(m)) return 'Lining up corners and braking moments…';
-  return STORIES[storyIdx.value % STORIES.length];
+  if (/metadata/i.test(m)) return 'Reading the recording';
+  if (/scor/i.test(m)) return 'Finding corners and braking';
+  if (/thumb|film/i.test(m)) return 'Making thumbnails';
+  return m || 'Reading the motion data';
 });
-let timer: ReturnType<typeof setInterval>;
-onMounted(() => {
-  timer = setInterval(() => {
-    storyIdx.value++;
-    if (blips.value.length < 40 && Math.random() < 0.6)
-      blips.value.push(Math.min(98, progress.value * 100 * Math.random()));
-  }, 1400);
-});
-onUnmounted(() => clearInterval(timer));
+const pct = computed(() => Math.round(progress.value * 100));
 </script>
 
 <template>
-  <div class="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-    <h1 class="m-0 text-[30px] font-bold text-fg">Looking through your ride…</h1>
-    <div
-      class="relative h-[46px] w-[min(720px,80vw)] overflow-hidden rounded-xl border border-line bg-s2"
-    >
-      <div
-        class="absolute inset-y-0 left-0 bg-gradient-to-r from-acc1/40 to-acc2/60 transition-[width] duration-500"
-        :style="{ width: `${progress * 100}%` }"
-      />
-      <div
-        v-for="b in blips"
-        :key="b"
-        class="absolute top-2 bottom-2 w-2 rounded bg-acc1"
-        :style="{ left: `${b}%` }"
-      />
+  <div class="flex flex-1 flex-col items-center justify-center p-8">
+    <div class="w-full max-w-[520px]">
+      <div class="flex items-baseline justify-between">
+        <h1 class="m-0 text-lg font-semibold text-fg">Scanning your ride</h1>
+        <span class="num text-2xl font-semibold text-fg">{{ pct }}%</span>
+      </div>
+      <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-bg3">
+        <div class="h-full bg-ink transition-[width] duration-500" :style="{ width: `${pct}%` }" />
+      </div>
+      <div class="num mt-2 flex justify-between text-xs text-fg2">
+        <span>{{ stage }}…</span>
+        <span>{{ done }} of {{ library.clips.length }} videos done</span>
+      </div>
+      <ul class="m-0 mt-6 max-h-[40vh] list-none overflow-auto p-0 text-[13px]">
+        <li
+          v-for="c in library.clips"
+          :key="c.stem"
+          class="flex h-7 items-center gap-2 border-b border-line last:border-b-0"
+        >
+          <PhCheck v-if="c.analyzed" :size="13" class="flex-none text-fg2" />
+          <span
+            v-else
+            class="h-1.5 w-1.5 flex-none rounded-full"
+            :class="jobs.analyzeJob ? 'animate-pulse bg-fg2' : 'bg-fg3'"
+          />
+          <span :class="c.analyzed ? 'text-fg' : 'text-fg2'">{{ shortName(c.stem) }}</span>
+          <span v-if="c.analyzed" class="num ml-auto text-xs text-fg3">
+            {{ c.nEnabled ?? 0 }} parts
+          </span>
+        </li>
+      </ul>
+      <p class="m-0 mt-4 text-xs text-fg3">
+        Only the camera’s motion data is read; your video files are not changed.
+      </p>
     </div>
-    <div class="min-h-7 text-lg text-fg">{{ story }}</div>
-    <p class="m-0 text-xs text-muted">{{ done }} of {{ library.clips.length }} videos done</p>
   </div>
 </template>

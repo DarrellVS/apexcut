@@ -1,6 +1,12 @@
 <script setup lang="ts">
-/** The app icon as inline SVG: the A of ApexCut with a racing line through its apex, on the brand gradient. */
-withDefaults(defineProps<{ size?: number }>(), { size: 28 });
+/**
+ * The mark as inline SVG: the A of ApexCut with a racing line through its apex. Flat, in the text
+ * colour, so it sits in the chrome like an icon. `tone` = 'ink' draws it on a filled square.
+ */
+withDefaults(defineProps<{ size?: number; tone?: 'flat' | 'ink' }>(), {
+  size: 16,
+  tone: 'flat',
+});
 </script>
 
 <template>
@@ -12,28 +18,21 @@ withDefaults(defineProps<{ size?: number }>(), { size: 28 });
     aria-hidden="true"
     focusable="false"
   >
-    <defs>
-      <linearGradient id="apexcut-brand" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="var(--acc1)" />
-        <stop offset="1" stop-color="var(--acc2)" />
-      </linearGradient>
-    </defs>
-    <rect width="512" height="512" rx="112" fill="url(#apexcut-brand)" />
+    <rect v-if="tone === 'ink'" width="512" height="512" rx="96" fill="var(--ink)" />
     <path
-      d="M 120 404 L 256 108 L 392 404"
+      d="M 96 420 L 256 92 L 416 420"
       fill="none"
-      stroke="#fff"
-      stroke-width="66"
+      :stroke="tone === 'ink' ? 'var(--ink-fg)' : 'currentColor'"
+      stroke-width="58"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
     <path
-      d="M 186 318 C 214 318, 226 296, 256 296 C 286 296, 298 318, 326 318"
+      d="M 176 326 C 208 326, 222 300, 256 300 C 290 300, 304 326, 336 326"
       fill="none"
-      stroke="#1c1c28"
-      stroke-width="30"
+      :stroke="tone === 'ink' ? 'var(--ink)' : 'var(--bg1)'"
+      stroke-width="34"
       stroke-linecap="round"
-      opacity="0.92"
     />
   </svg>
 </template>

@@ -237,17 +237,20 @@ defineExpose({ format });
 
 <template>
   <div class="flex flex-col gap-3">
-    <div class="text-xs text-muted">
+    <div class="num text-xs text-fg2">
       {{ summary }}
       <template v-if="library.analyzed.length > 1">
         ·
-        <a href="#" class="text-acc2" @click.prevent="scope = scope === 'all' ? 'current' : 'all'">
+        <a
+          href="#"
+          class="text-fg underline decoration-fg3 underline-offset-2"
+          @click.prevent="scope = scope === 'all' ? 'current' : 'all'"
+        >
           {{
             scope === 'all'
               ? 'all videos'
               : `only ${library.current ? shortName(library.current) : ''}`
           }}
-          ▾
         </a>
       </template>
     </div>
@@ -255,51 +258,39 @@ defineExpose({ format });
       <input v-model="onlyStarred" type="checkbox" class="m-0" />
       Only the starred parts ({{ nStarred }})
     </label>
-    <input
-      v-model="name"
-      class="rounded-ctl border border-line bg-s2 px-3 py-2 text-fg"
-      placeholder="Name of your movie"
-    />
+    <input v-model="name" class="input w-full" placeholder="Name of your movie" />
     <div>
-      <div class="mb-1.5 text-xs text-muted">What do you want?</div>
+      <div class="label-caps mb-1.5">What do you want?</div>
       <div class="grid grid-cols-2 gap-2">
-        <button
-          class="rounded-ctl border-[1.5px] p-2.5 text-center"
-          :class="!separate ? 'border-acc2 bg-acc2/10' : 'border-line bg-s2'"
-          @click="separate = false"
-        >
+        <button class="tile p-2.5 text-center" :aria-pressed="!separate" @click="separate = false">
           <b class="block text-[13px]">One movie</b
-          ><span class="text-xs text-muted">all parts back to back</span>
+          ><span class="text-xs text-fg2">all parts back to back</span>
         </button>
-        <button
-          class="rounded-ctl border-[1.5px] p-2.5 text-center"
-          :class="separate ? 'border-acc2 bg-acc2/10' : 'border-line bg-s2'"
-          @click="separate = true"
-        >
+        <button class="tile p-2.5 text-center" :aria-pressed="separate" @click="separate = true">
           <b class="block text-[13px]">Separate clips</b
-          ><span class="text-xs text-muted">each part as its own file</span>
+          ><span class="text-xs text-fg2">each part as its own file</span>
         </button>
       </div>
     </div>
     <div>
-      <div class="mb-1.5 text-xs text-muted">Which format?</div>
+      <div class="label-caps mb-1.5">Which format?</div>
       <div class="grid grid-cols-2 gap-2">
         <button
           v-for="t in TILES"
           :key="t.f"
-          class="rounded-ctl border-[1.5px] p-2.5 text-center"
-          :class="format === t.f ? 'border-acc2 bg-acc2/10' : 'border-line bg-s2'"
+          class="tile p-2.5 text-center"
+          :aria-pressed="format === t.f"
           @click="settings.update({ lastFormat: t.f })"
         >
           <div
-            class="mx-auto mb-2 rounded bg-muted"
+            class="mx-auto mb-2 rounded-[2px] border border-fg2 bg-fg3/30"
             :style="{ width: `${t.w}px`, height: `${t.h}px`, marginTop: `${(42 - t.h) / 2}px` }"
           />
           <b class="block text-[13px]">{{ t.label }}</b
-          ><span class="text-xs text-muted">{{ t.sub }}</span>
+          ><span class="text-xs text-fg2">{{ t.sub }}</span>
         </button>
       </div>
-      <div class="mt-2 text-xs text-muted">
+      <div class="mt-2 text-xs text-fg2">
         {{
           format === 'original'
             ? 'Ready within a minute, no quality loss.'
@@ -308,13 +299,12 @@ defineExpose({ format });
       </div>
     </div>
     <div v-if="!separate">
-      <div class="mb-1.5 text-xs text-muted">Between the parts</div>
-      <div class="grid grid-cols-3 gap-1 rounded-ctl bg-s2 p-1" role="radiogroup">
+      <div class="label-caps mb-1.5">Between the parts</div>
+      <div class="seg" role="radiogroup">
         <button
           v-for="t in TRANSITIONS"
           :key="t"
-          class="rounded-lg py-1 text-xs font-semibold transition-colors"
-          :class="transition === t ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+          class="seg-item"
           role="radio"
           :aria-checked="transition === t"
           :title="TRANSITION_LABEL[t].hint"
@@ -323,7 +313,7 @@ defineExpose({ format });
           {{ TRANSITION_LABEL[t].label }}
         </button>
       </div>
-      <div class="mt-1.5 text-xs text-muted">
+      <div class="mt-1.5 text-xs text-fg2">
         {{ TRANSITION_LABEL[transition].hint }}.
         <template
           v-if="format === 'original' && (transition !== 'cut' || cards.title || cards.end)"
@@ -333,22 +323,15 @@ defineExpose({ format });
         </template>
       </div>
       <div class="mt-3">
-        <div class="mb-1.5 text-xs text-muted">Riding data on the picture</div>
-        <div class="grid grid-cols-3 gap-1 rounded-ctl bg-s2 p-1" role="radiogroup">
-          <button
-            class="rounded-lg py-1 text-xs font-semibold transition-colors"
-            :class="!overlay ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
-            role="radio"
-            :aria-checked="!overlay"
-            @click="setOverlay(null)"
-          >
+        <div class="label-caps mb-1.5">Riding data on the picture</div>
+        <div class="seg" role="radiogroup">
+          <button class="seg-item" role="radio" :aria-checked="!overlay" @click="setOverlay(null)">
             Off
           </button>
           <button
             v-for="st in OVERLAY_STYLES"
             :key="st"
-            class="rounded-lg py-1 text-xs font-semibold transition-colors"
-            :class="overlay?.style === st ? 'bg-s3 text-fg shadow-sm' : 'text-muted hover:text-fg'"
+            class="seg-item"
             role="radio"
             :aria-checked="overlay?.style === st"
             :title="
@@ -363,7 +346,7 @@ defineExpose({ format });
         </div>
         <div v-if="overlay" class="mt-1.5 flex items-center gap-1.5 text-xs">
           <select
-            class="flex-1 rounded-ctl border border-line bg-s2 px-2 py-1 text-fg"
+            class="input h-6 flex-1 text-xs"
             :value="overlay.corner"
             aria-label="Corner of the overlay"
             @change="
@@ -372,12 +355,11 @@ defineExpose({ format });
           >
             <option v-for="c in OVERLAY_CORNERS" :key="c" :value="c">{{ CORNER_LABEL[c] }}</option>
           </select>
-          <div class="flex rounded-ctl bg-s2 p-0.5" role="radiogroup" aria-label="Size">
+          <div class="seg" role="radiogroup" aria-label="Size">
             <button
               v-for="sz in OVERLAY_SIZES"
               :key="sz"
-              class="rounded-lg px-2 py-0.5 font-semibold"
-              :class="overlay.size === sz ? 'bg-s3 text-fg' : 'text-muted hover:text-fg'"
+              class="seg-item"
               role="radio"
               :aria-checked="overlay.size === sz"
               @click="setOverlay({ size: sz })"
@@ -386,7 +368,7 @@ defineExpose({ format });
             </button>
           </div>
         </div>
-        <div v-if="overlay" class="mt-1 text-[11px] text-muted">
+        <div v-if="overlay" class="mt-1 text-[11px] text-fg2">
           Shown live on the video; the export draws it at full resolution.
           <template v-if="format === 'original' && transition === 'cut'">
             Square is re-encoded for it (full quality).
@@ -403,7 +385,7 @@ defineExpose({ format });
           />
           <span>
             Title card
-            <span v-if="cards.title" class="block text-muted">
+            <span v-if="cards.title" class="block text-fg2">
               “{{ cards.title.heading }}” · {{ cards.title.subheading }}
             </span>
           </span>
@@ -415,28 +397,21 @@ defineExpose({ format });
             :checked="settings.settings?.endCard ?? true"
             @change="settings.update({ endCard: ($event.target as HTMLInputElement).checked })"
           />
-          End card <span class="text-muted">· “Made with ApexCut”</span>
+          End card <span class="text-fg2">· “Made with ApexCut”</span>
         </label>
       </div>
     </div>
-    <button
-      class="btn btn-pri py-3 text-[15px]"
-      :disabled="!items.length || jobs.exporting"
-      @click="go"
-    >
+    <button class="btn btn-pri h-8" :disabled="!items.length || jobs.exporting" @click="go">
       {{ jobs.exporting ? 'Working…' : separate ? 'Make clips' : 'Make my movie' }}
     </button>
-    <div
-      v-if="job && job.status === 'done' && job.result"
-      class="card border-brake/40 bg-brake/10 text-sm break-all"
-    >
-      <b class="text-base text-fg"
-        >✓ {{ job.result.kind === 'extract' ? 'Your clips are ready!' : 'Your movie is ready!' }}</b
-      >
-      <div v-if="job.result.kind === 'export'" class="my-1.5 text-xs text-muted">
+    <div v-if="job && job.status === 'done' && job.result" class="card text-[13px] break-all">
+      <b class="text-[13px] font-semibold text-fg">{{
+        job.result.kind === 'extract' ? 'Your clips are ready' : 'Your movie is ready'
+      }}</b>
+      <div v-if="job.result.kind === 'export'" class="my-1.5 text-xs text-fg2">
         {{ job.result.file }} · {{ job.result.sizeMb }} MB
       </div>
-      <div v-if="job.result.kind === 'extract'" class="my-1.5 text-xs text-muted">
+      <div v-if="job.result.kind === 'extract'" class="my-1.5 text-xs text-fg2">
         {{ job.result.files.length }} files in {{ job.result.folder }}
       </div>
       <div class="flex flex-wrap gap-1.5">
@@ -463,22 +438,22 @@ defineExpose({ format });
         </button>
       </div>
     </div>
-    <div v-else-if="job && job.status === 'error'" class="card border-play/40 bg-play/10 text-sm">
+    <div v-else-if="job && job.status === 'error'" class="card border-danger/40 text-[13px]">
       <b>{{ friendlyError(job.error).title }}.</b>
-      <span class="text-muted">{{ friendlyError(job.error).hint }}</span>
+      <span class="text-fg2">{{ friendlyError(job.error).hint }}</span>
       <details class="mt-1.5">
-        <summary class="cursor-pointer text-xs text-muted">Details</summary>
+        <summary class="cursor-pointer text-xs text-fg2">Details</summary>
         <pre class="max-h-[160px] overflow-auto text-[11px] whitespace-pre-wrap">{{
           job.error
         }}</pre>
       </details>
     </div>
-    <div v-else-if="job && job.status === 'cancelled'" class="text-xs text-muted">
+    <div v-else-if="job && job.status === 'cancelled'" class="text-xs text-fg2">
       Export cancelled.
     </div>
     <div v-if="scope === 'all'" class="card">
-      <b class="block text-sm text-fg">Ride card</b>
-      <p class="m-0 mt-0.5 text-xs text-muted">
+      <b class="block text-[13px] font-semibold text-fg">Ride card</b>
+      <p class="m-0 mt-0.5 text-xs text-fg2">
         A picture with the numbers of this ride and its best moments, for Instagram or the group
         chat. Saved next to your movies and copied to the clipboard.
       </p>

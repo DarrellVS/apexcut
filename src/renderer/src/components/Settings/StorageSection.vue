@@ -39,34 +39,34 @@ onMounted(load);
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="m-0 text-sm text-muted">
+    <p class="m-0 text-[13px] text-fg2">
       Every scanned video leaves a small cache: its motion data, a filmstrip and a thumbnail. It is
       shared by all projects, so a video in two projects is scanned once.
     </p>
-    <div v-if="!info" class="card text-sm text-muted">Measuring…</div>
+    <div v-if="!info" class="card text-[13px] text-fg2">Measuring…</div>
     <template v-else>
       <div class="grid grid-cols-3 gap-2.5">
         <div class="card">
-          <b class="block text-xl text-fg">{{ fmtBytes(info.cacheBytes) }}</b>
-          <span class="text-xs text-muted">scan cache</span>
+          <b class="num block text-lg font-semibold text-fg">{{ fmtBytes(info.cacheBytes) }}</b>
+          <span class="text-xs text-fg2">scan cache</span>
         </div>
         <div class="card">
-          <b class="block text-xl text-fg">{{ info.nScanned }}</b>
-          <span class="text-xs text-muted">scanned videos</span>
+          <b class="num block text-lg font-semibold text-fg">{{ info.nScanned }}</b>
+          <span class="text-xs text-fg2">scanned videos</span>
         </div>
-        <div class="card" :class="{ 'border-play/40': info.unused.length }">
-          <b class="block text-xl text-fg">{{ info.unused.length }}</b>
-          <span class="text-xs text-muted">in no project · {{ fmtBytes(info.unusedBytes) }}</span>
+        <div class="card" :class="{ 'border-danger/40': info.unused.length }">
+          <b class="num block text-lg font-semibold text-fg">{{ info.unused.length }}</b>
+          <span class="text-xs text-fg2">in no project · {{ fmtBytes(info.unusedBytes) }}</span>
         </div>
       </div>
-      <div class="card flex items-center gap-3 text-sm">
-        <PhFolderOpen :size="22" class="flex-none text-muted" />
-        <div class="min-w-0 flex-1 text-xs break-all text-muted">{{ info.dataRoot }}</div>
+      <div class="card flex items-center gap-3 text-[13px]">
+        <PhFolderOpen :size="22" class="flex-none text-fg2" />
+        <div class="min-w-0 flex-1 text-xs break-all text-fg2">{{ info.dataRoot }}</div>
         <button class="btn btn-mini" @click="openData">Open data folder</button>
       </div>
-      <div class="card text-sm">
+      <div class="card text-[13px]">
         <div class="label-caps mb-1">Clean up</div>
-        <p class="m-0 text-xs text-muted">
+        <p class="m-0 text-xs text-fg2">
           Removes the scans of videos that are in no project any more
           <template v-if="info.unused.length">
             ({{ info.unused.map(shortName).join(', ') }})</template
@@ -75,9 +75,7 @@ onMounted(load);
         <div class="mt-2 flex items-center gap-2">
           <template v-if="confirming">
             <span class="text-xs text-fg">Remove {{ info.unused.length }} scans?</span>
-            <button class="btn btn-mini bg-play text-white hover:bg-play" @click="cleanup">
-              Remove
-            </button>
+            <button class="btn btn-mini btn-danger" @click="cleanup">Remove</button>
             <button class="btn btn-mini" @click="confirming = false">Keep</button>
           </template>
           <button

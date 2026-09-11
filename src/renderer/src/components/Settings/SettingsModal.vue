@@ -108,19 +108,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
     >
       <div
         ref="panel"
-        class="popover grid h-full max-h-[860px] w-full max-w-[1180px] grid-cols-[230px_1fr] overflow-hidden rounded-[18px]"
+        class="popover grid h-full max-h-[820px] w-full max-w-[1100px] grid-cols-[220px_1fr] overflow-hidden"
       >
-        <nav class="flex flex-col gap-4 overflow-auto border-r border-line bg-s2 p-4 pt-5">
+        <nav class="flex flex-col gap-4 overflow-auto border-r border-line bg-bg1 p-3 pt-4">
           <div v-for="g in NAV" :key="g.title">
-            <h4 class="label-caps m-0 mb-1.5 px-2">{{ g.title }}</h4>
+            <h4 class="label-caps m-0 mb-1 px-2">{{ g.title }}</h4>
             <button
               v-for="item in g.items"
               :key="item.id"
-              class="flex w-full items-center rounded-ctl px-2.5 py-1.5 text-left text-sm transition-colors"
+              class="flex h-7 w-full items-center rounded-ctl px-2 text-left text-[13px] transition-colors"
               :class="
                 ui.settingsSection === item.id
-                  ? 'bg-s3 font-semibold text-fg'
-                  : 'text-muted hover:bg-s2 hover:text-fg'
+                  ? 'bg-bg3 font-medium text-fg'
+                  : 'text-fg2 hover:bg-bg3 hover:text-fg'
               "
               :data-nav-active="ui.settingsSection === item.id ? '' : undefined"
               @click="ui.settingsSection = item.id"
@@ -128,19 +128,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
               {{ item.label }}
             </button>
           </div>
-          <div class="mt-auto px-2 text-[11px] text-muted">ApexCut {{ settings.version }}</div>
+          <div class="num mt-auto px-2 text-[11px] text-fg3">ApexCut {{ settings.version }}</div>
         </nav>
         <div class="relative flex min-h-0 flex-col overflow-auto">
           <button
-            class="btn btn-ghost absolute top-4 right-4 grid h-9 w-9 place-items-center rounded-full border border-line p-0"
+            class="btn btn-ghost btn-icon absolute top-3 right-3"
             title="Close (Esc)"
             aria-label="Close settings"
             @click="ui.closeSettings()"
           >
-            <PhX :size="16" weight="bold" />
+            <PhX :size="15" weight="bold" />
           </button>
-          <div class="mx-auto w-full max-w-[680px] px-10 py-9">
-            <h2 class="m-0 mb-6 text-xl font-bold text-fg">{{ title }}</h2>
+          <div class="mx-auto w-full max-w-[640px] px-9 py-8">
+            <h2 class="m-0 mb-5 text-base font-semibold text-fg">{{ title }}</h2>
             <AppearanceSection v-if="ui.settingsSection === 'appearance'" />
             <OutputSection v-else-if="ui.settingsSection === 'output'" />
             <StorageSection v-else-if="ui.settingsSection === 'storage'" />

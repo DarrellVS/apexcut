@@ -108,7 +108,7 @@ onUnmounted(() => {
     <!-- spotlight: the hole is the target, the giant shadow dims everything else -->
     <div
       v-if="spot"
-      class="absolute rounded-[12px] shadow-[0_0_0_9999px_rgba(0,0,0,.6)] ring-2 ring-white/80 transition-all duration-300"
+      class="absolute rounded-ctl shadow-[0_0_0_9999px_rgba(0,0,0,.6)] ring-1 ring-white/80 transition-all duration-300"
       :style="{
         left: `${spot.left}px`,
         top: `${spot.top}px`,
@@ -117,21 +117,18 @@ onUnmounted(() => {
       }"
     />
     <div v-else class="absolute inset-0 bg-black/60" />
-    <div
-      class="popover absolute flex w-[340px] flex-col gap-2 rounded-[14px] p-4 shadow-float"
-      :style="cardStyle"
-    >
+    <div class="popover absolute flex w-[340px] flex-col gap-2 p-4" :style="cardStyle">
       <div class="flex items-center gap-1.5">
         <span
           v-for="(s, i) in STEPS"
           :key="s.title"
-          class="h-1.5 rounded-full transition-all"
-          :class="i === step ? 'w-5 bg-acc2' : 'w-1.5 bg-s3'"
+          class="h-1 rounded-full transition-all"
+          :class="i === step ? 'w-4 bg-ink' : 'w-1 bg-line2'"
         />
-        <span class="ml-auto text-[11px] text-muted">{{ step + 1 }} of {{ STEPS.length }}</span>
+        <span class="ml-auto text-[11px] text-fg2">{{ step + 1 }} of {{ STEPS.length }}</span>
       </div>
-      <b class="text-[15px] text-fg">{{ STEPS[step].title }}</b>
-      <p class="m-0 text-sm text-muted">{{ STEPS[step].text }}</p>
+      <b class="text-[13px] font-semibold text-fg">{{ STEPS[step].title }}</b>
+      <p class="m-0 text-xs text-fg2">{{ STEPS[step].text }}</p>
       <div class="mt-1 flex items-center gap-2">
         <button class="btn btn-ghost btn-mini" @click="finish">Skip</button>
         <button class="btn btn-pri btn-mini ml-auto" autofocus @click="next">

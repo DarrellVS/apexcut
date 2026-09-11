@@ -28,13 +28,13 @@ defineExpose({ openMovie, framingActive });
 </script>
 
 <template>
-  <aside class="glass flex min-h-0 flex-col">
-    <div class="flex gap-0.5 border-b border-line p-1.5" role="tablist">
+  <aside class="panel flex min-h-0 flex-col">
+    <div class="flex h-8 flex-none items-stretch border-b border-line px-1.5" role="tablist">
       <button
         v-for="t in TABS"
         :key="t.id"
-        class="flex-1 rounded-lg py-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors"
-        :class="tab === t.id ? 'bg-s2 text-fg' : 'text-muted hover:text-fg'"
+        class="relative px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-2.5 after:bottom-[-1px] after:h-[2px] after:bg-ink after:opacity-0 after:content-['']"
+        :class="tab === t.id ? 'text-fg after:opacity-100' : 'text-fg2 hover:text-fg'"
         role="tab"
         :aria-selected="tab === t.id"
         @click="tab = t.id"
@@ -42,7 +42,7 @@ defineExpose({ openMovie, framingActive });
         {{ t.label }}
       </button>
     </div>
-    <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto p-3">
+    <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto p-2.5">
       <PartsTab
         v-show="tab === 'parts'"
         @seek="emit('seek', $event)"

@@ -3,7 +3,6 @@
  * Projects screen: search + sort, "New project" / "Import project…", a grid of cards and a collapsed
  * Archived section. Card actions (rename, export, archive, delete) live in ProjectCard.
  */
-import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { nextTick, ref } from 'vue';
 import { PhArrowSquareIn, PhMagnifyingGlass, PhPlus } from '@phosphor-icons/vue';
 import type { ProjectInfo } from '@shared/ipc';
@@ -66,21 +65,18 @@ async function archive(p: ProjectInfo, on: boolean): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col items-center overflow-auto py-6" @click="menuFor = null">
-    <div class="w-full max-w-[980px] px-4">
-      <header class="mb-5 flex items-center gap-3">
-        <BrandMark :size="40" />
+  <div class="flex min-h-0 flex-1 flex-col overflow-auto" @click="menuFor = null">
+    <div class="mx-auto w-full max-w-[1100px] px-8 py-7">
+      <header class="mb-5 flex items-end gap-3">
         <div class="min-w-0 flex-1">
-          <h1 class="m-0 text-xl font-bold text-fg">Your projects</h1>
-          <p class="m-0 text-xs text-muted">
-            A project is one movie: the videos of a ride and your picks.
-          </p>
+          <h1 class="m-0 text-lg font-semibold text-fg">Projects</h1>
+          <p class="m-0 text-xs text-fg2">One project is one ride and one movie.</p>
         </div>
-        <button class="btn flex items-center gap-1.5" @click.stop="importProject">
-          <PhArrowSquareIn :size="16" /> Import project…
+        <button class="btn" @click.stop="importProject">
+          <PhArrowSquareIn :size="15" /> Import project…
         </button>
-        <button class="btn btn-pri flex items-center gap-1.5" @click.stop="startCreate">
-          <PhPlus :size="16" weight="bold" /> New project
+        <button class="btn btn-pri" @click.stop="startCreate">
+          <PhPlus :size="14" weight="bold" /> New project
         </button>
       </header>
 
@@ -88,25 +84,24 @@ async function archive(p: ProjectInfo, on: boolean): Promise<void> {
         v-if="projects.projects.length > 3 || projects.query"
         class="mb-4 flex items-center gap-2"
       >
-        <label class="relative min-w-0 flex-1">
+        <label class="relative min-w-0 flex-1 max-w-[360px]">
           <PhMagnifyingGlass
-            :size="15"
-            class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
+            :size="14"
+            class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-fg3"
           />
           <input
             v-model="projects.query"
             type="search"
-            class="w-full rounded-ctl border border-line bg-s2 py-1.5 pr-3 pl-9 text-sm text-fg outline-none focus:border-sel"
+            class="input w-full pl-8"
             placeholder="Search projects"
             aria-label="Search projects"
           />
         </label>
-        <div class="flex rounded-ctl bg-s2 p-0.5" role="radiogroup" aria-label="Sort by">
+        <div class="seg ml-auto" role="radiogroup" aria-label="Sort by">
           <button
             v-for="s in SORTS"
             :key="s.id"
-            class="rounded-lg px-2.5 py-1 text-xs font-semibold"
-            :class="projects.sort === s.id ? 'bg-s3 text-fg' : 'text-muted hover:text-fg'"
+            class="seg-item"
             role="radio"
             :aria-checked="projects.sort === s.id"
             @click="projects.setSort(s.id)"
@@ -119,29 +114,29 @@ async function archive(p: ProjectInfo, on: boolean): Promise<void> {
       <div class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
         <form
           v-if="creating"
-          class="glass flex flex-col gap-2 p-3"
+          class="flex flex-col rounded-card border border-sel bg-bg2"
           @submit.prevent="create"
           @click.stop
         >
-          <div
-            class="grid aspect-video place-items-center rounded-[10px] bg-gradient-to-br from-acc1/30 to-acc2/30 text-sm text-muted"
-          >
+          <div class="grid aspect-video place-items-center rounded-t-[5px] bg-bg3 text-xs text-fg3">
             New project
           </div>
-          <input
-            ref="newInput"
-            v-model="newName"
-            class="w-full rounded-ctl border border-line bg-s2 px-2.5 py-1.5 text-sm text-fg outline-none focus:border-sel"
-            placeholder="Name it after the ride, e.g. Eifel Sunday"
-            maxlength="80"
-            aria-label="New project name"
-            @keydown.esc="creating = false"
-          />
-          <div class="flex gap-1.5">
-            <button type="submit" class="btn btn-pri btn-mini flex-1" :disabled="!newName.trim()">
-              Create
-            </button>
-            <button type="button" class="btn btn-mini" @click="creating = false">Cancel</button>
+          <div class="flex flex-col gap-2 p-3">
+            <input
+              ref="newInput"
+              v-model="newName"
+              class="input w-full"
+              placeholder="Name it after the ride, e.g. Eifel Sunday"
+              maxlength="80"
+              aria-label="New project name"
+              @keydown.esc="creating = false"
+            />
+            <div class="flex gap-1.5">
+              <button type="submit" class="btn btn-pri btn-mini flex-1" :disabled="!newName.trim()">
+                Create
+              </button>
+              <button type="button" class="btn btn-mini" @click="creating = false">Cancel</button>
+            </div>
           </div>
         </form>
         <ProjectCard
@@ -160,10 +155,17 @@ async function archive(p: ProjectInfo, on: boolean): Promise<void> {
       </div>
       <p
         v-if="!projects.sorted.length && projects.query"
-        class="m-0 mt-6 text-center text-sm text-muted"
+        class="m-0 mt-6 text-center text-[13px] text-fg2"
       >
         No project matches “{{ projects.query }}”.
       </p>
+      <div
+        v-if="!projects.projects.length && !creating"
+        class="mt-2 rounded-card border border-dashed border-line2 p-10 text-center text-[13px] text-fg2"
+      >
+        No projects yet. Start with <b class="text-fg">New project</b>, then add the videos of a
+        ride.
+      </div>
 
       <details v-if="projects.archived.length" class="mt-8">
         <summary class="label-caps cursor-pointer select-none">

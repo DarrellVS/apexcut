@@ -22,11 +22,11 @@ async function replay(): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="m-0 text-sm text-muted">
+    <p class="m-0 text-[13px] text-fg2">
       The quick tour points out the three things that matter: your parts on the timeline, Preview,
       and Make my movie. It shows once after the first scan.
     </p>
-    <div class="card flex items-center gap-3 text-sm">
+    <div class="card flex items-center gap-3 text-[13px]">
       <div class="min-w-0 flex-1 text-fg">
         {{
           settings.settings?.tourSeen

@@ -7,6 +7,11 @@ function applyTheme(theme: Theme): void {
   const dark =
     theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  // the native window buttons sit on the title bar: recolour them with the theme
+  const css = getComputedStyle(document.documentElement);
+  const bar = css.getPropertyValue('--bg0').trim();
+  const fg = css.getPropertyValue('--fg2').trim();
+  if (/^#[0-9a-f]{6}$/i.test(bar) && /^#[0-9a-f]{6}$/i.test(fg)) api.window.setOverlay(bar, fg);
 }
 
 export const useSettingsStore = defineStore('settings', () => {

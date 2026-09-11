@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
- * Top bar: brand, project name (menu: all projects / rename / export), open video + save state,
- * the active part (hover / selection / playing), undo/redo and "Make my movie ▾".
+ * The title bar is the toolbar: brand, project (menu: all projects / rename / export), save state,
+ * the active part (hover / selection / playing), undo/redo, settings and "Make my movie ▾".
+ * The bar is the window's drag handle; the OS draws its own window buttons over its right end
+ * (`titlebar-area-*`), so the content stops before them. Outside the editor it is a slim bar.
  */
 import BrandMark from '@renderer/components/Base/BrandMark.vue';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
@@ -16,6 +18,7 @@ import {
 } from '@phosphor-icons/vue';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
+import { api } from '@renderer/api';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
@@ -23,6 +26,7 @@ import { useUiStore } from '@renderer/stores/ui';
 import { fmtDuration, fmtTime, shortName, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
+defineProps<{ inEditor: boolean; title?: string }>();
 const emit = defineEmits<{ make: [scope: 'all' | 'current']; home: [] }>();
 const editor = useEditorStore();
 const library = useLibraryStore();
@@ -89,166 +93,188 @@ async function exportProject(): Promise<void> {
   const file = await projects.exportFile(projects.activeId);
   if (file) toast(`Project saved as ${file}`, 6000);
 }
+/** double-click on the bare bar: maximise / restore, like a native title bar */
+function onDblClick(e: MouseEvent): void {
+  if ((e.target as HTMLElement).closest('.no-drag')) return;
+  api.window.titlebarDoubleClick();
+}
 </script>
 
 <template>
-  <header
-    class="glass relative z-40 flex items-center gap-2.5 px-3.5 py-2"
-    @click.self="closeMenus"
+  <div
+    v-if="!ui.win.fullscreen"
+    class="relative z-40 flex h-[var(--titlebar-h)] flex-none bg-bg0 shadow-[inset_0_-1px_0_var(--line)] select-none"
+    :class="{ 'opacity-60': !ui.win.focused }"
   >
-    <button
-      class="flex items-center gap-2 rounded-ctl py-0.5 pr-1.5 hover:bg-s2"
-      title="All projects"
-      @click="emit('home')"
+    <header
+      class="drag-region flex min-w-0 items-center gap-1 pl-3 [margin-left:env(titlebar-area-x,0px)] [width:env(titlebar-area-width,100%)]"
+      @click.self="closeMenus"
+      @dblclick="onDblClick"
     >
-      <BrandMark :size="28" />
-      <b class="text-fg">ApexCut</b>
-    </button>
-    <span class="text-muted">/</span>
-    <div class="relative">
-      <input
-        v-if="renaming"
-        ref="renameInput"
-        v-model="renameValue"
-        class="w-[220px] rounded-ctl border border-sel bg-s2 px-2 py-0.5 text-sm font-semibold text-fg outline-none"
-        maxlength="80"
-        @keydown.enter="commitRename"
-        @keydown.esc="renaming = false"
-        @blur="commitRename"
-      />
       <button
-        v-else
-        class="flex max-w-[260px] items-center gap-1 rounded-ctl px-1.5 py-0.5 text-sm font-semibold text-fg hover:bg-s2"
-        :class="{ 'bg-s2': projectMenu }"
-        title="Project"
-        @click.stop="
-          projectMenu = !projectMenu;
-          menuOpen = false;
-        "
+        class="no-drag flex h-7 items-center gap-2 rounded-ctl px-1.5 text-fg hover:bg-bg3"
+        title="All projects"
+        @click="emit('home')"
       >
-        <span class="truncate">{{ projects.active?.name ?? 'Project' }}</span>
-        <PhCaretDown :size="12" weight="bold" class="flex-none text-muted" />
+        <BrandMark :size="16" />
+        <span class="text-[13px] font-semibold tracking-tight">ApexCut</span>
       </button>
-      <div
-        v-if="projectMenu"
-        class="popover absolute top-[calc(100%+6px)] left-0 z-30 min-w-[220px] p-1.5 text-sm"
-        @click.stop
-      >
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          @click="
-            projectMenu = false;
-            emit('home');
-          "
-        >
-          <PhSquaresFour :size="15" /> All projects
-        </button>
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          @click="startRename"
-        >
-          <PhPencilSimple :size="15" /> Rename
-        </button>
-        <button
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-s2"
-          @click="exportProject"
-        >
-          <PhExport :size="15" /> Export project…
-        </button>
-      </div>
-    </div>
-    <span v-if="editor.stem" class="truncate text-xs text-muted">
-      {{ shortName(editor.stem) }} · {{ editor.dirty ? 'Saving…' : 'Saved' }}
-    </span>
-    <div class="min-w-0 flex-1 text-center">
-      <Transition
-        mode="out-in"
-        enter-active-class="transition-opacity duration-150"
-        leave-active-class="transition-opacity duration-150"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-      >
-        <span
-          v-if="editor.activePart"
-          :key="editor.activePart.id"
-          class="inline-block max-w-full truncate text-[15px]"
-        >
-          <b>{{ REASON_LABEL[reasonOf(editor.activePart)] }}</b>
-          <span class="ml-1.5 text-muted">{{ why(editor.activePart) }}</span>
+
+      <template v-if="inEditor">
+        <span class="h-7 leading-7 text-fg3">/</span>
+        <div class="no-drag relative">
+          <input
+            v-if="renaming"
+            ref="renameInput"
+            v-model="renameValue"
+            class="input h-7 w-[220px] font-semibold"
+            maxlength="80"
+            @keydown.enter="commitRename"
+            @keydown.esc="renaming = false"
+            @blur="commitRename"
+          />
+          <button
+            v-else
+            class="flex h-7 max-w-[260px] items-center gap-1 rounded-ctl px-1.5 text-[13px] font-semibold text-fg hover:bg-bg3"
+            :class="{ 'bg-bg3': projectMenu }"
+            title="Project"
+            @click.stop="
+              projectMenu = !projectMenu;
+              menuOpen = false;
+            "
+          >
+            <span class="truncate">{{ projects.active?.name ?? 'Project' }}</span>
+            <PhCaretDown :size="11" weight="bold" class="flex-none text-fg3" />
+          </button>
+          <div
+            v-if="projectMenu"
+            class="popover absolute top-[calc(100%+4px)] left-0 z-30 min-w-[210px] p-1"
+            @click.stop
+          >
+            <button
+              class="menu-item"
+              @click="
+                projectMenu = false;
+                emit('home');
+              "
+            >
+              <PhSquaresFour :size="15" /> All projects
+            </button>
+            <button class="menu-item" @click="startRename">
+              <PhPencilSimple :size="15" /> Rename
+            </button>
+            <button class="menu-item" @click="exportProject">
+              <PhExport :size="15" /> Export project…
+            </button>
+          </div>
+        </div>
+        <span v-if="inEditor && editor.stem" class="ml-1 h-7 truncate text-xs leading-7 text-fg3">
+          {{ shortName(editor.stem!) }} · {{ editor.dirty ? 'Saving…' : 'Saved' }}
         </span>
-        <span v-else class="text-xs text-muted">{{ summary }}</span>
-      </Transition>
-    </div>
-    <button
-      class="btn btn-ghost px-2"
-      title="Undo (Ctrl+Z)"
-      aria-label="Undo"
-      :disabled="!editor.history.length"
-      @click="editor.undo()"
-    >
-      <PhArrowCounterClockwise :size="18" />
-    </button>
-    <button
-      class="btn btn-ghost px-2"
-      title="Redo (Ctrl+Y)"
-      aria-label="Redo"
-      :disabled="!editor.future.length"
-      @click="editor.redo()"
-    >
-      <PhArrowClockwise :size="18" />
-    </button>
-    <button
-      class="btn btn-ghost px-2"
-      title="Settings (Ctrl+,)"
-      aria-label="Settings"
-      @click="ui.openSettings()"
-    >
-      <PhGearSix :size="18" />
-    </button>
-    <div class="relative flex">
-      <button
-        class="btn btn-pri rounded-r-none"
-        :disabled="!canMake"
-        data-tour="make"
-        @click="choose('all')"
-      >
-        Make my movie
-      </button>
-      <button
-        class="btn btn-pri rounded-l-none border-l border-black/20 px-2.5"
-        :disabled="!canMake"
-        title="More options"
-        aria-label="More export options"
-        :aria-expanded="menuOpen"
-        @click.stop="
-          menuOpen = !menuOpen;
-          projectMenu = false;
-        "
-      >
-        <PhCaretDown :size="14" weight="bold" />
-      </button>
-      <div
-        v-if="menuOpen"
-        class="popover absolute top-[calc(100%+6px)] right-0 z-30 min-w-[280px] p-1.5"
-        @click.stop
-      >
-        <div class="cursor-pointer rounded-lg px-3 py-2 hover:bg-s2" @click="choose('all')">
-          <b class="block text-sm">All videos</b>
-          <span class="text-xs text-muted">{{ summary }}</span>
-        </div>
-        <div
-          v-if="library.currentClip"
-          class="cursor-pointer rounded-lg px-3 py-2 hover:bg-s2"
-          @click="choose('current')"
+      </template>
+      <span v-else-if="title" class="ml-1 h-7 text-xs leading-7 text-fg3">/ {{ title }}</span>
+
+      <!-- centre: the active part, or the movie so far -->
+      <div class="flex h-7 min-w-0 flex-1 items-center justify-center px-3 text-center">
+        <Transition
+          v-if="inEditor"
+          mode="out-in"
+          enter-active-class="transition-opacity duration-150"
+          leave-active-class="transition-opacity duration-150"
+          enter-from-class="opacity-0"
+          leave-to-class="opacity-0"
         >
-          <b class="block text-sm">Only this video</b>
-          <span class="text-xs text-muted">
-            {{ shortName(library.currentClip.stem) }} ·
-            {{ plural(editor.enabledParts.length, 'part') }} ·
-            {{ fmtDuration(editor.movieLength) }}
+          <span
+            v-if="editor.activePart"
+            :key="editor.activePart!.id"
+            class="num max-w-full truncate text-xs leading-7"
+          >
+            <b class="text-fg">{{ REASON_LABEL[reasonOf(editor.activePart!)] }}</b>
+            <span class="ml-1.5 text-fg2">{{ why(editor.activePart!) }}</span>
           </span>
+          <span v-else class="num text-xs leading-7 text-fg3">{{ summary }}</span>
+        </Transition>
+      </div>
+
+      <!-- right: actions; the OS window buttons come after this -->
+      <div class="no-drag flex items-center gap-0.5 pr-2">
+        <template v-if="inEditor">
+          <button
+            class="btn btn-ghost btn-icon"
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo"
+            :disabled="!editor.history.length"
+            @click="editor.undo()"
+          >
+            <PhArrowCounterClockwise :size="16" />
+          </button>
+          <button
+            class="btn btn-ghost btn-icon"
+            title="Redo (Ctrl+Y)"
+            aria-label="Redo"
+            :disabled="!editor.future.length"
+            @click="editor.redo()"
+          >
+            <PhArrowClockwise :size="16" />
+          </button>
+        </template>
+        <button
+          class="btn btn-ghost btn-icon"
+          title="Settings (Ctrl+,)"
+          aria-label="Settings"
+          @click="ui.openSettings()"
+        >
+          <PhGearSix :size="16" />
+        </button>
+        <div v-if="inEditor" class="relative ml-1.5 flex">
+          <button
+            class="btn btn-pri rounded-r-none"
+            :disabled="!canMake"
+            data-tour="make"
+            @click="choose('all')"
+          >
+            Make my movie
+          </button>
+          <button
+            class="btn btn-pri w-7 rounded-l-none border-l-ink-fg/20 px-0"
+            :disabled="!canMake"
+            title="More options"
+            aria-label="More export options"
+            :aria-expanded="menuOpen"
+            @click.stop="
+              menuOpen = !menuOpen;
+              projectMenu = false;
+            "
+          >
+            <PhCaretDown :size="12" weight="bold" />
+          </button>
+          <div
+            v-if="menuOpen"
+            class="popover absolute top-[calc(100%+4px)] right-0 z-30 min-w-[280px] p-1"
+            @click.stop
+          >
+            <button
+              class="menu-item h-auto flex-col items-start gap-0 py-1.5"
+              @click="choose('all')"
+            >
+              <b class="text-[13px]">All videos</b>
+              <span class="num text-xs text-fg2">{{ summary }}</span>
+            </button>
+            <button
+              v-if="library.currentClip"
+              class="menu-item h-auto flex-col items-start gap-0 py-1.5"
+              @click="choose('current')"
+            >
+              <b class="text-[13px]">Only this video</b>
+              <span class="num text-xs text-fg2">
+                {{ shortName(library.currentClip.stem) }} ·
+                {{ plural(editor.enabledParts.length, 'part') }} ·
+                {{ fmtDuration(editor.movieLength) }}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </header>
+    </header>
+  </div>
 </template>
