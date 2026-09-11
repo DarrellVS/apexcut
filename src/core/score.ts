@@ -133,12 +133,16 @@ export function nanmedian(x: ArrayLike<number>): number {
  * The p90 fallback keeps sparse features (mostly zero) from exploding when MAD ≈ 0. Clipped to [0, clip].
  */
 export function robustPos(x: Float64Array, clip: number): Float64Array {
+  const { med, scale } = robustScale(x);
+  return x.map((v) => Math.min(clip, Math.max(0, (v - med) / scale)));
+}
+/** the median and scale `robustPos` divides by, so an extra term can be scaled the same way */
+export function robustScale(x: Float64Array): { med: number; scale: number } {
   const med = nanmedian(x);
   const absDev = x.map((v) => Math.abs(v - med));
   const mad = nanmedian(absDev) * 1.4826;
   const p90 = (nanpercentile(x, 90) - med) / 1.2816;
-  const scale = Math.max(mad, p90, 1e-9);
-  return x.map((v) => Math.min(clip, Math.max(0, (v - med) / scale)));
+  return { med, scale: Math.max(mad, p90, 1e-9) };
 }
 
 const clip01 = (v: number): number => Math.min(1, Math.max(0, v));
@@ -235,22 +239,39 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
   const nearGate = near.map((v) =>
     clip01((v - cfg.accel_lean_lo_deg) / (cfg.accel_lean_hi_deg - cfg.accel_lean_lo_deg)),
   );
-  // ... unless the rider asked for straight-line pulls as well
-  const pullGate = cfg.pulls ? detectPulls(aLon, fs, cfg) : new Float64Array(nGrid);
-  const accelGate = nearGate.map((v, i) => Math.max(v, pullGate[i]));
-  const fAccel = roll(mul(abs(aLon), accelGate), win, 'mean');
+  const fAccelBase = roll(mul(abs(aLon), nearGate), win, 'mean');
 
   const w = cfg.weights;
   const totalW =
     [w.lean, w.yaw, w.accel, w.rpm ?? 0].filter((v) => v > 0).reduce((a, b) => a + b, 0) || 1;
   const nLean = robustPos(fLean, cfg.norm_clip);
   const nYaw = robustPos(fYaw, cfg.norm_clip);
-  const nAccel = robustPos(fAccel, cfg.norm_clip);
+  const nAccelBase = robustPos(fAccelBase, cfg.norm_clip);
+  const smooth = Math.trunc(cfg.smooth_s * fs);
+  const scoreOf = (nAcc: Float64Array): Float64Array =>
+    roll(
+      nLean.map((v, i) => (w.lean * v + w.yaw * nYaw[i] + w.accel * nAcc[i]) / totalW),
+      smooth,
+      'mean',
+    );
+  const scoreBase = scoreOf(nAccelBase);
+
+  // ... unless the rider asked for straight-line pulls as well. Pulls are purely additive: their
+  // term is scaled like the base acceleration and added on top, and the threshold below is taken
+  // from the score *without* them — switching pulls on can only add parts, never lose one.
+  const pullGate = cfg.pulls ? detectPulls(aLon, fs, cfg) : new Float64Array(nGrid);
+  const accelGate = nearGate.map((v, i) => Math.max(v, pullGate[i]));
+  const pullOnly = pullGate.map((v, i) => Math.max(0, v - nearGate[i]));
+  const fAccelPull = roll(mul(abs(aLon), pullOnly), win, 'mean');
+  const fAccel = fAccelBase.map((v, i) => v + fAccelPull[i]);
+  const { scale } = robustScale(fAccelBase);
+  const nAccel = nAccelBase.map((v, i) =>
+    Math.min(cfg.norm_clip, v + Math.max(0, fAccelPull[i] / scale)),
+  );
   const scoreRaw = nLean.map(
     (v, i) => (w.lean * v + w.yaw * nYaw[i] + w.accel * nAccel[i]) / totalW,
   );
-  const smooth = Math.trunc(cfg.smooth_s * fs);
-  const score = roll(scoreRaw, smooth, 'mean');
+  const score = cfg.pulls ? scoreOf(nAccel) : scoreBase;
   const cornerPart = roll(
     nLean.map((v, i) => (w.lean * v + w.yaw * nYaw[i]) / totalW),
     smooth,
@@ -262,7 +283,7 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
     'mean',
   );
 
-  const threshold = cfg.threshold_abs ?? nanpercentile(score, cfg.threshold_pct);
+  const threshold = cfg.threshold_abs ?? nanpercentile(scoreBase, cfg.threshold_pct);
   const signals: ScoreSignals = {
     t,
     leanDeg,

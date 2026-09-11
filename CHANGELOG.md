@@ -5,6 +5,15 @@ notes (and the “What’s new” text in the update banner).
 
 ## 0.4.17
 
+- New layout: the left panel is the **Ride** — the numbers of the open video and an outline of every
+  video with its parts underneath. Click a part
+  of any video to open it and go there. Video actions moved into the row’s menu; “How picky?” is a
+  popover in the rail’s head. The right panel is the **Movie**, always visible — no more Parts /
+  Movie / This video tabs. “Make ride card” moved to the project menu in the title bar.
+- Every menu and popover now closes on a click outside or Escape.
+- Title and end cards are gone: the movie starts with your first part and ends with your last.
+- “Count acceleration pulls too” now only ever adds parts. It used to raise the “fun enough” line
+  (a percentile of the score) and could lose borderline corners in the same video.
 - New look. The window is one dark slab: panels sit edge to edge with hairlines between them, no
   glass, gradients or glow; colour is kept for the data (corners, braking) and for delete/stop. Light
   theme follows the same rules.

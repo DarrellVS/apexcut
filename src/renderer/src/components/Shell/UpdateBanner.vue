@@ -3,9 +3,12 @@
 import { ref } from 'vue';
 import { PhArrowsClockwise, PhDownloadSimple, PhX } from '@phosphor-icons/vue';
 import { useUpdaterStore } from '@renderer/stores/updater';
+import { useDismiss } from '@renderer/composables/useDismiss';
 
 const updater = useUpdaterStore();
 const notesOpen = ref(false);
+const notesRoot = ref<HTMLElement | null>(null);
+useDismiss(notesRoot, () => (notesOpen.value = false));
 </script>
 
 <template>
@@ -37,7 +40,7 @@ const notesOpen = ref(false);
         <b class="font-semibold">ApexCut {{ updater.ready.version }} is ready.</b>
         <span class="text-fg2"> It installs when you restart.</span>
       </span>
-      <div class="relative">
+      <div ref="notesRoot" class="relative">
         <button
           v-if="updater.ready.notes"
           class="btn btn-mini"

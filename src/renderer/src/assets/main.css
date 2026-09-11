@@ -373,6 +373,14 @@
   border: 1px solid var(--line2);
   border-radius: var(--r-card);
   box-shadow: var(--shadow);
+  /* popovers open from headers and buttons: never inherit their caps, nowrap or size */
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  color: var(--fg);
 }
 /* sits on top of video or the timeline: dark in both themes because it is over media */
 @utility chip {

@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parseDjmd } from '@core/dji/djmd';
+import { derive } from '@core/imu';
 import type { ImuSignals } from '@core/imu';
 import { compute, DEFAULT_CONFIG, detectPulls } from '@core/score';
 
@@ -77,5 +81,22 @@ describe('compute with pulls', () => {
     expect(seg.core_start_s).toBeGreaterThanOrEqual(97);
     expect(seg.core_end_s).toBeLessThanOrEqual(110);
     expect(seg.max_accel_g).toBeCloseTo(0.3, 1);
+  });
+});
+
+describe('pulls on a real ride', () => {
+  const raw = new Uint8Array(readFileSync(resolve(__dirname, '../fixtures/clip0034.djmd')));
+  const imu = derive(parseDjmd(raw).frames);
+  it('only ever adds parts: every part found without pulls is still there with pulls', () => {
+    const off = compute(imu);
+    const on = compute(imu, { pulls: true });
+    expect(on.threshold).toBeCloseTo(off.threshold, 9);
+    for (const seg of off.segments) {
+      const kept = on.segments.some(
+        (s) => s.start_s <= seg.core_start_s && s.end_s >= seg.core_end_s,
+      );
+      expect(kept, `part ${seg.core_start_s}–${seg.core_end_s} lost`).toBe(true);
+    }
+    expect(on.segments.length).toBeGreaterThanOrEqual(off.segments.length - 0);
   });
 });

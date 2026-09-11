@@ -368,7 +368,7 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
       }"
     >
       <div
-        class="pointer-events-auto absolute border border-white shadow-[0_0_0_9999px_rgba(0,0,0,.62)]"
+        class="group pointer-events-auto absolute border border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,.55)]"
         :class="isVertical ? 'cursor-ew-resize' : 'cursor-ns-resize'"
         :style="winStyle"
         @mousedown="frameDrag"
@@ -376,7 +376,7 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
         @contextmenu.prevent="resetFrame"
       >
         <div
-          class="chip absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 text-center text-xs whitespace-nowrap"
+          class="chip absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 text-center text-xs whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100"
         >
           {{ isVertical ? 'Drag left or right' : 'Drag to place the horizon' }}
           <small class="block text-[11px] opacity-70">Double-click to reset</small>

@@ -13,7 +13,7 @@ import {
   type OverlaySpec,
   type Sample,
 } from '@core/overlay';
-import { cardFont } from './cards';
+import { cardFont } from './fonts';
 
 export interface OverlaySprites {
   bike: string;

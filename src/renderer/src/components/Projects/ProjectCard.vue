@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/vue';
 import type { ProjectInfo } from '@shared/ipc';
 import { fmtDuration, fmtWhen } from '@renderer/utils/format';
+import { useDismiss } from '@renderer/composables/useDismiss';
 
 const props = defineProps<{ project: ProjectInfo; active: boolean; menuOpen: boolean }>();
 const emit = defineEmits<{
@@ -26,6 +27,8 @@ const renaming = ref(false);
 const renameValue = ref('');
 const renameInput = ref<HTMLInputElement | null>(null);
 const confirmDelete = ref(false);
+const card = ref<HTMLElement | null>(null);
+useDismiss(card, () => props.menuOpen && emit('menu', false));
 
 function thumb(p: ProjectInfo): string | null {
   return p.thumbStem ? `apexcut://media/clip/${encodeURIComponent(p.thumbStem)}/thumb.jpg` : null;
@@ -58,6 +61,7 @@ function onCardClick(): void {
 
 <template>
   <article
+    ref="card"
     class="group relative flex cursor-pointer flex-col rounded-card border bg-bg2 transition-colors hover:border-line2"
     :class="[
       active ? 'border-sel hover:border-sel' : 'border-line',

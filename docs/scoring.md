@@ -74,8 +74,10 @@ straight-line pulls have a switch under “How picky?” (per project, `ProjectR
 on, `detectPulls` marks runs where forward acceleration stays above `pull_min_g` (0.12 g) for at
 least `pull_min_s` (2.5 s) **and** the run adds up to `pull_min_dv_mps` (6 m/s ≈ 22 km/h) of speed
 gain; inside such a run the acceleration gate is 1, so the pull scores like acceleration next to a
-corner and becomes an “Acceleration / braking” part. Braking on straights stays out (usually
-traffic). Off, the pipeline is unchanged, so the parity fixture is untouched; new scans and preset
+corner and becomes an “Acceleration / braking” part. The pull term is scaled like the base
+acceleration (`robustScale` of the near-corner signal) and _added_; the threshold percentile is taken
+from the score without pulls, so the switch can only add parts, never lose one (fixture test).
+Braking on straights stays out (usually traffic). Off, the pipeline is unchanged, so the parity fixture is untouched; new scans and preset
 changes carry the project's switch (`projects.scoreConfig()`). Tests: `tests/core/pulls.test.ts`.
 
 ## Changing the rules

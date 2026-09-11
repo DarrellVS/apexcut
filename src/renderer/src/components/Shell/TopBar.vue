@@ -6,13 +6,14 @@
  * (`titlebar-area-*`), so the content stops before them. Outside the editor it is a slim bar.
  */
 import BrandMark from '@renderer/components/Base/BrandMark.vue';
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
   PhArrowCounterClockwise,
   PhArrowClockwise,
   PhCaretDown,
   PhExport,
   PhGearSix,
+  PhImageSquare,
   PhPencilSimple,
   PhSquaresFour,
 } from '@phosphor-icons/vue';
@@ -25,6 +26,8 @@ import { useProjectsStore } from '@renderer/stores/projects';
 import { useUiStore } from '@renderer/stores/ui';
 import { fmtDuration, fmtTime, shortName, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
+import { useRideCard } from '@renderer/composables/useRideCard';
+import { useDismiss } from '@renderer/composables/useDismiss';
 
 defineProps<{ inEditor: boolean; title?: string }>();
 const emit = defineEmits<{ make: [scope: 'all' | 'current']; home: [] }>();
@@ -33,6 +36,7 @@ const library = useLibraryStore();
 const projects = useProjectsStore();
 const ui = useUiStore();
 const menuOpen = ref(false);
+const rideCard = useRideCard();
 const projectMenu = ref(false);
 const renaming = ref(false);
 const renameValue = ref('');
@@ -65,12 +69,10 @@ function closeMenus(): void {
   menuOpen.value = false;
   projectMenu.value = false;
 }
-// Esc closes an open menu wherever the focus is
-function onKey(e: KeyboardEvent): void {
-  if (e.key === 'Escape' && (menuOpen.value || projectMenu.value)) closeMenus();
-}
-onMounted(() => window.addEventListener('keydown', onKey));
-onUnmounted(() => window.removeEventListener('keydown', onKey));
+const projectRoot = ref<HTMLElement | null>(null);
+const makeRoot = ref<HTMLElement | null>(null);
+useDismiss(projectRoot, () => (projectMenu.value = false));
+useDismiss(makeRoot, () => (menuOpen.value = false));
 async function startRename(): Promise<void> {
   projectMenu.value = false;
   renameValue.value = projects.active?.name ?? '';
@@ -122,7 +124,7 @@ function onDblClick(e: MouseEvent): void {
 
       <template v-if="inEditor">
         <span class="h-7 leading-7 text-fg3">/</span>
-        <div class="no-drag relative">
+        <div ref="projectRoot" class="no-drag relative">
           <input
             v-if="renaming"
             ref="renameInput"
@@ -162,6 +164,18 @@ function onDblClick(e: MouseEvent): void {
             </button>
             <button class="menu-item" @click="startRename">
               <PhPencilSimple :size="15" /> Rename
+            </button>
+            <button
+              class="menu-item"
+              :disabled="rideCard.busy.value || !library.analyzed.length"
+              title="A picture with the numbers of this ride and its best moments, for Instagram or the group chat. Saved next to your movies and copied to the clipboard."
+              @click="
+                projectMenu = false;
+                rideCard.make();
+              "
+            >
+              <PhImageSquare :size="15" />
+              {{ rideCard.busy.value ? 'Making the ride card…' : 'Make ride card' }}
             </button>
             <button class="menu-item" @click="exportProject">
               <PhExport :size="15" /> Export project…
@@ -226,7 +240,7 @@ function onDblClick(e: MouseEvent): void {
         >
           <PhGearSix :size="16" />
         </button>
-        <div v-if="inEditor" class="relative ml-1.5 flex">
+        <div v-if="inEditor" ref="makeRoot" class="relative ml-1.5 flex">
           <button
             class="btn btn-pri rounded-r-none"
             :disabled="!canMake"

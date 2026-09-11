@@ -16,7 +16,7 @@ state, square-ish clips, small tabular type, the same three-plus-one layout, a u
 ```
 ┌ title bar 40 px (drag handle; native ─ ☐ ✕ drawn by the OS at the right) ───────────────────┐
 │ ⋀ ApexCut / Eifel test ▾  Video 24 · Saved     [Corners · 7:28 – 7:38 · 11 sec]   ↶ ↷ ⚙ [Make my movie ▾] │
-├ Videos (280, draggable) │ stage (video in an 8 px black inset) │ Parts | Movie | This video (300, draggable) ┤
+├ Ride rail (300, draggable) │ stage (video in an 8 px black inset) │ Movie panel (300, draggable) ┤
 ├ timeline 300: ruler 20 · score 40 · parts lane · music 28+32 · legend 28 ───────────────────────┤
 ```
 
@@ -65,7 +65,9 @@ semantic and identical in meaning across themes. Theme: `data-theme="light|dark"
 - `.input` 28 px; `.seg` / `.seg-item` segmented radio (the chosen item raised on `--bg2`);
   `.tile` a bordered choice card (`aria-pressed` = selected, `--sel` border); `.card` for grouped
   settings; `.row` / `.menu-item` 28 px rows.
-- `.popover` on the chrome (`--bg2`, `--line2`, shadow). `.chip` / `.chip-btn` for anything that sits
+- `.popover` on the chrome (`--bg2`, `--line2`, shadow; resets caps/nowrap/size so it can open from
+  a panel head). Every menu and popover closes on a click outside or Escape through one composable,
+  `composables/useDismiss.ts`. `.chip` / `.chip-btn` for anything that sits
   on video or the timeline (transport, toolbars, hover readout): dark in both themes because it is over
   media.
 - `.label-caps` 11 px / 600 / 0.04em; `.num` tabular numerals — on every time, count and size.
@@ -80,11 +82,22 @@ semantic and identical in meaning across themes. Theme: `data-theme="light|dark"
 - **Empty project**: a dashed drop zone with `Choose videos…` (primary) and `Whole memory card…`.
 - **Scanning**: title + percentage, a 4 px `--ink` bar, the stage text and `n of m videos done`, then
   the list of videos ticking off.
-- **Parts tab**: How picky? (preset segment, Fewer/More slider, “Count acceleration pulls too”
-  checkbox with a one-line explanation, “Add part at …”), **This ride** (four label/value rows that
-  jump to the moment), the part list (checkbox, colour tick, time, reason, length, star).
-- **Movie tab**: 11 px caps labels over tiles (`One movie` / `Separate clips`; four formats),
-  segments for transition and riding-data overlay, title/end card checkboxes, one primary button.
+- **Ride rail** (`Ride/RideRail.vue`, left): the app's real model is one ride = several videos =
+  one movie of parts, so the left panel is the ride, not a media bin. Head: `Ride` and the picky
+  popover (`Sporty ▾`: preset segment, Fewer/More slider, “Count acceleration pulls too”, “Add part
+  at …”). Then three label/value rows (sharpest lean,
+  hardest braking, twistiest minute) that jump to the moment. Then the **outline**: every video as a
+  row (grip · fold caret · thumb · name · `kept parts · length`, `···` menu: find moved file, scan
+  again, EDL, how parts are picked, remove) with its parts underneath (checkbox, colour tick, time,
+  reason, length, star). A part of any video opens that video and jumps there; drag a video row to
+  change the movie's order. Footer: `+ Videos`, `+ Folder`.
+- **Movie panel** (`Movie/MoviePanel.vue`, right, always visible — no tabs): head `Movie · N parts
+from M videos · length`, made from all videos / only this one, name, 11 px caps labels over tiles
+  (`One movie` / `Separate clips`; four formats), segments for transition and riding-data overlay,
+  the result; the primary button is a fixed footer under the scrolling content. The ride card lives in the project menu
+  of the title bar (`Make ride card`, `composables/useRideCard.ts`). Sections are 20 px apart; tiles
+  carry an icon and a name only, the explanation is the tooltip. The crop frame is on the
+  video whenever the format is not square; its drag hint appears on hover.
 - **Settings**: near-fullscreen popover, left nav grouped App / Editing / Advanced, 640 px reading
   width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned.
 - **Import sheet**, **Export overlay**, **Error card**, **Quick tour**: centred popovers, base

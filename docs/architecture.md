@@ -27,7 +27,7 @@ src/
                     scripts/check-package.mjs guards this in the release build)
   preload/     contextBridge → `window.apexcut` (typed, promise-based, plus event subscriptions)
   renderer/    Vue 3 + Pinia + Tailwind v4
-    components/{Projects,Shell,Library,Stage,Inspector,Timeline,Base}/
+    components/{Projects,Shell,Ride,Stage,Movie,Timeline,Library,Base}/
     composables/    useTimelineView, useUndo, useSuggestions, useKeyboard, useFraming
     stores/         projects, library (videos of the open project), editor (segments/selection/undo), jobs, settings
 ```
@@ -51,9 +51,8 @@ src/
    cuts the middles losslessly at those keyframes (`TrimCopyAction`), builds one `acrossfade` audio
    track (`AudioCrossfadeAction`) and muxes. Square with dip/crossfade is re-encoded under the same
    quality rules (10-bit, CQ 18, bitrate cap) — a copy/encode mix cannot be concatenated safely.
-   Then, in `finish()`: title/end cards (`CardAction`, ffmpeg gradients + drawtext, encoded like the
-   parts, concatenated around the movie) and the music mix (`MusicMixAction`: songs trimmed, faded and
-   concatenated, cut at the movie end, laid over the original audio with `amix`; video stream copied).
+   Then, in `finish()`: the music mix (`MusicMixAction`: songs trimmed, faded and concatenated, cut at
+   the movie end, laid over the original audio with `amix`; video stream copied).
    Songs are referenced by path and served to the player through `apexcut://media/music/<base64url>`.
    Telemetry overlay: `core/overlay.ts` owns layout, drawing (a minimal 2D-context interface, so it is
    pure and unit-tested) and the `sendcmd` command stream; the renderer draws the same thing live on a

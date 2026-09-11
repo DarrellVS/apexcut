@@ -25,9 +25,9 @@ import { friendlyError } from '@renderer/utils/errors';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
 import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
-import VideoList from '@renderer/components/Library/VideoList.vue';
+import RideRail from '@renderer/components/Ride/RideRail.vue';
 import VideoStage from '@renderer/components/Stage/VideoStage.vue';
-import InspectorPanel from '@renderer/components/Inspector/InspectorPanel.vue';
+import MoviePanel from '@renderer/components/Movie/MoviePanel.vue';
 import Timeline from '@renderer/components/Timeline/Timeline.vue';
 import ToastHost, { toast } from '@renderer/components/Base/ToastHost.vue';
 
@@ -40,11 +40,11 @@ const ui = useUiStore();
 const updater = useUpdaterStore();
 
 // side panels: drag the hairline between panels; widths are remembered
-const left = usePanelWidth('left', 280, 200, 480, 1);
-const right = usePanelWidth('right', 300, 240, 520, -1);
+const left = usePanelWidth('ride', 300, 240, 520, 1);
+const right = usePanelWidth('movie', 300, 240, 520, -1);
 
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
-const inspector = ref<InstanceType<typeof InspectorPanel> | null>(null);
+const movie = ref<InstanceType<typeof MoviePanel> | null>(null);
 
 const phase = computed<'projects' | 'empty' | 'scanning' | 'editor'>(() => {
   if (projects.showHome || !projects.activeId) return 'projects';
@@ -331,7 +331,7 @@ function onKey(e: KeyboardEvent): void {
             ? 'Scanning'
             : (projects.active?.name ?? '')
       "
-      @make="inspector?.openMovie($event)"
+      @make="movie?.openMovie($event)"
       @home="goHome"
     />
     <UpdateBanner />
@@ -350,24 +350,19 @@ function onKey(e: KeyboardEvent): void {
           gridTemplateColumns: `${left.width.value}px 1px minmax(0,1fr) 1px ${right.width.value}px`,
         }"
       >
-        <VideoList @pick="pickAndScan" />
+        <RideRail @pick="pickAndScan" @seek="stage?.seek($event)" @play="stage?.play($event)" />
         <div
           class="splitter"
           :class="{ 'is-dragging': left.dragging.value }"
           @mousedown="left.start"
         />
-        <VideoStage ref="stage" :framing="inspector?.framingActive ?? false" />
+        <VideoStage ref="stage" :framing="movie?.framingActive ?? false" />
         <div
           class="splitter"
           :class="{ 'is-dragging': right.dragging.value }"
           @mousedown="right.start"
         />
-        <InspectorPanel
-          ref="inspector"
-          @seek="stage?.seek($event)"
-          @play="stage?.play($event)"
-          @watch="stage?.watchResult($event)"
-        />
+        <MoviePanel ref="movie" @watch="stage?.watchResult($event)" />
       </main>
       <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />
     </template>

@@ -20,15 +20,8 @@ import { mkdtempSync, rmSync, renameSync, statSync, writeFileSync } from 'node:f
 import { FORMAT_SPEC, type ExportFormat, type MusicSettings, type Transition } from '@shared/ipc';
 import { encoders, probe, runFfmpeg, type ProbeResult } from '../services/media';
 import type { JobContext } from '../services/jobs';
-import { CardAction } from './cards';
 import { MusicMixAction } from './music';
 import { overlayGraph, type OverlayJob } from './overlay';
-
-/** Title / end cards around the movie (see cards.ts). */
-export interface Cards {
-  title: { heading: string; subheading: string } | null;
-  end: boolean;
-}
 
 /** crossfade length and dip-to-black fade length, seconds */
 export const XFADE_S = 0.5;
@@ -505,75 +498,25 @@ export function prepareItems(items: CutItem[], transition: Transition): CutItem[
   });
 }
 
-/** Title/end cards rendered like the movie itself, then joined around it losslessly. */
-async function addCards(
-  movie: string,
-  outPath: string,
-  cards: Cards,
-  encArgs: string[],
-  tmp: string,
-  ctx: JobContext,
-): Promise<void> {
-  const info = await probe(movie);
-  const spec = {
-    width: info.width,
-    height: info.height,
-    fps: String(info.fps),
-    tenBit: info.tenBit,
-    encArgs,
-    tmp,
-    footer: 'Made with ApexCut',
-  };
-  const sequence: string[] = [];
-  if (cards.title) {
-    ctx.progress(0.985, 'Making the title card');
-    sequence.push(
-      await new CardAction().execute({ ...spec, ...cards.title, dst: join(tmp, 'title.mp4') }, ctx),
-    );
-  }
-  sequence.push(movie);
-  if (cards.end) {
-    ctx.progress(0.99, 'Making the end card');
-    sequence.push(
-      await new CardAction().execute(
-        {
-          ...spec,
-          heading: 'Made with ApexCut',
-          subheading: '',
-          footer: '',
-          dst: join(tmp, 'end.mp4'),
-        },
-        ctx,
-      ),
-    );
-  }
-  ctx.progress(0.995, 'Joining everything');
-  await new ConcatAction().execute(sequence, outPath, ctx);
-}
-
 export async function compileMovie(
   items: CutItem[],
   outPath: string,
   ctx: JobContext,
   transition: Transition = 'crossfade',
-  cards: Cards = { title: null, end: false },
   music?: MusicSettings,
 ): Promise<string> {
   const tmp = mkdtempSync(join(outPath, '..', 'apexcut-'));
-  const withCards = !!cards.title || cards.end;
   const withMusic = !!music && music.tracks.some((t) => t.outS > t.inS);
-  // cards are encoded clips: the movie must be encoded too so the pieces concatenate cleanly
-  const encodeAll = withCards && items.some((it) => it.format === 'original');
+  // encoder settings shared by the crossfade clips
   const { args: encArgs } = await videoArgsFor(
     items[0].src,
     items[0].format,
     items[0].quality ?? 18,
   );
   const finish = async (movie: string): Promise<string> => {
-    // cards first (video), then the music mix on top of the finished picture (audio only)
+    // the music mix goes on top of the finished picture (audio only, video stream copied)
     const carded = withMusic ? join(tmp, 'carded.mp4') : outPath;
-    if (withCards) await addCards(movie, carded, cards, encArgs, tmp, ctx);
-    else renameSync(movie, carded);
+    renameSync(movie, carded);
     if (withMusic && music) {
       ctx.progress(0.99, 'Adding the music');
       try {
@@ -592,7 +535,6 @@ export async function compileMovie(
   try {
     const prepared = prepareItems(items, transition).map((it, k) => ({
       ...it,
-      encode: it.encode || encodeAll,
       name: `part_${String(k).padStart(3, '0')}.mp4`,
     }));
     const crossfading = transition === 'crossfade' && prepared.length > 1;
