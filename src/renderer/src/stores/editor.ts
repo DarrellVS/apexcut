@@ -1,3 +1,4 @@
+import type { Grade } from '@core/grade';
 /**
  * Editing state for the open video: timeline data, parts, selection, undo/redo, playhead.
  * Every mutation goes through `mutate()` so undo snapshots and debounced saving stay consistent.
@@ -188,6 +189,10 @@ export const useEditorStore = defineStore('editor', () => {
     const on = !list.every((p) => p.starred);
     mutate(() => list.forEach((p) => (p.starred = on || undefined)));
   }
+  /** give parts their own colours (undefined = back to the movie's) */
+  function setGrade(list: Part[], grade: Grade | undefined): void {
+    mutate(() => list.forEach((p) => (p.grade = grade ? { ...grade } : undefined)));
+  }
   function remove(list: Part[]): void {
     mutate(() => (parts.value = parts.value.filter((p) => !list.includes(p))));
     selection.value = [];
@@ -311,6 +316,7 @@ export const useEditorStore = defineStore('editor', () => {
     nextOf,
     setEnabled,
     toggleStar,
+    setGrade,
     remove,
     addAt,
     restore,

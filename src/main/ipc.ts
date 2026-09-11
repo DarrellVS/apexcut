@@ -34,6 +34,7 @@ import {
   type MusicTrack,
   type RideStats,
   type Settings,
+  gradeSchema,
 } from '@shared/ipc';
 import { compileMovie, cutAll, fileSizeMb, prepareItems, type CutItem } from './actions/cut';
 import type { OverlayJob, OverlaySprites } from './actions/overlay';
@@ -114,6 +115,9 @@ export function registerIpc(s: Services): void {
   );
   ipcMain.handle('projects:setTransition', (_e, t: unknown) =>
     s.projects.setTransition(z.enum(TRANSITIONS).parse(t)),
+  );
+  ipcMain.handle('projects:setGrade', (_e, g: unknown, id: unknown) =>
+    s.projects.setGrade(gradeSchema.nullable().parse(g), z.string().optional().parse(id)),
   );
   ipcMain.handle('projects:setOverlay', (_e, o: unknown) =>
     s.projects.setOverlay(overlaySpecSchema.nullable().parse(o)),
@@ -371,6 +375,7 @@ export function registerIpc(s: Services): void {
         format: req.format,
         framePos: req.framePos,
         fade: 0,
+        grade: it.grade,
         name: `${it.stem}_${mm}m${ss}s_${label}_${k}.mp4`,
         overlay: overlayFor?.(it),
       };

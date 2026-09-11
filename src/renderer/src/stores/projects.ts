@@ -1,3 +1,4 @@
+import type { Grade } from '@core/grade';
 /**
  * Projects: the list, which one is open, and the actions of the projects screen.
  */
@@ -98,6 +99,14 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  /** the movie's colours; optimistic for the open project, or copied into another project */
+  async function setGrade(g: Grade | null, id?: string): Promise<void> {
+    const p = id ? projects.value.find((x) => x.id === id) : active.value;
+    if (p) p.grade = g ? { ...g } : null;
+    await api.projects.setGrade(g ? { ...g } : null, id);
+    await refresh();
+  }
+
   async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.overlay = o;
@@ -142,6 +151,7 @@ export const useProjectsStore = defineStore('projects', () => {
     setTransition,
     setMusic,
     setOverlay,
+    setGrade,
     exportFile,
     importFile,
   };

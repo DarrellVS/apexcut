@@ -3,6 +3,7 @@
  * the bridge from the renderer; the inferred types are the single source of truth.
  */
 import { z } from 'zod';
+import type { Grade } from '@core/grade';
 import { OVERLAY_CORNERS, OVERLAY_SIZES, OVERLAY_STYLES } from '@core/overlay';
 import type { PresetId } from '@core/presets';
 import type { Part, ScoreConfig, Segment } from '@core/types';
@@ -131,6 +132,8 @@ export interface ProjectInfo {
   music: MusicSettings;
   /** telemetry overlay in the export, null when off */
   overlay: OverlaySpecDto | null;
+  /** the movie's colours, null = as recorded */
+  grade: Grade | null;
 }
 
 export interface TimelinePayload {
@@ -163,11 +166,26 @@ export type JobResult =
   | { kind: 'export'; file: string; url: string; sizeMb: number }
   | { kind: 'extract'; folder: string; files: string[] };
 
+/** colour grading (core/grade.ts); every value 0 when neutral */
+export const gradeSchema = z.object({
+  exposure: z.number().min(-2).max(2),
+  contrast: z.number().min(-100).max(100),
+  highlights: z.number().min(-100).max(100),
+  shadows: z.number().min(-100).max(100),
+  saturation: z.number().min(-100).max(100),
+  warmth: z.number().min(-100).max(100),
+  tint: z.number().min(-100).max(100),
+  vignette: z.number().min(0).max(100),
+  sharpen: z.number().min(0).max(100),
+});
+
 export const exportItemSchema = z.object({
   stem: z.string(),
   startS: z.number().nonnegative(),
   endS: z.number().positive(),
   reden: z.string().optional(),
+  /** colours for this part (its own or the movie's); none = as recorded */
+  grade: gradeSchema.optional(),
 });
 
 export const exportRequestSchema = z.object({
@@ -199,6 +217,7 @@ export const partSchema = z.object({
   manual: z.boolean(),
   parts: z.array(z.tuple([z.number(), z.number()])).optional(),
   starred: z.boolean().optional(),
+  grade: gradeSchema.optional(),
   score: z.number().nullable().optional(),
   peak: z.number().optional(),
   core_start_s: z.number().optional(),
@@ -302,6 +321,8 @@ export interface ApexcutApi {
     setMusic(music: MusicSettings): Promise<void>;
     /** the open project's telemetry overlay (null = off) */
     setOverlay(overlay: OverlaySpecDto | null): Promise<void>;
+    /** the movie's colours; `id` targets another project (copy to…), default the open one */
+    setGrade(grade: Grade | null, id?: string): Promise<void>;
     /** the numbers of the open project for the ride card */
     rideStats(): Promise<RideStats>;
     /**

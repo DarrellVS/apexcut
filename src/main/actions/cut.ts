@@ -22,6 +22,8 @@ import { encoders, probe, runFfmpeg, type ProbeResult } from '../services/media'
 import type { JobContext } from '../services/jobs';
 import { MusicMixAction } from './music';
 import { overlayGraph, type OverlayJob } from './overlay';
+import { VignetteMaskAction } from './vignette';
+import { ffmpegGrade, isNeutral, vignetteStrength, type Grade } from '@core/grade';
 
 /** crossfade length and dip-to-black fade length, seconds */
 export const XFADE_S = 0.5;
@@ -42,6 +44,8 @@ export interface CutInput {
   keyframesAt?: number[];
   /** telemetry overlay for this part (forces an encode) */
   overlay?: OverlayJob;
+  /** colours for this part (forces an encode); neutral or missing = as recorded */
+  grade?: Grade;
 }
 
 export function cropFilter(format: ExportFormat, w: number, h: number, pos: number): string | null {
@@ -208,7 +212,8 @@ export class CutSegmentAction {
       '-map',
       '0:a:0?',
     ];
-    if (input.format === 'original' && !input.encode && !input.overlay) {
+    const grade = input.grade && !isNeutral(input.grade) ? input.grade : null;
+    if (input.format === 'original' && !input.encode && !input.overlay && !grade) {
       await runFfmpeg(
         [
           ...common,
@@ -232,27 +237,57 @@ export class CutSegmentAction {
     const vf: string[] = [];
     const crop = cropFilter(input.format, info.width, info.height, input.framePos);
     if (crop) vf.push(crop);
+    // colours before the fade, so the fade still ends in real black
+    if (grade) vf.push(...ffmpegGrade(grade));
     const fading = input.fade > 0 && dur > 2 * input.fade;
     if (fading) {
       vf.push(
         `fade=t=in:st=0:d=${input.fade.toFixed(2)},fade=t=out:st=${(dur - input.fade).toFixed(2)}:d=${input.fade.toFixed(2)}`,
       );
     }
+    const spec = FORMAT_SPEC[input.format];
+    const outW = spec ? Math.min(spec.w, info.width) : info.width;
+    const outH = spec ? Math.min(spec.h, info.height) : info.height;
+    // dark edges: a mask PNG overlaid on the picture (see vignette.ts)
+    const mask =
+      grade && grade.vignette > 0
+        ? await new VignetteMaskAction().execute(
+            outW,
+            outH,
+            vignetteStrength(grade),
+            join(input.dst, '..'),
+          )
+        : null;
     let args: string[];
-    if (input.overlay) {
-      // the crop/fade chain ends in [base]; the overlay graph continues from there to [v]
-      const spec = FORMAT_SPEC[input.format];
-      const outW = spec ? Math.min(spec.w, info.width) : info.width;
-      const outH = spec ? Math.min(spec.h, info.height) : info.height;
-      const og = overlayGraph(
-        input.overlay,
-        outW,
-        outH,
-        1,
-        join(input.dst, '..'),
-        basename(input.dst, '.mp4'),
-      );
-      const pre = vf.length ? `[0:v]${vf.join(',')}[base]` : `[0:v]null[base]`;
+    if (input.overlay || mask) {
+      // the crop/grade/fade chain ends in [pre]; the mask (if any) and the telemetry overlay
+      // continue from there to [v]
+      const extra: string[] = [];
+      const steps: string[] = [];
+      let nextInput = 1;
+      let cur = 'pre';
+      if (mask) {
+        extra.push('-loop', '1', '-i', mask);
+        const out = input.overlay ? 'base' : 'v';
+        // format=yuv420p10: keeps the picture 10-bit (auto would go through 8-bit yuva444p)
+        steps.push(`[${cur}][${nextInput}:v]overlay=format=yuv420p10:shortest=1[${out}]`);
+        cur = out;
+        nextInput++;
+      }
+      if (input.overlay) {
+        if (cur !== 'base') steps.push(`[${cur}]null[base]`);
+        const og = overlayGraph(
+          input.overlay,
+          outW,
+          outH,
+          nextInput,
+          join(input.dst, '..'),
+          basename(input.dst, '.mp4'),
+        );
+        extra.push(...og.inputs);
+        steps.push(og.graph);
+      }
+      const pre = vf.length ? `[0:v]${vf.join(',')}[pre]` : `[0:v]null[pre]`;
       args = [
         '-ss',
         input.startS.toFixed(3),
@@ -260,9 +295,9 @@ export class CutSegmentAction {
         input.endS.toFixed(3),
         '-i',
         input.src,
-        ...og.inputs,
+        ...extra,
         '-filter_complex',
-        `${pre};${og.graph}`,
+        [pre, ...steps].join(';'),
         '-map',
         '[v]',
         '-map',
@@ -459,7 +494,9 @@ export async function cutAll(
       `Cutting part ${Math.min(items.length, finished + 1)} of ${items.length}`,
     );
   };
-  const workers = items.some((i) => i.format !== 'original' || i.encode) ? PARALLEL_CUTS : 1;
+  const workers = items.some((i) => i.format !== 'original' || i.encode || i.grade)
+    ? PARALLEL_CUTS
+    : 1;
   const results = new Array<string>(items.length);
   let next = 0;
   const action = new CutSegmentAction();

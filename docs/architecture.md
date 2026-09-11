@@ -51,6 +51,14 @@ src/
    cuts the middles losslessly at those keyframes (`TrimCopyAction`), builds one `acrossfade` audio
    track (`AudioCrossfadeAction`) and muxes. Square with dip/crossfade is re-encoded under the same
    quality rules (10-bit, CQ 18, bitrate cap) — a copy/encode mix cannot be concatenated safely.
+   Colours (`core/grade.ts`): one set of maths for both sides. The renderer builds an SVG filter
+   (`utils/gradeSvg.ts`: gains → contrast → saturate → tone-curve table → sharpen) for the live
+   picture; the export puts `ffmpegGrade()` into the part's filter chain after the crop and before the
+   fade — `colorchannelmixer` (gains + saturation as one matrix), `colorlevels` (contrast),
+   `curves` fed the same 33 sampled points, `unsharp`; all keep 10-bit RGB (`eq`, `vignette` and
+   8-bit `curves` paths are avoided). Dark edges are a PNG mask (`VignetteMaskAction`, one ffmpeg
+   `geq` frame per size and strength) overlaid before the telemetry overlay. Any grade forces an
+   encode.
    Then, in `finish()`: the music mix (`MusicMixAction`: songs trimmed, faded and concatenated, cut at
    the movie end, laid over the original audio with `amix`; video stream copied).
    Songs are referenced by path and served to the player through `apexcut://media/music/<base64url>`.

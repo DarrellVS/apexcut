@@ -3,6 +3,16 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.4.18
+
+- **Colours.** The Movie panel has a Colour section: seven looks previewed on your own footage
+  (Moody, Punchy, Sunny, Golden hour, Film, Black & white), nine fine-tune sliders (brightness,
+  contrast, highlights, shadows, colour, warmth, tint, dark edges, sharpen), live on the video as you
+  drag, and in the export at full quality (10-bit stays 10-bit). Copy the colours to another movie in
+  one click; a movie without colours offers to take a sibling's. Select one part and tick “Own colours
+  for this part” to grade that part on its own, starting from the movie's; such parts carry a small
+  mark on the timeline.
+
 ## 0.4.17
 
 - New layout: the left panel is the **Ride** — the numbers of the open video and an outline of every

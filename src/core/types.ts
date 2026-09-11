@@ -1,3 +1,4 @@
+import type { Grade } from './grade';
 /** Reason keys are stored on disk; the UI maps them to English labels. */
 export type Reason = 'bochten' | 'accel/rem' | 'beide' | 'handmatig' | 'samengeplakt';
 
@@ -59,4 +60,6 @@ export interface Part extends Partial<Omit<Segment, 'start_s' | 'end_s' | 'reden
   parts?: [number, number][];
   /** a favourite: always kept by automatic picks, exportable on its own */
   starred?: boolean;
+  /** its own colours, instead of the movie's (see core/grade.ts) */
+  grade?: Grade;
 }

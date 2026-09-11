@@ -4,7 +4,7 @@
  * join-suggestion bars, floating toolbar clamped to the lane) · legend row with zoom.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { PhQuestion, PhStar } from '@phosphor-icons/vue';
+import { PhCircleHalf, PhQuestion, PhStar } from '@phosphor-icons/vue';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useTimelineView } from '@renderer/composables/useTimelineView';
@@ -479,6 +479,14 @@ const zoomInput = computed({
           </span>
         </template>
         <PhStar v-else-if="p.starred" :size="9" weight="fill" class="absolute top-1 right-1" />
+        <!-- own colours: always shown, whatever the width -->
+        <PhCircleHalf
+          v-if="p.grade"
+          :size="9"
+          weight="fill"
+          class="absolute bottom-1 left-1.5 opacity-80"
+          title="Has its own colours"
+        />
         <div
           class="absolute inset-y-0 right-0 w-2.5 cursor-ew-resize before:absolute before:top-[30%] before:right-[3px] before:bottom-[30%] before:w-px before:bg-fg/40 before:content-['']"
           @mousedown.stop="dragEdge($event, p, 'end_s')"

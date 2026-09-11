@@ -98,6 +98,20 @@ from M videos · length`, made from all videos / only this one, name, 11 px caps
   of the title bar (`Make ride card`, `composables/useRideCard.ts`). Sections are 20 px apart; tiles
   carry an icon and a name only, the explanation is the tooltip. The crop frame is on the
   video whenever the format is not square; its drag hint appears on hover.
+- **Colour** (`Movie/ColourSection.vue`, in the Movie panel): `Colour · the movie` or `Colour · this
+part`. Seven **looks** as 4-column tiles, each the open video's thumbnail with that look's filter on
+  it (As recorded, Moody, Punchy, Sunny, Golden hour, Film, Black & white); the matching one is
+  pressed, anything else reads “Your own mix”. **Fine-tune** folds out nine sliders (Brightness,
+  Contrast, Highlights, Shadows, Colour, Warmth, Tint, Dark edges, Sharpen) with a value readout;
+  sliders update the picture live and write one undo step on release; double-click puts one back to
+  0; Reset returns to the recording. With exactly one part selected a checkbox **Own colours for this
+  part** copies the movie's colours onto the part and everything below edits the part (a small
+  half-circle marks such parts on the timeline and in the rail; “n parts with own colours · use the
+  movie's” takes them back). Across movies: **Copy to another movie** (menu of the other projects)
+  is immediate; a movie without colours whose sibling has some shows “‹name› has colours · use them
+  here”. The stage applies the live grade (a selected part's own, else the part under the playhead,
+  else the movie's) and shows a `Colours on` chip. Colours are per project (`ProjectRecord.grade`)
+  and per part (`Part.grade`).
 - **Settings**: near-fullscreen popover, left nav grouped App / Editing / Advanced, 640 px reading
   width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned.
 - **Import sheet**, **Export overlay**, **Error card**, **Quick tour**: centred popovers, base

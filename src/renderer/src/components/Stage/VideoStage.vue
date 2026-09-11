@@ -4,7 +4,7 @@
  * and the draggable framing window shown while a cropped format is being chosen.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
+import { PhCircleHalf, PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
 import { FORMAT_SPEC } from '@shared/ipc';
 import { drawOverlayFrame, overlayLayout, type Ctx2D, type Sample } from '@core/overlay';
 import { musicUrl, useMovieTime } from '@renderer/composables/useMovieTime';
@@ -14,6 +14,8 @@ import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { fmtTime } from '@renderer/utils/format';
+import { gradeFilterMarkup, vignetteCss } from '@renderer/utils/gradeSvg';
+import { isNeutral, type Grade } from '@core/grade';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const props = defineProps<{ framing: boolean }>();
@@ -285,6 +287,25 @@ watch(
   { deep: true },
 );
 
+// ---- live colours: a selected part with its own colours wins, else the part under the playhead,
+// else the movie's; the SVG filter is rebuilt from the same maths as the export
+const liveGrade = computed<Grade | null>(() => {
+  const sel = editor.selectedParts;
+  if (sel.length === 1 && sel[0].grade) return sel[0].grade;
+  const t = editor.time;
+  const at = editor.parts.find((p) => t >= p.start_s && t < p.end_s);
+  return at?.grade ?? projects.active?.grade ?? null;
+});
+const gradeMarkup = computed(() => gradeFilterMarkup(liveGrade.value));
+const gradeStyle = computed(() =>
+  gradeMarkup.value && !watchingResult.value ? { filter: 'url(#apexcut-grade-live)' } : {},
+);
+const vignetteStyle = computed(() => {
+  const css = watchingResult.value ? '' : vignetteCss(liveGrade.value);
+  return css ? { background: css } : null;
+});
+const graded = computed(() => !watchingResult.value && !isNeutral(liveGrade.value));
+
 // smooth clock: 'timeupdate' fires only ~4×/s, so follow currentTime per animation frame while playing
 let raf = 0;
 function tick(): void {
@@ -319,6 +340,7 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
       <video
         ref="video"
         class="absolute inset-0 h-full w-full object-contain"
+        :style="gradeStyle"
         preload="metadata"
         @timeupdate="onTime"
         @loadedmetadata="
@@ -330,6 +352,29 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
         @click="togglePlay"
       />
     </div>
+    <!-- the live colour filter (same maths as the export) and the dark edges over the video box -->
+    <svg class="absolute h-0 w-0" aria-hidden="true">
+      <!-- eslint-disable-next-line vue/no-v-html -- the markup is built from numbers only (gradeSvg.ts) -->
+      <filter id="apexcut-grade-live" color-interpolation-filters="sRGB" v-html="gradeMarkup" />
+    </svg>
+    <div
+      v-if="vignetteStyle"
+      class="pointer-events-none absolute z-[5]"
+      :style="{
+        left: `${box.left}px`,
+        top: `${box.top}px`,
+        width: `${box.width}px`,
+        height: `${box.height}px`,
+        ...vignetteStyle,
+      }"
+    />
+    <span
+      v-if="graded"
+      class="chip pointer-events-none absolute top-4 right-4 flex h-6 items-center gap-1.5 px-2 text-[11px]"
+      title="Shown with the colours it will have in the movie"
+    >
+      <PhCircleHalf :size="12" weight="fill" /> Colours on
+    </span>
     <audio ref="music" preload="auto" />
     <!-- telemetry overlay preview, same drawing as the export, over the video box -->
     <canvas

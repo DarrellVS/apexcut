@@ -31,6 +31,8 @@ import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { friendlyError } from '@renderer/utils/errors';
+import { isNeutral, type Grade } from '@core/grade';
+import ColourSection from './ColourSection.vue';
 import { fmtDuration, shortName } from '@renderer/utils/format';
 
 const scope = ref<'all' | 'current'>('all');
@@ -58,6 +60,11 @@ const TILES: { f: ExportFormat; label: string; sub: string; w: number; h: number
 /** export only the starred parts */
 const onlyStarred = ref(false);
 type Item = ExportRequest['items'][number] & { starred?: boolean; maxLean?: number };
+/** a part's own colours, else the movie's, else nothing */
+const gradeFor = (p: Part): Grade | undefined => {
+  const g = p.grade ?? projects.active?.grade ?? undefined;
+  return g && !isNeutral(g) ? { ...g } : undefined;
+};
 const toItem = (stem: string, p: Part): Item => ({
   stem,
   startS: p.start_s,
@@ -65,6 +72,7 @@ const toItem = (stem: string, p: Part): Item => ({
   reden: p.reden,
   starred: p.starred,
   maxLean: p.max_lean_deg,
+  grade: gradeFor(p),
 });
 
 const items = computed(() => {
@@ -93,7 +101,11 @@ async function loadOthers(): Promise<void> {
 }
 // any change in what is picked (per-video counts) or which video is open invalidates the cache
 watch(
-  () => [editor.stem, library.clips.map((c) => `${c.stem}:${c.nEnabled}:${c.highlightS}`).join()],
+  () => [
+    editor.stem,
+    JSON.stringify(projects.active?.grade ?? null),
+    library.clips.map((c) => `${c.stem}:${c.nEnabled}:${c.highlightS}`).join(),
+  ],
   () => {
     otherParts.value = {};
     loadOthers();
@@ -269,6 +281,8 @@ defineExpose({ format, openMovie, framingActive });
           }}
         </div>
       </section>
+
+      <ColourSection />
 
       <section v-if="!separate" class="flex flex-col gap-4">
         <div>

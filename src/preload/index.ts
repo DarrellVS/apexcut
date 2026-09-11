@@ -20,6 +20,7 @@ const api: ApexcutApi = {
     setTransition: (transition) => invoke('projects:setTransition', transition),
     setMusic: (music) => invoke('projects:setMusic', music),
     setOverlay: (overlay) => invoke('projects:setOverlay', overlay),
+    setGrade: (grade, id) => invoke('projects:setGrade', grade, id),
     rideStats: () => invoke('projects:rideStats'),
   },
   library: {

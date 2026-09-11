@@ -1,3 +1,4 @@
+import type { Grade } from '@core/grade';
 /**
  * Projects: a name plus an ordered set of videos, each with its own selection of parts.
  *   data/projects.json                 { active, projects: [{ id, name, createdAt, updatedAt, clips }] }
@@ -41,6 +42,8 @@ export interface ProjectRecord {
   transition?: Transition;
   /** songs under the movie and the mix levels */
   music?: MusicSettings;
+  /** the movie's colours (core/grade.ts) */
+  grade?: Grade;
   /** telemetry overlay in the export */
   overlay?: OverlaySpecDto | null;
 }
@@ -190,12 +193,22 @@ export class Projects {
       transition: p.transition ?? 'crossfade',
       music: p.music ?? DEFAULT_MUSIC,
       overlay: p.overlay ?? null,
+      grade: p.grade ?? null,
     };
   }
 
   setOverlay(overlay: OverlaySpecDto | null): void {
     const p = this.active;
     p.overlay = overlay;
+    this.touch(p);
+  }
+
+  /** the movie's colours; with an id, another project's (copy to…) */
+  setGrade(grade: Grade | null, id?: string): void {
+    const p = id ? this.state.projects.find((x) => x.id === id) : this.active;
+    if (!p) throw new Error('no such project');
+    if (grade) p.grade = grade;
+    else delete p.grade;
     this.touch(p);
   }
 

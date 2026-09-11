@@ -9,6 +9,7 @@ import { computed, nextTick, ref } from 'vue';
 import {
   PhArrowsClockwise,
   PhCaretRight,
+  PhCircleHalf,
   PhDotsSixVertical,
   PhDotsThree,
   PhExport,
@@ -338,6 +339,13 @@ const totalParts = computed(() => library.analyzed.reduce((a, c) => a + (c.nEnab
               <span class="w-9 text-fg2">{{ fmtTime(p.start_s) }}</span>
               <span class="min-w-0 flex-1 truncate">{{ REASON_LABEL[reasonOf(p)] }}</span>
               <span class="text-fg2">{{ fmtDuration(p.end_s - p.start_s) }}</span>
+              <PhCircleHalf
+                v-if="p.grade"
+                :size="11"
+                weight="fill"
+                class="flex-none text-fg2"
+                title="Has its own colours"
+              />
               <PhStar v-if="p.starred" :size="11" weight="fill" class="flex-none text-fg" />
             </div>
             <div
