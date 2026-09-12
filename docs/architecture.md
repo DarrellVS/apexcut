@@ -5,6 +5,8 @@ Single npm package, electron-vite (three Vite builds: main, preload, renderer), 
 ```
 src/
   core/        pure TypeScript, no Node/DOM imports — unit-tested, parity-tested against the Python oracle
+               numeric.ts is the numpy/pandas toolbox the parity depends on; grade/ and overlay/ are
+               folders (vocabulary vs maths, spec vs drawing vs the ffmpeg command stream)
     dji/pb.ts       schema-less protobuf wire decoder
     dji/djmd.ts     DJI `djmd` track → per-frame {t, quaternion, accel}
     imu.ts          quaternion → Euler, gravity compensation, Butterworth low-pass (scipy-compatible filtfilt)
@@ -101,6 +103,11 @@ a reload would bring back only the renderer, while the fatal error is often in t
 
 `npm run check` = ESLint + Prettier check + `tsc`/`vue-tsc` + Vitest. CI runs it on every push; a `v*`
 tag builds and publishes the Windows installer + portable exe + update feed.
+
+The end-to-end tests are the gate for a release, not for CI: `npm run check:pre-release` =
+`npm run check` + `npm run test:e2e`, and `npm run build:win` depends on it, so an installer cannot
+be built from a tree whose Playwright tests fail. `playwright.config.ts` refuses to run when `CI` is
+set (a human who really means it can set `APEXCUT_ALLOW_CI_E2E=1`).
 
 `npm run test:e2e` = `electron-vite build`, then Playwright drives the built app
 (`playwright.config.ts`, `tests/**/*.spec.ts`; `_electron.launch` on `out/main/index.js`). Every test

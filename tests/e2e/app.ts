@@ -63,3 +63,27 @@ export async function launchApp(opts: LaunchOptions = {}): Promise<LaunchedApp> 
 export function status(page: Page, text: string | RegExp): ReturnType<Page['locator']> {
   return page.locator('[role="status"]', { hasText: text });
 }
+
+/**
+ * Wait until the editor is calm: the parts are on the timeline, the preview the app starts after a
+ * scan is off, the video is paused at 0 and the "Done! Found n fun parts" toast has gone. Every test
+ * that looks at the editor (and every screenshot) starts from here.
+ */
+export async function editorReady(page: Page, timeout = 120_000): Promise<void> {
+  await page.locator('[data-part]').first().waitFor({ timeout });
+  const preview = page.getByRole('button', { name: 'Preview' });
+  if ((await preview.getAttribute('aria-pressed')) === 'true') await preview.click();
+  await page.locator('video').evaluate((v: HTMLVideoElement) => {
+    v.pause();
+    v.currentTime = 0;
+  });
+  await page.waitForFunction(() => {
+    const v = document.querySelector('video');
+    return !!v && v.paused && v.currentTime < 0.2;
+  });
+  await page
+    .locator('[role="status"]')
+    .first()
+    .waitFor({ state: 'hidden', timeout: 15_000 })
+    .catch(() => undefined);
+}

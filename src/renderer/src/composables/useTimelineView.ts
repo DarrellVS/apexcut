@@ -12,8 +12,6 @@ export interface TimelineView {
   fit(): void;
   xPct(t: number): number;
   tOfEvent(e: MouseEvent, el: HTMLElement): number;
-  zoomAt(tCenter: number, factor: number): void;
-  pan(fraction: number): void;
   setZoom(z: number, center: number): void;
   follow(t: number): void;
   onWheel(e: WheelEvent, el: HTMLElement): void;
@@ -79,5 +77,5 @@ export function useTimelineView(duration: Ref<number>): TimelineView {
     else zoomAt(tOfEvent(e, el), e.deltaY > 0 ? 1.25 : 0.8);
   }
 
-  return { t0, t1, span, zoom, fit, xPct, tOfEvent, zoomAt, pan, setZoom, follow, onWheel };
+  return { t0, t1, span, zoom, fit, xPct, tOfEvent, setZoom, follow, onWheel };
 }

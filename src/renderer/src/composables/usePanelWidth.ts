@@ -3,6 +3,7 @@
  * localStorage and clamped to [min, max]. `dir` says which way a rightward drag grows the panel.
  */
 import { ref, type Ref } from 'vue';
+import { startDrag } from './useDrag';
 
 export interface PanelWidth {
   width: Ref<number>;
@@ -42,24 +43,18 @@ export function usePanelWidth(
     localStorage.setItem(`apexcut.panel.${key}`, String(width.value));
   }
   function start(e: MouseEvent): void {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    const x0 = e.clientX;
-    const w0 = width.value;
-    dragging.value = true;
-    document.body.style.cursor = 'col-resize';
-    const move = (ev: MouseEvent): void => {
-      width.value = clamp(w0 + (ev.clientX - x0) * dir);
-    };
-    const up = (): void => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      dragging.value = false;
-      document.body.style.cursor = '';
-      localStorage.setItem(`apexcut.panel.${key}`, String(width.value));
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
+    startDrag(e, {
+      cursor: 'col-resize',
+      start: (ev) => {
+        dragging.value = true;
+        return { x0: ev.clientX, w0: width.value };
+      },
+      move: (ev, from) => (width.value = clamp(from.w0 + (ev.clientX - from.x0) * dir)),
+      end: () => {
+        dragging.value = false;
+        localStorage.setItem(`apexcut.panel.${key}`, String(width.value));
+      },
+    });
   }
   return { width, start, reset, dragging };
 }

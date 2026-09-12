@@ -12,12 +12,11 @@ import { encoders } from './media';
 import { ensureDir, paths } from './store';
 import { writeZip, type ZipEntry } from './zip';
 
-/** What goes into the zip — listed in the UI so the user knows what they are sending. */
-export const REPORT_CONTENTS = [
-  'main.log (what the app did, including ffmpeg output)',
-  'projects.json and settings.json (names, video paths, your settings — no picks)',
-  'info.json (app version, Windows version, encoder)',
-] as const;
+/*
+ * What goes into the zip, and what the UI promises the user (Settings → Updates & about, and the
+ * error card): main.log (what the app did, including ffmpeg output), projects.json and settings.json
+ * (names, video paths, settings — no picks), info.json (app version, Windows version, encoder).
+ */
 
 export async function createReport(jobs: JobState[]): Promise<string> {
   const entries: ZipEntry[] = [];

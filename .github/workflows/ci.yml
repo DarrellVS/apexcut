@@ -18,5 +18,10 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
+      # unit + parity tests only. The Playwright end-to-end tests (npm run test:e2e) start a real
+      # Electron window, decode video and call ffmpeg: too slow and too flaky for a hosted runner,
+      # and they burn CI minutes. They are the mandatory LOCAL gate before a release instead
+      # (npm run check:pre-release, which npm run build:win depends on); playwright.config.ts
+      # refuses to run when CI is set.
       - run: npm test
       - run: npx electron-vite build

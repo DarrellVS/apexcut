@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** One project on the projects screen: thumbnail, name, facts, last edit, and its menu. */
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
   PhArchive,
   PhArrowCounterClockwise,
@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/vue';
 import type { ProjectInfo } from '@shared/ipc';
 import { fmtDuration, fmtWhen } from '@renderer/utils/format';
+import { hideBrokenImage, thumbUrl } from '@renderer/utils/media';
 import { useDismiss } from '@renderer/composables/useDismiss';
 
 const props = defineProps<{ project: ProjectInfo; active: boolean; menuOpen: boolean }>();
@@ -30,9 +31,7 @@ const confirmDelete = ref(false);
 const card = ref<HTMLElement | null>(null);
 useDismiss(card, () => props.menuOpen && emit('menu', false));
 
-function thumb(p: ProjectInfo): string | null {
-  return p.thumbStem ? `apexcut://media/clip/${encodeURIComponent(p.thumbStem)}/thumb.jpg` : null;
-}
+const thumb = computed(() => (props.project.thumbStem ? thumbUrl(props.project.thumbStem) : null));
 function meta(p: ProjectInfo): string {
   if (!p.nClips) return 'No videos yet';
   const v = `${p.nClips} video${p.nClips === 1 ? '' : 's'}`;
@@ -73,11 +72,11 @@ function onCardClick(): void {
   >
     <div class="relative aspect-video overflow-hidden rounded-t-[5px] bg-bg3">
       <img
-        v-if="thumb(project)"
-        :src="thumb(project)!"
+        v-if="thumb"
+        :src="thumb"
         alt=""
         class="h-full w-full object-cover"
-        @error="($event.target as HTMLImageElement).style.visibility = 'hidden'"
+        @error="hideBrokenImage"
       />
       <div v-else class="grid h-full w-full place-items-center text-xs text-fg3">No videos yet</div>
       <span

@@ -10,15 +10,6 @@ export function fmtDuration(t: number): string {
   return t < 60 ? `${Math.round(t)} sec` : `${fmtTime(t)} min`;
 }
 
-export function fmtElapsed(s: number): string {
-  const v = Math.round(s);
-  if (v < 60) return `${v} sec`;
-  const m = Math.floor(v / 60);
-  const r = v % 60;
-  if (m < 60) return `${m} min${r ? ` ${r} sec` : ''}`;
-  return `${Math.floor(m / 60)} h ${m % 60} min`;
-}
-
 /** 1234567 → "1.2 MB" */
 export function fmtBytes(n: number): string {
   if (n < 1e6) return `${Math.round(n / 1e3)} kB`;

@@ -204,24 +204,25 @@ export class Projects {
     };
   }
 
+  /** One choice about the open project's movie, saved with a new "last edited" time. */
+  private patchActive(patch: Partial<ProjectRecord>): void {
+    const p = this.active;
+    Object.assign(p, patch);
+    this.touch(p);
+  }
+
   /** shape of the open project's movie */
   setFormat(format: ExportFormat): void {
-    const p = this.active;
-    p.format = format;
-    this.touch(p);
+    this.patchActive({ format });
   }
 
   /** where the crop window sits for the open project (0..1) */
   setFramePos(pos: number): void {
-    const p = this.active;
-    p.framePos = Math.min(1, Math.max(0, pos));
-    this.touch(p);
+    this.patchActive({ framePos: Math.min(1, Math.max(0, pos)) });
   }
 
   setOverlay(overlay: OverlaySpecDto | null): void {
-    const p = this.active;
-    p.overlay = overlay;
-    this.touch(p);
+    this.patchActive({ overlay });
   }
 
   /** the movie's colours; with an id, another project's (copy to…) */
@@ -234,33 +235,25 @@ export class Projects {
   }
 
   setMusic(music: MusicSettings): void {
-    const p = this.active;
-    p.music = music;
-    this.touch(p);
+    this.patchActive({ music });
   }
 
   setPreset(preset: PresetId): void {
-    const p = this.active;
-    p.preset = preset;
-    this.touch(p);
+    this.patchActive({ preset });
   }
 
-  setPulls(on: boolean): void {
-    const p = this.active;
-    p.pulls = on;
-    this.touch(p);
+  setPulls(pulls: boolean): void {
+    this.patchActive({ pulls });
+  }
+
+  setTransition(transition: Transition): void {
+    this.patchActive({ transition });
   }
 
   /** Scoring overrides of the open project: its preset plus the pulls switch. */
   scoreConfig(): Partial<ScoreConfig> {
     const p = this.active;
     return { ...PRESETS[p.preset ?? 'sporty'].config, pulls: !!p.pulls };
-  }
-
-  setTransition(transition: Transition): void {
-    const p = this.active;
-    p.transition = transition;
-    this.touch(p);
   }
 
   create(name: string, transition?: Transition): ProjectInfo {

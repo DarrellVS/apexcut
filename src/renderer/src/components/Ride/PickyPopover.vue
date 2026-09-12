@@ -9,13 +9,12 @@ import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { fmtTime } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
-import { useDismiss } from '@renderer/composables/useDismiss';
+import { usePopover } from '@renderer/composables/usePopover';
 
 const editor = useEditorStore();
 const library = useLibraryStore();
 const projects = useProjectsStore();
-const open = ref(false);
-const root = ref<HTMLElement | null>(null);
+const picky = usePopover();
 
 /** the project's preset, or Custom once the open video's sliders moved away from it */
 const preset = computed<PresetId | 'custom'>(() => presetOf(editor.config));
@@ -64,24 +63,26 @@ async function togglePulls(on: boolean): Promise<void> {
 }
 function addHere(): void {
   editor.addAt(editor.time);
-  open.value = false;
+  picky.close();
   toast('Part added — drag the edges to fit');
 }
-useDismiss(root, () => (open.value = false));
 </script>
 
 <template>
-  <div ref="root" class="relative">
+  <div ref="picky.root" class="relative">
     <button
       class="btn btn-mini"
-      :class="{ 'bg-bg3': open }"
+      :class="{ 'bg-bg3': picky.open.value }"
       title="How picky? Fewer or more parts, presets, pulls"
-      :aria-expanded="open"
-      @click="open = !open"
+      :aria-expanded="picky.open.value"
+      @click="picky.toggle()"
     >
       {{ label }} <PhCaretDown :size="10" weight="bold" class="text-fg3" />
     </button>
-    <div v-if="open" class="popover absolute top-[calc(100%+4px)] left-0 z-30 w-[290px] p-3">
+    <div
+      v-if="picky.open.value"
+      class="popover absolute top-[calc(100%+4px)] left-0 z-30 w-[290px] p-3"
+    >
       <div class="label-caps mb-1.5">How picky?</div>
       <div class="seg" role="radiogroup">
         <button

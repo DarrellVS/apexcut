@@ -17,8 +17,8 @@ export interface RideParts {
   partsOf: (stem: string) => Part[];
   /** every part of the project in movie order (video order, then time) */
   all: ComputedRef<{ stem: string; part: Part }[]>;
-  /** drop the cache; it refills on demand */
-  invalidate: () => void;
+  /** every scanned video's parts are in the cache (the export waits for this) */
+  ready: () => Promise<void>;
 }
 
 export function useRideParts(): RideParts {
@@ -42,6 +42,13 @@ export function useRideParts(): RideParts {
     }
     return hit ?? [];
   }
+  async function ready(): Promise<void> {
+    await Promise.all(
+      library.analyzed
+        .filter((c) => c.stem !== editor.stem && !cache.value[c.stem]?.length)
+        .map((c) => load(c.stem)),
+    );
+  }
   const all = computed(() =>
     library.analyzed.flatMap((c) => partsOf(c.stem).map((part) => ({ stem: c.stem, part }))),
   );
@@ -57,5 +64,5 @@ export function useRideParts(): RideParts {
       if (j.kind !== 'export' && j.kind !== 'extract' && j.status === 'done') invalidate();
     });
   }
-  return { partsOf, all, invalidate };
+  return { partsOf, all, ready };
 }

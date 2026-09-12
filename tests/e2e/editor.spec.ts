@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
-import { launchApp, status, type LaunchedApp } from './app';
+import { editorReady, launchApp, status, type LaunchedApp } from './app';
 import { bigDjiVideos, realDjiVideo, stemOf } from './fixtures';
 
 /**
@@ -15,9 +15,7 @@ test.describe('editor with a scanned video', () => {
   test.beforeAll(async () => {
     test.setTimeout(180_000);
     launched = await launchApp({ args: [`--add=${real}`] });
-    const { page } = launched;
-    // the scan takes the screen and can be stopped; then the editor opens with parts
-    await expect(page.locator('[data-part]').first()).toBeVisible({ timeout: 90_000 });
+    await editorReady(launched.page);
   });
   test.afterAll(async () => launched?.close());
 

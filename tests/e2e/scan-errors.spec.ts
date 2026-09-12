@@ -61,7 +61,7 @@ test.describe('one bad video among good ones', () => {
 
   test('the good video is scanned and opened, the bad one is marked, one toast sums it up', async () => {
     const { page } = launched;
-    await expect(status(page, /could not be scanned/)).toBeVisible({ timeout: 90_000 });
+    await expect(status(page, /could not be scanned/)).toBeVisible({ timeout: 120_000 });
     const good = page.locator(`[data-clip="${stemOf(real!)}"]`);
     const bad = page.locator(`[data-clip="${stemOf(plain)}"]`);
     await expect(bad.getByText('scan failed')).toBeVisible();

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 /** Slim bar under the title bar while an update downloads (progress) and once it is ready: what's new + restart. */
-import { ref } from 'vue';
+
 import { PhArrowsClockwise, PhDownloadSimple, PhX } from '@phosphor-icons/vue';
 import { useUpdaterStore } from '@renderer/stores/updater';
-import { useDismiss } from '@renderer/composables/useDismiss';
+import { usePopover } from '@renderer/composables/usePopover';
 
 const updater = useUpdaterStore();
-const notesOpen = ref(false);
-const notesRoot = ref<HTMLElement | null>(null);
-useDismiss(notesRoot, () => (notesOpen.value = false));
+const notes = usePopover();
 </script>
 
 <template>
@@ -40,17 +38,17 @@ useDismiss(notesRoot, () => (notesOpen.value = false));
         <b class="font-semibold">ApexCut {{ updater.ready.version }} is ready.</b>
         <span class="text-fg2"> It installs when you restart.</span>
       </span>
-      <div ref="notesRoot" class="relative">
+      <div ref="notes.root" class="relative">
         <button
           v-if="updater.ready.notes"
           class="btn btn-mini"
-          :class="{ 'bg-bg3': notesOpen }"
-          @click="notesOpen = !notesOpen"
+          :class="{ 'bg-bg3': notes.open.value }"
+          @click="notes.toggle()"
         >
           What’s new
         </button>
         <div
-          v-if="notesOpen"
+          v-if="notes.open.value"
           class="popover absolute top-[calc(100%+4px)] right-0 z-30 max-h-[320px] w-[420px] overflow-auto p-3 text-xs whitespace-pre-wrap"
           @click.stop
         >

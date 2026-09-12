@@ -25,10 +25,19 @@ modify it).
 
 ## Structure (short)
 
-`src/core` pure TS (no Node/DOM) — parsing, IMU maths, scoring, selection, EDL. Unit-tested.
-`src/main` Electron main — ffmpeg/ffprobe, jobs, library persistence, media protocol, dialogs.
-`src/preload` typed bridge `window.apexcut`. `src/renderer` Vue app (Pinia setup stores, Tailwind v4).
-`src/shared` IPC contract (zod schemas + types) used by main, preload and renderer.
+`src/core` pure TS (no Node/DOM) — `dji/` parsing, `imu.ts`, `numeric.ts` (the numpy/pandas
+behaviour the oracle needs), `score.ts`, `selection.ts`, `grade/`, `overlay/`, `edl.ts`. Unit-tested.
+`src/main` Electron main — `ipc/` (one module per domain), `services/` (library, projects, analysis,
+jobs, media, protocol, storage, updater, windows), `actions/` (ffmpeg: `cut/` = quality rules, the
+pure argument plan, the run, joining and compiling), `workers/`, `startup.ts`.
+`src/preload` typed bridge `window.apexcut`. `src/renderer` Vue app: `components/<area>/` with one
+job per component, `composables/` for behaviour, `stores/` (Pinia setup stores), Tailwind v4.
+`src/shared/ipc/` the contract: `movie.ts` (formats, crops, transitions), `dto.ts`, `schemas.ts`
+(zod for everything the renderer sends), `api.ts`.
+
+Keep files small and named after what they do: a component draws one thing, a composable holds one
+behaviour, a service owns one part of the data. Nothing in `src/renderer` reaches for Node, nothing
+in `src/core` reaches for Electron.
 
 ## Conventions
 
@@ -38,5 +47,7 @@ modify it).
 - Main: one class per ffmpeg operation (`XAction.execute(input)`), long work runs as a job with progress,
   never awaited inside an IPC handler.
 - Logging via `electron-log` (main) and `@renderer/utils/logger` (renderer); no bare `console`.
-- Conventional Commits, enforced by commitlint. `npm run check` must pass before a commit.
+- Conventional Commits, enforced by commitlint. `npm run check` must pass before a commit, and
+  `npm run check:pre-release` (which adds the Playwright tests) before a release tag. The
+  end-to-end tests never run in CI — see docs/architecture.md → Quality gates.
 - Docs live next to the code they describe; update them in the same change.

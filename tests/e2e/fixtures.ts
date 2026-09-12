@@ -3,9 +3,9 @@
  *
  * - `plainMp4()`  a real, playable MP4 without a DJI data track (made with the bundled ffmpeg)
  * - `corruptMp4()` 4 kB of noise with an .mp4 name
- * - `realDjiVideo()` a small DJI recording on this machine, when there is one: the path in
- *   `APEXCUT_E2E_VIDEO`, else the smallest `.LRF` under `~/Downloads/dji-examples` that is at least
- *   25 s long by size (≥ 15 MB, so it has at least one part). Tests that need it skip when it is absent.
+ * - `realDjiVideo()` a DJI recording on this machine, when there is one: the path in
+ *   `APEXCUT_E2E_VIDEO`, else the smallest `.LRF` in one of the folders below (the proxy carries the
+ *   same motion data as the MP4 and reads fast). Tests that need it skip when there is none.
  * - `bigDjiVideos()` the paths in `APEXCUT_E2E_BIG_VIDEO` (`;`-separated, for the "stop scanning" test).
  */
 import { execFileSync } from 'node:child_process';
@@ -52,17 +52,24 @@ export function corruptMp4(name = 'broken_video'): string {
   return file;
 }
 
+/** where recordings usually sit on this machine; the first match wins */
+const VIDEO_DIRS = [
+  join(homedir(), 'Videos', 'DJI-RAW'),
+  join(homedir(), 'Downloads', 'dji-examples'),
+];
+
 export function realDjiVideo(): string | null {
   const env = process.env.APEXCUT_E2E_VIDEO;
   if (env && existsSync(env)) return env;
-  const examples = join(homedir(), 'Downloads', 'dji-examples');
-  if (!existsSync(examples)) return null;
-  const candidates = readdirSync(examples)
-    .filter((f) => /\.lrf$/i.test(f))
-    .map((f) => ({ file: join(examples, f), size: statSync(join(examples, f)).size }))
-    .filter((c) => c.size >= 15e6)
-    .sort((a, b) => a.size - b.size);
-  return candidates[0]?.file ?? null;
+  for (const dir of VIDEO_DIRS) {
+    if (!existsSync(dir)) continue;
+    const candidates = readdirSync(dir)
+      .filter((f) => /\.lrf$/i.test(f))
+      .map((f) => ({ file: join(dir, f), size: statSync(join(dir, f)).size }))
+      .sort((a, b) => a.size - b.size);
+    if (candidates.length) return candidates[0].file;
+  }
+  return null;
 }
 
 /** one or more large recordings (`;`-separated) for the "stop scanning" test; [] when unset */

@@ -21,10 +21,6 @@ export class Jobs extends EventEmitter {
     return [...this.jobs.values()].sort((a, b) => b.startedAt - a.startedAt).slice(0, 30);
   }
 
-  get(id: string): JobState | undefined {
-    return this.jobs.get(id);
-  }
-
   start(kind: JobKind, label: string, fn: (ctx: JobContext) => Promise<JobResult>): string {
     const id = randomUUID().slice(0, 8);
     const controller = new AbortController();

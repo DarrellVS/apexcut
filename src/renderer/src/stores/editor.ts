@@ -7,12 +7,7 @@ import { rangeStats } from '@core/stats';
 import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import {
-  joinParts,
-  manualPart,
-  missingAuto,
-  suggestions as computeSuggestions,
-} from '@core/selection';
+import { joinParts, manualPart, suggestions as computeSuggestions } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -51,7 +46,6 @@ export const useEditorStore = defineStore('editor', () => {
   const suggestions = computed(() =>
     computeSuggestions(parts.value, (data.value.score ?? []) as number[], threshold.value),
   );
-  const deletedAuto = computed(() => missingAuto(parts.value, auto.value));
   const amountIndex = computed(() => {
     const i = AMOUNT_LEVELS.indexOf(config.value?.threshold_pct ?? 75);
     return i >= 0 ? i : 2;
@@ -203,12 +197,6 @@ export const useEditorStore = defineStore('editor', () => {
     selection.value = [p.id];
     return p;
   }
-  function restore(seg: Segment): Part {
-    const p: Part = { ...seg, id: `r${Date.now()}`, enabled: true, manual: true };
-    mutate(() => parts.value.push(p));
-    selection.value = [p.id];
-    return p;
-  }
   /** Drag edit: caller snapshots once on drag start, then calls `setEdge` repeatedly and `save` on release. */
   /**
    * Keyboard trim (I/O): move one edge to `t`, never past the neighbouring parts, with undo + save.
@@ -299,7 +287,6 @@ export const useEditorStore = defineStore('editor', () => {
     movieLength,
     activePart,
     suggestions,
-    deletedAuto,
     amountIndex,
     open,
     close,
@@ -319,7 +306,6 @@ export const useEditorStore = defineStore('editor', () => {
     setGrade,
     remove,
     addAt,
-    restore,
     setEdge,
     trimTo,
     trimToCore,

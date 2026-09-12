@@ -11,7 +11,7 @@
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run typecheck && electron-vite build",
-    "build:win": "npm run build && electron-builder --win",
+    "build:win": "npm run check:pre-release && npm run build && electron-builder --win",
     "build:unpack": "npm run build && electron-builder --dir",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -28,7 +28,8 @@
     "prepare": "husky",
     "pretest:e2e": "electron-vite build",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "check:pre-release": "npm run check && npm run test:e2e"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

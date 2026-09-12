@@ -12,6 +12,9 @@
   "compilerOptions": {
     "composite": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
     "noUncheckedIndexedAccess": false,
     "types": ["electron-vite/node"],
     "baseUrl": ".",

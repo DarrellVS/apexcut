@@ -14,6 +14,7 @@
  * so results match the Python oracle to floating-point precision.
  */
 import type { FrameMeta } from './dji/djmd';
+import { median } from './numeric';
 
 export interface ImuSignals {
   t: Float64Array;
@@ -124,15 +125,6 @@ export function unwrap(p: Float64Array): Float64Array {
     out[i] = p[i] + offset;
   }
   return out;
-}
-
-export function median(values: ArrayLike<number>): number {
-  const arr = Array.from(values)
-    .filter((v) => !Number.isNaN(v))
-    .sort((x, y) => x - y);
-  const n = arr.length;
-  if (!n) return NaN;
-  return n % 2 ? arr[(n - 1) / 2] : (arr[n / 2 - 1] + arr[n / 2]) / 2;
 }
 
 // ---------------------------------------------------------------- derivation

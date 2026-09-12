@@ -59,6 +59,20 @@ No gradients, no `backdrop-filter`, no glow. Shadows only on popovers (`--shadow
 semantic and identical in meaning across themes. Theme: `data-theme="light|dark"` on `<html>`,
 "System" follows `prefers-color-scheme`; stored in settings.
 
+## Where the interface lives
+
+One job per file. Screens are `components/<area>/`, behaviour is `composables/`, data is `stores/`.
+The shell (`App.vue`) only decides the phase and hangs the overlays; the editor's three panels are
+`Ride/RideRail.vue` (with `RideNumbers`, `ClipRow`, `ClipParts`), `Stage/VideoStage.vue` (with
+`StageNotice`, `FramingWindow`, `OverlayGauge`, `StageTransport`) and `Movie/MoviePanel.vue` (with
+`FormatSection`, `ColourSection` → `LookTiles` / `GradeSliders` / `GradeDonor` / `GradeCopy`,
+`OverlaySection`, `ExportResultCard`); the timeline is `Timeline/Timeline.vue` with `TimelineRuler`,
+`ScoreLane`, `PartBlock`, `PartToolbar`, `MusicLane` (+ `MusicMixHeader`, `MusicToolbar`) and
+`TimelineLegend`. Shared behaviour: `useDrag` (every drag), `usePopover` + `useDismiss` (every
+floating thing), `useCanvasPainter` (every canvas), `usePanelWidth`, `useFraming`, `useLiveGrade`,
+`useVideoTransport`, `useMusicSync`, `useEdgeSnap`, `useImport`, `useEditorShortcuts`,
+`useScanLifecycle`, `useMovieExport`, `useRideParts`.
+
 ## Components (utilities in `main.css`)
 
 - `.btn` 28 px, hairline, `--bg2`; `.btn-pri` inverse (`--ink`); `.btn-ghost` transparent; `.btn-danger`;

@@ -6,10 +6,11 @@ export default defineConfig({
     alias: {
       '@core': resolve(__dirname, 'src/core'),
       '@shared': resolve(__dirname, 'src/shared'),
+      '@main': resolve(__dirname, 'src/main'),
     },
   },
   test: {
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
-    coverage: { provider: 'v8', include: ['src/core/**', 'src/shared/**'] },
+    coverage: { provider: 'v8', include: ['src/core/**', 'src/shared/**', 'src/main/**'] },
   },
 });

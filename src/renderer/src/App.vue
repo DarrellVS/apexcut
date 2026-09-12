@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
- * Application shell: phases projects → empty → scanning → editor, plus global keyboard shortcuts.
- * Restart-safe: the open project, its open video and the playhead are remembered.
+ * Application shell: phases projects → empty → scanning → editor, the panels of the editor, and the
+ * overlays that can appear over any of them. Restart-safe: the open project, its open video and the
+ * playhead are remembered. Importing, the keyboard and what happens around a scan live in their own
+ * composables.
  */
 import { api } from '@renderer/api';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -12,17 +14,18 @@ import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
 import { useUiStore } from '@renderer/stores/ui';
 import { useUpdaterStore } from '@renderer/stores/updater';
+import { useEditorShortcuts } from '@renderer/composables/useEditorShortcuts';
+import { useImport } from '@renderer/composables/useImport';
 import { usePanelWidth } from '@renderer/composables/usePanelWidth';
-import type { ImportGroup } from '@shared/ipc';
+import { useScanLifecycle } from '@renderer/composables/useScanLifecycle';
 import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
+import PanelSplitter from '@renderer/components/Shell/PanelSplitter.vue';
 import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
 import TourOverlay from '@renderer/components/Onboarding/TourOverlay.vue';
 import EmptyState from '@renderer/components/EmptyState.vue';
 import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import ExportOverlay from '@renderer/components/Export/ExportOverlay.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
-import { friendlyError } from '@renderer/utils/errors';
-import { dayLabel, plural } from '@renderer/utils/format';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
 import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
@@ -31,7 +34,7 @@ import RideCardSheet from '@renderer/components/Ride/RideCardSheet.vue';
 import VideoStage from '@renderer/components/Stage/VideoStage.vue';
 import MoviePanel from '@renderer/components/Movie/MoviePanel.vue';
 import Timeline from '@renderer/components/Timeline/Timeline.vue';
-import ToastHost, { toast } from '@renderer/components/Base/ToastHost.vue';
+import ToastHost from '@renderer/components/Base/ToastHost.vue';
 
 const library = useLibraryStore();
 const projects = useProjectsStore();
@@ -105,151 +108,29 @@ async function goHome(): Promise<void> {
   projects.showHome = true;
 }
 
-async function scanNew(added: string[]): Promise<void> {
-  const todo = library.clips.filter((c) => !c.analyzed).map((c) => c.stem);
-  if (added.length) toast(`${added.length} video${added.length === 1 ? '' : 's'} added`);
-  if (todo.length) await api.analysis.run(todo);
-}
+const importing = useImport({
+  onProjectsScreen: () => phase.value === 'projects',
+  openProject,
+});
+const { pendingGroups, dropping, pickAndScan, confirmImport, onDragOver, onDrop } = importing;
 
-// ---- adding videos: one day → straight into the project; several days → ask (ImportSheet)
-const pendingGroups = ref<ImportGroup[] | null>(null);
-async function importPaths(paths: string[]): Promise<void> {
-  if (!paths.length) return;
-  const groups = await api.library.inspect(paths);
-  if (!groups.length) {
-    toast(
-      'No DJI videos found there. On the memory card they are in DCIM › 100MEDIA, as .MP4 with a small .LRF next to each.',
-      7000,
-    );
-    return;
-  }
-  if (groups.length > 1) {
-    pendingGroups.value = groups;
-    return;
-  }
-  await scanNew(await library.add(paths));
-}
-async function confirmImport(groups: { name: string | null; paths: string[] }[]): Promise<void> {
-  pendingGroups.value = null;
-  const r = await api.projects.addGroups(JSON.parse(JSON.stringify(groups)));
-  if (r.firstProject) await openProject(r.firstProject);
-  else await library.refresh();
-  const n = groups.filter((g) => g.name !== null).length;
-  toast(
-    n
-      ? `${n} project${n === 1 ? '' : 's'} created with ${r.stems.length} videos`
-      : `${r.stems.length} video${r.stems.length === 1 ? '' : 's'} added`,
-  );
-  if (r.toScan.length) await api.analysis.run(r.toScan);
-}
-async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
-  await importPaths(await library.pick(kind));
-}
-
-// ---- drop MP4/LRF files or folders from Explorer anywhere in the window: into the open project,
-// or — on the projects screen — as a new project per recording day
-const dropping = ref(false);
-function onDragOver(e: DragEvent): void {
-  if (e.dataTransfer?.types.includes('Files')) {
-    e.preventDefault();
-    dropping.value = true;
-  }
-}
-/** a drop on the projects screen: one project per day, named after it, the first one opens */
-async function importAsProjects(paths: string[]): Promise<void> {
-  if (!paths.length) return;
-  const groups = await api.library.inspect(paths);
-  if (!groups.length) {
-    toast(
-      'No DJI videos found there. On the memory card they are in DCIM › 100MEDIA, as .MP4 with a small .LRF next to each.',
-      7000,
-    );
-    return;
-  }
-  await confirmImport(groups.map((g) => ({ name: dayLabel(g.day), paths: [...g.paths] })));
-}
-async function onDrop(e: DragEvent): Promise<void> {
-  dropping.value = false;
-  const files = e.dataTransfer?.files;
-  if (!files?.length) return;
-  e.preventDefault();
-  const paths = Array.from(files).map((f) => api.files.pathOf(f));
-  // music files go under the movie, everything else is looked at as video
-  const audio = paths.filter((p) => /\.(mp3|m4a|aac|wav|flac|ogg|opus)$/i.test(p));
-  if (phase.value === 'projects') {
-    if (audio.length) toast('Open a project first — music goes under its movie', 5000);
-    await importAsProjects(paths.filter((p) => !audio.includes(p)));
-    return;
-  }
-  if (audio.length && projects.active) {
-    const tracks = await api.music.add(audio);
-    if (tracks.length) {
-      await projects.setMusic({
-        ...projects.active.music,
-        tracks: [...projects.active.music.tracks, ...tracks],
-      });
-      toast(
-        `${tracks.length === 1 ? tracks[0].name : `${tracks.length} songs`} added under your movie`,
-      );
-    }
-  }
-  await importPaths(paths.filter((p) => !audio.includes(p)));
-}
+useScanLifecycle({
+  inEditor: () => phase.value === 'editor',
+  openClip,
+  startPreview: () => stage.value?.startPreview(),
+});
+useEditorShortcuts({
+  active: () => phase.value === 'editor',
+  stage: () => stage.value,
+});
 
 onMounted(async () => {
   await Promise.all([settings.init(), jobs.init(), projects.refresh(), updater.init()]);
   if (projects.activeId) await openProject(projects.activeId);
-
-  jobs.onUpdate(async (job) => {
-    if (job.status === 'running') {
-      // a scan reports "Done" per video: refresh so the "n of m videos done" count moves along
-      if (job.kind === 'analyze' && job.message === 'Done') await library.refresh();
-      return;
-    }
-    await Promise.all([library.refresh(), projects.refresh()]);
-    if (job.kind === 'analyze' && job.status === 'done') {
-      const failed = job.result?.kind === 'analyze' ? (job.result.failed ?? []) : [];
-      library.noteScanFailures(failed);
-      const target =
-        library.analyzed.find((c) => c.stem === library.current) ?? library.analyzed[0];
-      if (target && phase.value === 'editor') {
-        await openClip(target.stem);
-        const n = editor.parts.length;
-        const corners = editor.parts.filter((p) => p.reden !== 'accel/rem').length;
-        if (failed.length) {
-          const f = friendlyError(failed[0].error);
-          toast(
-            `${plural(failed.length, 'video')} could not be scanned (${f.title.toLowerCase()}); the rest is done. See the Ride panel.`,
-            8000,
-          );
-        } else {
-          toast(
-            `Done! Found ${n} fun parts${corners ? `, ${corners} with corners` : ''}. Press ▶ for a preview.`,
-          );
-          stage.value?.startPreview();
-        }
-      }
-    }
-    if (job.kind === 'analyze' && job.status === 'error') {
-      // nothing could be read: every video of that scan carries the reason
-      library.noteScanFailures(
-        library.clips
-          .filter((c) => !c.analyzed)
-          .map((c) => ({ stem: c.stem, error: job.error ?? '' })),
-      );
-      const f = friendlyError(job.error);
-      toast(`${f.title}. ${f.hint}`, 8000);
-    }
-    if (job.kind === 'analyze' && job.status === 'cancelled') {
-      toast('Scan stopped. Videos that were not scanned yet can be scanned from their menu.', 6000);
-    }
-  });
-  window.addEventListener('keydown', onKey);
   setInterval(() => {
     if (editor.stem) localStorage.setItem(timeKey(), String(Math.round(editor.time)));
   }, 2000);
 });
-onUnmounted(() => window.removeEventListener('keydown', onKey));
 
 watch(
   () => library.current,
@@ -268,118 +149,6 @@ watch(
 watch(phase, (p) => {
   if (p !== 'editor' && ui.tourActive) ui.tourActive = false;
 });
-
-function onKey(e: KeyboardEvent): void {
-  const mod = e.ctrlKey || e.metaKey;
-  if (mod && e.key === ',') {
-    e.preventDefault();
-    ui.toggleSettings();
-    return;
-  }
-  if (phase.value !== 'editor' || ui.settingsOpen) return;
-  if (mod && (e.key === 'z' || e.key === 'Z')) {
-    e.preventDefault();
-    e.shiftKey ? editor.redo() : editor.undo();
-    return;
-  }
-  if (mod && (e.key === 'y' || e.key === 'Y')) {
-    e.preventDefault();
-    editor.redo();
-    return;
-  }
-  const target = e.target as HTMLElement;
-  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
-  // a focused timeline block handles these itself (Timeline.blockKey); no second action here
-  if (
-    target.closest('[data-part]') &&
-    [' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'Delete', 'Backspace'].includes(e.key)
-  )
-    return;
-  // I / O: set an edge of the selected part at the playhead (a new part when none is selected)
-  const trim = (edge: 'start_s' | 'end_s', toCore: boolean): void => {
-    let p = editor.selectedParts.length === 1 ? editor.selectedParts[0] : null;
-    if (!p && !toCore) p = editor.addAt(editor.time);
-    if (!p) return;
-    const ok = toCore ? editor.trimToCore(p, edge) : editor.trimTo(p, edge, editor.time);
-    if (!ok)
-      toast(toCore ? 'This part has no scanned core to trim to' : 'Cannot move the edge there');
-  };
-  switch (e.key) {
-    case ' ':
-      e.preventDefault();
-      stage.value?.togglePlay();
-      break;
-    case 'l':
-    case 'L': {
-      const rate = stage.value?.shuttle('play') ?? 1;
-      if (rate > 1) toast(`${rate}× speed`, 1200);
-      break;
-    }
-    case 'k':
-    case 'K':
-      stage.value?.shuttle('pause');
-      break;
-    case 'j':
-    case 'J':
-      stage.value?.seek(editor.time - 10);
-      break;
-    case ',':
-      stage.value?.frameStep(-1);
-      break;
-    case '.':
-      stage.value?.frameStep(1);
-      break;
-    case 'i':
-    case 'I':
-      trim('start_s', e.shiftKey);
-      break;
-    case 'o':
-    case 'O':
-      trim('end_s', e.shiftKey);
-      break;
-    case '?':
-      ui.openSettings('shortcuts');
-      break;
-    case 'ArrowLeft':
-      stage.value?.seek(editor.time - (e.shiftKey ? 1 : 5));
-      break;
-    case 'ArrowRight':
-      stage.value?.seek(editor.time + (e.shiftKey ? 1 : 5));
-      break;
-    case 'Home':
-      stage.value?.seek(0);
-      break;
-    case 'End':
-      stage.value?.seek(editor.duration);
-      break;
-    case ']':
-      stage.value?.seekPart(1);
-      break;
-    case '[':
-      stage.value?.seekPart(-1);
-      break;
-    case 'Delete':
-    case 'Backspace':
-      if (editor.selectedParts.length) {
-        editor.remove(editor.selectedParts);
-        toast('Part deleted — Ctrl+Z brings it back');
-      }
-      break;
-    case 'm':
-      editor.join(editor.selectedParts);
-      break;
-    case 'f':
-      editor.toggleStar(editor.selectedParts);
-      break;
-    case 'n':
-      editor.addAt(editor.time);
-      toast('Part added — drag the edges to fit');
-      break;
-    case 'Escape':
-      editor.clearSelection();
-      break;
-  }
-}
 </script>
 
 <template>
@@ -428,25 +197,13 @@ function onKey(e: KeyboardEvent): void {
         }"
       >
         <RideRail @pick="pickAndScan" @seek="stage?.seek($event)" @play="stage?.play($event)" />
-        <div
-          class="splitter"
-          :class="{ 'is-dragging': left.dragging.value }"
-          title="Drag to resize · double-click to reset"
-          @mousedown="left.start"
-          @dblclick="left.reset"
-        />
+        <PanelSplitter :panel="left" />
         <VideoStage
           ref="stage"
           :framing="movie?.framingActive ?? false"
           @scan="api.analysis.run([$event])"
         />
-        <div
-          class="splitter"
-          :class="{ 'is-dragging': right.dragging.value }"
-          title="Drag to resize · double-click to reset"
-          @mousedown="right.start"
-          @dblclick="right.reset"
-        />
+        <PanelSplitter :panel="right" />
         <MoviePanel ref="movie" @watch="stage?.watchResult($event)" />
       </main>
       <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />

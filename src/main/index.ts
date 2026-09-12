@@ -4,12 +4,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import log from 'electron-log/main';
 import { autoUpdater } from 'electron-updater';
 import icon from '../../resources/icon.png?asset';
-import type { Part } from '@core/types';
-import { existsSync } from 'node:fs';
-import { ThumbnailAction } from './actions/thumbs';
 import { createServices, registerIpc } from './ipc';
+import { runStartupTasks } from './startup';
+import { broadcast } from './services/windows';
 import { installProtocol, registerScheme } from './services/protocol';
-import { paths, readJson } from './services/store';
+import { paths } from './services/store';
 import { TITLEBAR_HEIGHT } from '@shared/ipc';
 
 // same data folder in dev (unpackaged runs default to "Electron") and in the packaged app;
@@ -36,9 +35,7 @@ autoUpdater.logger = log;
 const tellRenderer = (kind: string, e: unknown): void => {
   const err = e instanceof Error ? e : new Error(String(e));
   log.error(`${kind}:`, err.stack ?? err.message);
-  for (const w of BrowserWindow.getAllWindows()) {
-    w.webContents.send('app:fatal', { message: err.message, stack: err.stack });
-  }
+  broadcast('app:fatal', { message: err.message, stack: err.stack });
 };
 process.on('uncaughtException', (e) => tellRenderer('uncaught exception', e));
 process.on('unhandledRejection', (e) => tellRenderer('unhandled rejection', e));
@@ -131,60 +128,7 @@ app.whenReady().then(() => {
   registerIpc(services);
   createWindow();
 
-  // `ApexCut --add=<file-or-folder>`: add videos on startup and scan them (also handy for smoke tests)
-  const adds = process.argv.filter((a) => a.startsWith('--add=')).map((a) => a.slice(6));
-  // `ApexCut --import-legacy=<out dir of the Python prototype>`: take over its library and edited selections
-  for (const dir of process.argv
-    .filter((a) => a.startsWith('--import-legacy='))
-    .map((a) => a.slice(16))) {
-    const lib = readJson<Record<string, { mp4?: string | null; lrf?: string | null }>>(
-      join(dir, 'library.json'),
-      {},
-    );
-    for (const [stem, rec] of Object.entries(lib)) {
-      adds.push(...[rec.mp4, rec.lrf].filter((p): p is string => !!p));
-      const sel = readJson<{ segments?: Part[] } | null>(join(dir, stem, 'selection.json'), null);
-      if (sel?.segments) {
-        services.analysis.importSelection(stem, sel.segments);
-        log.info(`legacy import: ${stem} — ${sel.segments.length} parts`);
-      }
-    }
-  }
-  if (adds.length) {
-    const added = services.projects.addClips(services.library.add(adds));
-    log.info('startup add:', added);
-    const todo = services.projects
-      .clipInfos()
-      .filter((c) => !c.analyzed)
-      .map((c) => c.stem);
-    if (todo.length) {
-      services.jobs.start('analyze', `Scanning ${todo.length} videos`, async (ctx) => {
-        for (let i = 0; i < todo.length; i++) {
-          await services.analysis.analyze(
-            todo[i],
-            undefined,
-            ctx,
-            i / todo.length,
-            1 / todo.length,
-          );
-        }
-        return { kind: 'analyze', stems: todo };
-      });
-    }
-  }
-
-  // backfill card thumbnails for clips analysed before thumbnails existed (e.g. legacy imports)
-  for (const c of services.library.records()) {
-    const meta = services.analysis.meta(c.stem);
-    if (meta && !existsSync(join(paths.clipDir(c.stem), 'thumb.jpg'))) {
-      new ThumbnailAction()
-        .execute(c.stem, services.library.proxyOf(c.stem), meta.durationS * 0.1, 160, 'thumb.jpg')
-        .catch((e) => log.warn('thumbnail backfill:', e));
-    }
-  }
-
-  // check for a new version a few seconds after start; the renderer shows a banner when it is ready
-  setTimeout(() => services.updater.check().catch((e) => log.warn('updater:', e)), 4000);
+  runStartupTasks(services);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

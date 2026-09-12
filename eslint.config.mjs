@@ -24,6 +24,16 @@ export default defineConfig(
   {
     files: ['**/*.{ts,mts,tsx,vue}'],
     rules: {
+      // the bridge and a few ffmpeg/canvas shims need a cast; everything else must be typed
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        { allowExpressions: true, allowTypedFunctionExpressions: true },
+      ],
+      'no-console': 'error',
+      eqeqeq: ['error', 'smart'],
+      'object-shorthand': 'error',
+      'prefer-const': 'error',
       'vue/require-default-prop': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/block-lang': [
@@ -35,6 +45,12 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    // the two sanctioned console users: the renderer logger (which forwards to main.log) and the
+    // build/release scripts, which are command-line tools
+    files: ['src/renderer/src/utils/logger.ts', 'scripts/**/*.mjs'],
+    rules: { 'no-console': 'off' },
   },
   {
     // the renderer talks to main through `api` (@renderer/api), which copies arguments to plain data;

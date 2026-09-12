@@ -4,7 +4,7 @@
  */
 import { protocol, net } from 'electron';
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { extname, join, resolve, sep } from 'node:path';
+import { extname, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { paths } from './store';
 
@@ -103,5 +103,3 @@ export async function head(url: string): Promise<number> {
   const r = await net.fetch(url, { method: 'HEAD' });
   return r.status;
 }
-
-export { join as pathJoin };

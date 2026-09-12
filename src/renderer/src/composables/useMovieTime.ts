@@ -69,12 +69,3 @@ export function useMovieTime(): MovieTime {
 
   return { movieLen, movieTimeOf, placed, trackAt };
 }
-
-/** apexcut:// URL of a song for the <audio> element (the main process allows its folder). */
-export function musicUrl(path: string): string {
-  const enc = btoa(unescape(encodeURIComponent(path)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-  return `apexcut://media/music/${enc}`;
-}

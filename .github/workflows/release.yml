@@ -17,6 +17,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # lint + typecheck + unit/parity tests. No end-to-end tests here on purpose: they run locally
+      # before the tag is pushed (npm run check:pre-release) — see playwright.config.ts.
       - run: npm run check
       # Create the release first, with the CHANGELOG section as its body (= the app's “What’s new”).
       # electron-builder then uploads into this one release; letting it create the release itself

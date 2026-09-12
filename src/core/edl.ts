@@ -40,26 +40,3 @@ export function edl(
   });
   return lines.join('\n');
 }
-
-export function markersCsv(parts: Part[], clipName: string, fps: number): string {
-  const rows = [
-    'clip,start_s,end_s,start_tc,end_tc,duration_s,reason,score,max_lean_deg,max_brake_g',
-  ];
-  for (const p of parts) {
-    rows.push(
-      [
-        clipName,
-        p.start_s,
-        p.end_s,
-        timecode(p.start_s, fps),
-        timecode(p.end_s, fps),
-        (p.end_s - p.start_s).toFixed(2),
-        REASON_LABEL[reasonOf(p)],
-        p.score ?? '',
-        p.max_lean_deg ?? '',
-        p.max_brake_g ?? '',
-      ].join(','),
-    );
-  }
-  return rows.join('\n');
-}

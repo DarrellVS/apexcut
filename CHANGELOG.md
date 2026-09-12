@@ -3,6 +3,19 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 1.0.0
+
+- **Nothing about ApexCut changed — and that is the point.** This release is the code underneath:
+  every big file was broken into named pieces, the repeated bits (dragging, popovers, canvases,
+  media URLs) became one each, and dead code went out. The scoring, the colours and the ffmpeg
+  commands were not touched.
+- To prove it, the app's behaviour was frozen in tests first: 16 pixel-exact screenshots of the
+  screens, panels and popovers, 43 end-to-end tests that drive the real app (including a real export
+  written to disk), and 69 unit tests — among them a new set that pins every ffmpeg argument, and
+  the parity fixtures against the original Python prototype. All of them still pass, unchanged.
+- The end-to-end tests never run in the cloud; they are the gate before a release is built on this
+  machine (`npm run check:pre-release`, which `npm run build:win` depends on).
+
 ## 0.5.0
 
 - A video that cannot be read (no DJI motion data, a damaged or half-copied file) no longer stops

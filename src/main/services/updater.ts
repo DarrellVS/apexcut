@@ -2,10 +2,10 @@
  * Auto-update (electron-updater → GitHub Releases) with a state the renderer can show: checking,
  * up to date, downloading x %, ready to install, or a plain error. Dev builds never check.
  */
-import { BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log/main';
 import type { UpdateStatus } from '@shared/ipc';
+import { broadcast } from './windows';
 
 export class Updater {
   status: UpdateStatus = { state: 'idle' };
@@ -15,7 +15,7 @@ export class Updater {
 
   private set(next: UpdateStatus): void {
     this.status = next;
-    for (const w of BrowserWindow.getAllWindows()) w.webContents.send('updater:status', next);
+    broadcast('updater:status', next);
   }
 
   private wire(): void {
