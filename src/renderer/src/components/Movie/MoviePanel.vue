@@ -17,6 +17,7 @@ import ColourSection from './ColourSection.vue';
 import ExportResultCard from './ExportResultCard.vue';
 import FormatSection from './FormatSection.vue';
 import OverlaySection from './OverlaySection.vue';
+import PlatformPresets from './PlatformPresets.vue';
 
 const emit = defineEmits<{ watch: [url: string] }>();
 const library = useLibraryStore();
@@ -106,7 +107,10 @@ defineExpose({ openMovie, framingActive });
         </div>
       </section>
 
-      <FormatSection />
+      <div class="-mt-3">
+        <FormatSection />
+        <div class="mt-2"><PlatformPresets /></div>
+      </div>
 
       <ColourSection />
 
@@ -131,6 +135,24 @@ defineExpose({ openMovie, framingActive });
           </div>
         </div>
         <OverlaySection />
+        <div>
+          <div class="label-caps mb-2">Sound</div>
+          <label class="flex cursor-pointer items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              class="mt-0.5"
+              :checked="projects.active?.loudness ?? false"
+              @change="projects.setLoudness(($event.target as HTMLInputElement).checked)"
+            />
+            <span>
+              <b class="block font-semibold text-fg">Same loudness as your other movies</b>
+              <span class="text-fg2">
+                Evens the volume of the whole movie out to the level phones and websites expect, so
+                one ride is not twice as loud as the next. Adds a short step at the end.
+              </span>
+            </span>
+          </label>
+        </div>
       </section>
 
       <ExportResultCard v-if="job" :job="job" @watch="emit('watch', $event)" />

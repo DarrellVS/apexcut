@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import type { MusicSettings, Transition } from '@shared/ipc';
 import { runFfmpeg } from '../../services/media';
 import type { JobContext } from '../../services/jobs';
+import { LoudnessAction } from '../loudness';
 import { MusicMixAction } from '../music';
 import { cutAll, prepareItems } from './batch';
 import { videoArgsFor } from './encode';
@@ -24,13 +25,20 @@ import { XFADE_S, type CutItem } from './types';
 const numbered = (dir: string, prefix: string, k: number): string =>
   join(dir, `${prefix}_${String(k).padStart(3, '0')}.mp4`);
 
+export interface CompileOptions {
+  transition?: Transition;
+  music?: MusicSettings;
+  /** even the volume of the finished movie out (actions/loudness.ts) */
+  loudness?: boolean;
+}
+
 export async function compileMovie(
   items: CutItem[],
   outPath: string,
   ctx: JobContext,
-  transition: Transition = 'crossfade',
-  music?: MusicSettings,
+  opts: CompileOptions = {},
 ): Promise<string> {
+  const { transition = 'crossfade', music, loudness = false } = opts;
   const tmp = mkdtempSync(join(outPath, '..', 'apexcut-'));
   const withMusic = !!music && music.tracks.some((t) => t.outS > t.inS);
   // encoder settings shared by the crossfade clips
@@ -39,22 +47,36 @@ export async function compileMovie(
     items[0].format,
     items[0].quality ?? 18,
   );
+  /** the last steps on the finished picture: the music, the loudness, then the name it keeps */
   const finish = async (movie: string): Promise<string> => {
-    const carded = withMusic ? join(tmp, 'carded.mp4') : outPath;
-    renameSync(movie, carded);
+    let current = movie;
     if (withMusic && music) {
-      ctx.progress(0.99, 'Adding the music');
+      ctx.progress(0.98, 'Adding the music');
+      const mixed = join(tmp, 'mixed.mp4');
       try {
-        const { skipped } = await new MusicMixAction().execute(carded, music, outPath, ctx);
+        const { skipped } = await new MusicMixAction().execute(current, music, mixed, ctx);
         for (const p of skipped) ctx.log(`music file missing, skipped: ${p}`);
+        current = mixed;
       } catch (e) {
         if (ctx.signal.aborted) throw e;
         ctx.log(
           `music mix failed, movie kept without music: ${(e as Error).message.slice(0, 200)}`,
         );
-        renameSync(carded, outPath);
       }
     }
+    if (loudness) {
+      ctx.progress(0.99, 'Evening out the volume');
+      const evened = join(tmp, 'evened.mp4');
+      try {
+        current = await new LoudnessAction().execute(current, evened, ctx);
+      } catch (e) {
+        if (ctx.signal.aborted) throw e;
+        ctx.log(
+          `loudness pass failed, movie kept as it was: ${(e as Error).message.slice(0, 200)}`,
+        );
+      }
+    }
+    renameSync(current, outPath);
     return outPath;
   };
   try {

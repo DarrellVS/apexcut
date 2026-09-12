@@ -3,6 +3,18 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 1.1.0
+
+- **Compare your colours.** With colours on the movie, the stage offers `Compare`: the recording on
+  one side of a line you drag, your colours on the other. Nothing changes by looking.
+- **Same loudness as your other movies.** A checkbox under Sound in the Movie panel evens the volume
+  of the finished movie out to the level phones and websites expect, so one ride is not twice as
+  loud as the next. Off unless you ask for it.
+- **Made for.** Folded under the format tiles: YouTube, Reels/Shorts/TikTok, or keep it as recorded.
+  One click sets the shape and the sound, and everything it did is still there to change.
+- **Ctrl+K.** Type what you want: open a project or a video, set a format, a look or a transition,
+  jump to a part, make the movie or the ride card, undo. It runs the same things the buttons do.
+
 ## 1.0.0
 
 - **Nothing about ApexCut changed — and that is the point.** This release is the code underneath:

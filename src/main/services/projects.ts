@@ -49,6 +49,8 @@ export interface ProjectRecord {
   format?: ExportFormat;
   /** where the crop window sits on the cropped axis (0..1); absent = the app's last choice */
   framePos?: number;
+  /** even the volume of the movie out when it is made (actions/loudness.ts) */
+  loudness?: boolean;
   /** telemetry overlay in the export */
   overlay?: OverlaySpecDto | null;
 }
@@ -201,6 +203,7 @@ export class Projects {
       grade: p.grade ?? null,
       format: p.format ?? null,
       framePos: p.framePos ?? null,
+      loudness: !!p.loudness,
     };
   }
 
@@ -219,6 +222,11 @@ export class Projects {
   /** where the crop window sits for the open project (0..1) */
   setFramePos(pos: number): void {
     this.patchActive({ framePos: Math.min(1, Math.max(0, pos)) });
+  }
+
+  /** even the volume of the open project's movie out */
+  setLoudness(loudness: boolean): void {
+    this.patchActive({ loudness });
   }
 
   setOverlay(overlay: OverlaySpecDto | null): void {

@@ -98,6 +98,80 @@ test('the telemetry overlay draws on the picture and is remembered', async () =>
   await expect(page.locator('section canvas')).toHaveCount(0);
 });
 
+test('Compare puts the recording next to the colours and drags', async () => {
+  const { page } = launched;
+  // no colours, nothing to compare
+  await expect(page.getByRole('button', { name: 'Compare' })).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Punchy' }).click();
+  const compare = page.getByRole('button', { name: 'Compare' });
+  await expect(compare).toBeVisible();
+  await compare.click();
+  const plain = page.locator('section video').nth(1);
+  await expect(plain).toBeVisible();
+  const before = await plain.evaluate((v) => getComputedStyle(v).clipPath);
+  // drag the divider to the left: more of the graded picture shows
+  const line = page.locator('.cursor-ew-resize').first();
+  const box = (await line.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 120, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(() => plain.evaluate((v) => getComputedStyle(v).clipPath)).not.toBe(before);
+  await compare.click();
+  await expect(page.locator('section video')).toHaveCount(1);
+  // back to as recorded
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await expect(page.getByRole('button', { name: 'Compare' })).toHaveCount(0);
+});
+
+test('the same loudness for every movie is off unless you ask for it', async () => {
+  const { page } = launched;
+  const loudness = (): Promise<boolean> =>
+    page.evaluate(async () => {
+      const bridge = (window as unknown as { apexcut: unknown }).apexcut as {
+        projects: {
+          list(): Promise<{ id: string; loudness: boolean }[]>;
+          active(): Promise<string>;
+        };
+      };
+      const [list, id] = await Promise.all([bridge.projects.list(), bridge.projects.active()]);
+      return !!list.find((p) => p.id === id)?.loudness;
+    });
+  expect(await loudness()).toBe(false);
+  const box = page.getByRole('checkbox', { name: /Same loudness/ });
+  await box.check();
+  await expect.poll(loudness).toBe(true);
+  await box.uncheck();
+  await expect.poll(loudness).toBe(false);
+});
+
+test('“Made for” sets the shape and the sound in one click', async () => {
+  const { page } = launched;
+  const setup = (): Promise<{ format: string | null; loudness: boolean }> =>
+    page.evaluate(async () => {
+      const bridge = (window as unknown as { apexcut: unknown }).apexcut as {
+        projects: {
+          list(): Promise<{ id: string; format: string | null; loudness: boolean }[]>;
+          active(): Promise<string>;
+        };
+      };
+      const [list, id] = await Promise.all([bridge.projects.list(), bridge.projects.active()]);
+      const p = list.find((x) => x.id === id)!;
+      return { format: p.format, loudness: !!p.loudness };
+    });
+  // folded away until you want it
+  const summary = page.getByText('Made for', { exact: false }).first();
+  await expect(page.getByRole('button', { name: /Reels, Shorts, TikTok/ })).toBeHidden();
+  await summary.click();
+  await page.getByRole('button', { name: /Reels, Shorts, TikTok/ }).click();
+  await expect.poll(setup).toEqual({ format: '9x16', loudness: true });
+  await page.getByRole('button', { name: /YouTube/ }).click();
+  await expect.poll(setup).toEqual({ format: '16x9', loudness: true });
+  await page.getByRole('button', { name: /Keep it as recorded/ }).click();
+  await expect.poll(setup).toEqual({ format: 'original', loudness: false });
+  await summary.click();
+});
+
 test('making the movie writes a real file', async () => {
   test.setTimeout(300_000);
   const { page, outputDir } = launched;
@@ -108,6 +182,7 @@ test('making the movie writes a real file', async () => {
   await panel.getByRole('checkbox', { name: /Starred only/ }).check();
   await page.getByRole('button', { name: 'Square' }).click();
   await page.getByRole('radio', { name: 'Cut', exact: true }).click();
+  await page.getByRole('checkbox', { name: /Same loudness/ }).check();
   await page.getByLabel('Name of your movie').fill('e2e-movie');
   await panel.getByRole('button', { name: 'Make my movie' }).click();
 
@@ -133,6 +208,8 @@ test('making the movie writes a real file', async () => {
     ]).toString(),
   ) as { format: { duration: string }; streams: { codec_type: string; width?: number }[] };
   const video = probe.streams.find((s) => s.codec_type === 'video')!;
+  // the loudness pass wrote the sound again, so the movie still has audio
+  expect(probe.streams.some((s) => s.codec_type === 'audio')).toBe(true);
   // square keeps the source resolution and is never downscaled
   expect(video.width).toBeGreaterThanOrEqual(720);
   expect(Number(probe.format.duration)).toBeGreaterThan(2);

@@ -56,6 +56,8 @@ export interface ApexcutApi {
     setFormat(format: ExportFormat): Promise<void>;
     /** where the crop window sits for the open project (0..1) */
     setFramePos(pos: number): Promise<void>;
+    /** even the volume of the open project's movie out when it is made */
+    setLoudness(on: boolean): Promise<void>;
     /** the numbers of the open project for the ride card */
     rideStats(): Promise<RideStats>;
     /**

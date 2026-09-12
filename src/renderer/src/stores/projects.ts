@@ -127,6 +127,13 @@ export const useProjectsStore = defineStore('projects', () => {
     await api.projects.setFramePos(pos);
   }
 
+  /** even the volume of this movie out when it is made */
+  async function setLoudness(on: boolean): Promise<void> {
+    const p = active.value;
+    if (p) p.loudness = on;
+    await api.projects.setLoudness(on);
+  }
+
   async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.overlay = o;
@@ -171,6 +178,7 @@ export const useProjectsStore = defineStore('projects', () => {
     setTransition,
     setFormat,
     setFramePos,
+    setLoudness,
     setMusic,
     setOverlay,
     setGrade,

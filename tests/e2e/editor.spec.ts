@@ -171,6 +171,38 @@ test.describe('editor with a scanned video', () => {
     await expect(sheet).toBeHidden();
   });
 
+  test('Ctrl+K finds what the buttons do and runs it', async () => {
+    const { page } = launched;
+    await page.keyboard.press('Control+k');
+    const palette = page.getByRole('dialog', { name: /What do you want to do/ });
+    await expect(palette).toBeVisible();
+    // the search narrows the list, and Escape leaves without doing anything
+    await page.getByLabel('Search what ApexCut can do').fill('vertical');
+    await expect(palette.getByRole('button', { name: /Vertical 9:16/ })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(palette).toBeHidden();
+
+    // running one does what its button does: the format lands on the project
+    const activeFormat = (): Promise<string | null> =>
+      page.evaluate(async () => {
+        const bridge = (window as unknown as { apexcut: unknown }).apexcut as {
+          projects: {
+            list(): Promise<{ id: string; format: string | null }[]>;
+            active(): Promise<string>;
+          };
+        };
+        const [list, id] = await Promise.all([bridge.projects.list(), bridge.projects.active()]);
+        return list.find((p) => p.id === id)?.format ?? null;
+      });
+    await page.keyboard.press('Control+k');
+    await page.getByLabel('Search what ApexCut can do').fill('classic');
+    await page.keyboard.press('Enter');
+    await expect(palette).toBeHidden();
+    await expect.poll(activeFormat).toBe('4x3');
+    await page.getByRole('button', { name: 'Widescreen 16:9' }).click();
+    await expect.poll(activeFormat).toBe('16x9');
+  });
+
   test('the scoring knobs read as plain words with the technical name behind them', async () => {
     const { page } = launched;
     await page.keyboard.press('Control+Comma');

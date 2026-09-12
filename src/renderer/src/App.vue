@@ -18,6 +18,7 @@ import { useEditorShortcuts } from '@renderer/composables/useEditorShortcuts';
 import { useImport } from '@renderer/composables/useImport';
 import { usePanelWidth } from '@renderer/composables/usePanelWidth';
 import { useScanLifecycle } from '@renderer/composables/useScanLifecycle';
+import CommandPalette from '@renderer/components/Shell/CommandPalette.vue';
 import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
 import PanelSplitter from '@renderer/components/Shell/PanelSplitter.vue';
 import ImportSheet from '@renderer/components/Library/ImportSheet.vue';
@@ -119,9 +120,21 @@ useScanLifecycle({
   openClip,
   startPreview: () => stage.value?.startPreview(),
 });
+const paletteOpen = ref(false);
+/** what the command palette can reach outside the stores */
+const paletteContext = {
+  inEditor: () => phase.value === 'editor',
+  goHome,
+  pick: pickAndScan,
+  make: (scope: 'all' | 'current') => movie.value?.openMovie(scope),
+  seek: (t: number) => stage.value?.seek(t),
+  play: (t: number) => stage.value?.play(t),
+  togglePreview: () => stage.value?.startPreview(),
+};
 useEditorShortcuts({
   active: () => phase.value === 'editor',
   stage: () => stage.value,
+  openPalette: () => (paletteOpen.value = true),
 });
 
 onMounted(async () => {
@@ -214,6 +227,7 @@ watch(phase, (p) => {
       @confirm="confirmImport"
       @cancel="pendingGroups = null"
     />
+    <CommandPalette v-model="paletteOpen" :context="paletteContext" />
     <SettingsModal />
     <RideCardSheet />
     <ExportOverlay @watch="stage?.watchResult($event)" />

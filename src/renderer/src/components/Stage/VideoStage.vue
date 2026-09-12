@@ -15,6 +15,7 @@ import { useStageBox } from '@renderer/composables/useStageBox';
 import { useVideoTransport } from '@renderer/composables/useVideoTransport';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
+import CompareSlider from './CompareSlider.vue';
 import FramingWindow from './FramingWindow.vue';
 import OverlayGauge from './OverlayGauge.vue';
 import StageNotice from './StageNotice.vue';
@@ -42,6 +43,11 @@ const {
 } = useLiveGrade(watchingResult);
 
 const src = computed(() => watchingResult.value ?? library.currentClip?.proxyUrl ?? '');
+/** hold the recording next to the graded picture (only offered when there are colours to compare) */
+const comparing = ref(false);
+watch(graded, (on) => {
+  if (!on) comparing.value = false;
+});
 watch(src, async (s) => {
   const v = video.value;
   if (!v) return;
@@ -134,13 +140,23 @@ defineExpose({
         ...vignetteStyle,
       }"
     />
-    <span
-      v-if="graded"
-      class="chip pointer-events-none absolute top-4 right-4 flex h-6 items-center gap-1.5 px-2 text-[11px]"
-      title="Shown with the colours it will have in the movie"
-    >
-      <PhCircleHalf :size="12" weight="fill" /> Colours on
-    </span>
+    <div v-if="graded" class="absolute top-4 right-4 z-[8] flex items-center gap-1.5">
+      <span
+        class="chip pointer-events-none flex h-6 items-center gap-1.5 px-2 text-[11px]"
+        title="Shown with the colours it will have in the movie"
+      >
+        <PhCircleHalf :size="12" weight="fill" /> Colours on
+      </span>
+      <button
+        class="chip chip-btn h-6 text-[11px]"
+        :class="{ 'bg-white/15': comparing }"
+        :aria-pressed="comparing"
+        title="Put the recording next to your colours and drag the line"
+        @click="comparing = !comparing"
+      >
+        Compare
+      </button>
+    </div>
     <audio ref="audio" preload="auto" />
     <OverlayGauge
       v-if="projects.active?.overlay"
@@ -163,7 +179,9 @@ defineExpose({
         <button class="chip-btn h-5" @click="previewOn = false">Stop</button>
       </div>
     </Transition>
-    <FramingWindow v-if="framing && cropped" :box="box" />
+    <CompareSlider v-if="comparing && graded" :box="box" :src="src" />
+    <!-- while comparing colours the crop frame steps aside: it would sit on top of the divider -->
+    <FramingWindow v-if="framing && cropped && !comparing" :box="box" />
     <StageTransport
       :preview-on="previewOn"
       @seek-part="transport.seekPart($event)"

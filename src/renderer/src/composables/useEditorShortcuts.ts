@@ -25,12 +25,19 @@ export function useEditorShortcuts(opts: {
   /** the editor is on screen */
   active: () => boolean;
   stage: () => TransportKeys | null;
+  /** Ctrl+K, from anywhere in the app */
+  openPalette: () => void;
 }): void {
   const editor = useEditorStore();
   const ui = useUiStore();
 
   function onKey(e: KeyboardEvent): void {
     const mod = e.ctrlKey || e.metaKey;
+    if (mod && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      opts.openPalette();
+      return;
+    }
     if (mod && e.key === ',') {
       e.preventDefault();
       ui.toggleSettings();

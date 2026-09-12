@@ -102,6 +102,10 @@ floating thing), `useCanvasPainter` (every canvas), `usePanelWidth`, `useFraming
 - **Scanning**: title + percentage, a 4 px `--ink` bar, the stage text and `n of m videos done`, then
   the list of videos ticking off, and `Stop scanning` (mini button; the rest can be scanned later from
   each video's menu). A video that cannot be read never stops the others.
+- **Compare** (`Stage/CompareSlider.vue`): while the movie has colours, a `Compare` chip next to
+  `Colours on` splits the picture — the recording on the left of a draggable line, your colours on
+  the right, labelled at the bottom. It is a second copy of the same video without the filter, so it
+  follows the player; the crop frame steps aside while it is on.
 - **Stage notice** (`Stage/VideoStage.vue`): when nothing can play, the black box carries a centred
   message — `No scanned video yet` · `Video 12 is not scanned yet` + `Scan now` · the friendly reason
   of a failed scan + `Scan again` · `Video 12 was not found` — so the rail, the stage and the timeline
@@ -125,6 +129,10 @@ from M videos · length`, made from all videos / only this one, name, 11 px caps
   card (`Ride/RideCardSheet.vue`): the picture itself, "on your clipboard", the file, `Open folder`,
   `Done`. The format and the crop position are **per project** (`composables/useFraming.ts`); the
   app only remembers the last choice as the starting point for a project that was never framed.
+  Under the format tiles, **Made for** (`Movie/PlatformPresets.vue`) folds open into three rows —
+  YouTube, Reels/Shorts/TikTok, Keep it as recorded — that set the shape and the sound in one click
+  and say which one the movie matches now; nothing it does is hidden, the sections above still show
+  it. **Sound** is one checkbox: same loudness as your other movies (−14 LUFS), off unless asked.
   Videos whose files are not
   found are skipped with a dashed danger note under the name (“2 videos not found · their parts are
   skipped”); an empty name becomes `my-ride`. Sections are 20 px apart; tiles
@@ -144,6 +152,10 @@ part`. Seven **looks** as 4-column tiles, each the open video's thumbnail with t
   here”. The stage applies the live grade (a selected part's own, else the part under the playhead,
   else the movie's) and shows a `Colours on` chip. Colours are per project (`ProjectRecord.grade`)
   and per part (`Part.grade`).
+- **Command palette** (`Shell/CommandPalette.vue`, `Ctrl+K`): one field over the window with the list
+  of everything the app can do underneath (`composables/useCommands.ts`) — open a project or a video,
+  set a format, a look or a transition, jump to a part, make the movie, make the ride card, undo.
+  Arrows move, Enter runs, Escape leaves; every entry calls the same code as its button.
 - **Settings**: near-fullscreen popover, left nav grouped App / Editing / Advanced, 640 px reading
   width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned. **How parts are picked**
   (Advanced) groups the scoring knobs as What makes a moment fun / How much gets picked / What to

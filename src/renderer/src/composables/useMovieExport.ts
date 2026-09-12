@@ -140,6 +140,7 @@ export function useMovieExport(): MovieExport {
         music: separate.value
           ? DEFAULT_MUSIC
           : JSON.parse(JSON.stringify(projects.active?.music ?? DEFAULT_MUSIC)),
+        loudness: !separate.value && !!projects.active?.loudness,
         overlay: overlay
           ? {
               spec: { ...overlay } as OverlaySpecDto,

@@ -120,6 +120,8 @@ export interface ProjectInfo {
   format: ExportFormat | null;
   /** where the crop window sits on the cropped axis (0..1); null = the app's last choice */
   framePos: number | null;
+  /** even the volume of the movie out when it is made */
+  loudness: boolean;
 }
 
 export interface TimelinePayload {

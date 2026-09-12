@@ -47,6 +47,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ['Ctrl', 'Z'], label: 'Undo' },
       { keys: ['Ctrl', 'Y'], label: 'Redo' },
+      { keys: ['Ctrl', 'K'], label: 'What do you want to do? (search everything ApexCut can do)' },
       { keys: ['Ctrl', ','], label: 'Settings' },
       { keys: ['?'], label: 'This list' },
     ],

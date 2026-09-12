@@ -37,6 +37,8 @@ export const exportRequestSchema = z.object({
   transition: z.enum(TRANSITIONS).default('crossfade'),
   /** songs under the movie; missing files are skipped */
   music: musicSettingsSchema.default(DEFAULT_MUSIC),
+  /** even the volume of the finished movie out (−14 LUFS) */
+  loudness: z.boolean().default(false),
   /** telemetry overlay: the choice plus the three sprites the renderer drew (PNG data URLs) */
   overlay: z
     .object({

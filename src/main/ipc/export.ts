@@ -98,7 +98,11 @@ export function registerExportIpc(s: Services): void {
       'export',
       `Movie “${sanitize(req.name)}” · ${fmtClock(total)}`,
       async (ctx) => {
-        await compileMovie(items, out, ctx, req.transition, req.music);
+        await compileMovie(items, out, ctx, {
+          transition: req.transition,
+          music: req.music,
+          loudness: req.loudness,
+        });
         return {
           kind: 'export',
           file: out,

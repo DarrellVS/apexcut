@@ -23,6 +23,7 @@ const api: ApexcutApi = {
     setGrade: (grade, id) => invoke('projects:setGrade', grade, id),
     setFormat: (format) => invoke('projects:setFormat', format),
     setFramePos: (pos) => invoke('projects:setFramePos', pos),
+    setLoudness: (on) => invoke('projects:setLoudness', on),
     rideStats: () => invoke('projects:rideStats'),
   },
   library: {
