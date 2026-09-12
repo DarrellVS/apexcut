@@ -3,7 +3,7 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
-## Unreleased
+## 1.3.0
 
 - **Let the picture vote too.** A switch under “How picky?”: as well as the sensor, ApexCut looks at
   the recording itself and gives moments that _look_ good a say — riding into a tunnel or under a
