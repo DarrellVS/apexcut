@@ -3,7 +3,7 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
-## Unreleased
+## 1.4.0
 
 - **Keep the bits you point at.** Hold two fingers up to the camera for about a second while you
   ride and ApexCut keeps that spot: the ten seconds before your hand went up become a part of their
