@@ -39,6 +39,8 @@ export const exportRequestSchema = z.object({
   music: musicSettingsSchema.default(DEFAULT_MUSIC),
   /** even the volume of the finished movie out (−14 LUFS) */
   loudness: z.boolean().default(false),
+  /** vertical only: let the crop window lean into the corners (see core/framing) */
+  follow: z.boolean().default(false),
   /** telemetry overlay: the choice plus the three sprites the renderer drew (PNG data URLs) */
   overlay: z
     .object({

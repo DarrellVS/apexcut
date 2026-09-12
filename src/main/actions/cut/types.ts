@@ -29,6 +29,8 @@ export interface CutInput {
   overlay?: OverlayJob;
   /** colours for this part (forces an encode); neutral or missing = as recorded */
   grade?: Grade;
+  /** vertical only: where the crop window sits per frame (0..1), and at which frame rate */
+  follow?: { pos: number[]; fps: number };
 }
 
 export interface CutItem extends Omit<CutInput, 'dst'> {

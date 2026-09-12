@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
 import { edl } from '@core/edl';
+import { followFrames, followPath } from '@core/framing';
 import { resample } from '@core/overlay';
 import { fmtClock } from '@shared/format';
 import { exportRequestSchema, type ExportRequest, type JobState } from '@shared/ipc';
@@ -53,9 +54,45 @@ function overlayJobs(
   };
 }
 
+/**
+ * The crop window that leans into the corners, per part: the whole recording's path is walked once
+ * (so a part starts where the ride had got to), then sampled at the part's own frame rate. Null
+ * unless the rider asked for it, and only for the vertical format, which is the one with room to
+ * move sideways.
+ */
+function followFor(
+  s: Services,
+  req: ExportRequest,
+): ((it: ExportItem) => { pos: number[]; fps: number } | undefined) | null {
+  if (!req.follow || req.format !== '9x16') return null;
+  const paths = new Map<string, { t: number[]; path: Float64Array; fps: number } | null>();
+  return (it) => {
+    let entry = paths.get(it.stem);
+    if (entry === undefined) {
+      const sig = s.analysis.signals(it.stem);
+      const meta = s.analysis.meta(it.stem);
+      entry =
+        sig && meta
+          ? {
+              t: sig.imuT,
+              path: followPath(sig.imuT, sig.imu.yawRateLpDps, { p0: req.framePos }),
+              fps: meta.fps || 30,
+            }
+          : null;
+      paths.set(it.stem, entry);
+    }
+    if (!entry) return undefined;
+    return {
+      pos: followFrames(entry.t, entry.path, it.startS, it.endS, entry.fps),
+      fps: entry.fps,
+    };
+  };
+}
+
 /** Every part as a cut item: the source file, its window, the framing, the colours, its file name. */
 function cutItems(s: Services, req: ExportRequest): CutItem[] {
   const overlayFor = overlayJobs(s, req.overlay);
+  const followOf = followFor(s, req);
   return req.items.map((it, k) => {
     const rec = s.library.get(it.stem);
     const src = rec.mp4 ?? rec.lrf;
@@ -73,6 +110,7 @@ function cutItems(s: Services, req: ExportRequest): CutItem[] {
       grade: it.grade,
       name: `${it.stem}_${mm}m${ss}s_${label}_${k}.mp4`,
       overlay: overlayFor?.(it),
+      follow: followOf?.(it),
     };
   });
 }

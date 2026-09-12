@@ -7,6 +7,7 @@
 import { computed } from 'vue';
 import { FORMAT_SPEC } from '@shared/ipc';
 import { startDrag } from '@renderer/composables/useDrag';
+import { useFollowFrame } from '@renderer/composables/useFollowFrame';
 import { useFraming } from '@renderer/composables/useFraming';
 import type { Box } from '@renderer/composables/useStageBox';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
@@ -15,6 +16,7 @@ const props = defineProps<{ box: Box }>();
 const frame = useFraming();
 const format = frame.format;
 const framePos = frame.framePos;
+const follow = useFollowFrame();
 
 const isVertical = computed(() => format.value === '9x16');
 /** how much of the frame the format keeps along the axis it crops */
@@ -23,11 +25,13 @@ const winFrac = computed(() => {
   if (!spec) return 1;
   return isVertical.value ? spec.w / spec.h : spec.h / spec.w;
 });
+/** where the window is drawn: its resting place, or where the corner has taken it */
+const shownPos = computed(() => (follow.on.value ? follow.pos.value : framePos.value));
 const winStyle = computed(() => {
   const f = winFrac.value * 100;
   const free = 100 - f;
   return isVertical.value
-    ? { top: 0, height: '100%', width: `${f}%`, left: `${framePos.value * free}%` }
+    ? { top: 0, height: '100%', width: `${f}%`, left: `${shownPos.value * free}%` }
     : { left: 0, width: '100%', height: `${f}%`, top: `${framePos.value * free}%` };
 });
 defineExpose({ winFrac, isVertical });
@@ -75,7 +79,9 @@ function resetFrame(): void {
         class="chip absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 text-center text-xs whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100"
       >
         {{ isVertical ? 'Drag left or right' : 'Drag to place the horizon' }}
-        <small class="block text-[11px] opacity-70">Double-click to reset</small>
+        <small class="block text-[11px] opacity-70">
+          {{ follow.on.value ? 'It leans into the corners from here' : 'Double-click to reset' }}
+        </small>
       </div>
     </div>
   </div>

@@ -193,3 +193,40 @@ describe('the filter chain of a re-encoded cut', () => {
     expect(planCopy(part()).args).toContain('copy');
   });
 });
+
+describe('the crop window that follows the corners', () => {
+  const follow = { pos: [0.5, 0.6], fps: 30 };
+
+  it('forces an encode even for the square format', () => {
+    expect(needsEncode(part({ follow }))).toBe(true);
+  });
+
+  it('names the crop and feeds it a command file, before the crop in the chain', () => {
+    const { args } = planEncode(part({ format: '9x16', follow }), SOURCE, ['-c:v', 'x'], {
+      followCmd: 'C:/tmp/part_000.follow.cmd',
+    });
+    expect(valueAfter(args, '-vf')).toBe(
+      "sendcmd=f='C\\:/tmp/part_000.follow.cmd',crop@follow=2160:3840:840:0",
+    );
+  });
+
+  it('leaves the crop alone when the format has no room sideways', () => {
+    const { args } = planEncode(part({ format: '16x9', follow }), SOURCE, ['-c:v', 'x'], {
+      followCmd: 'C:/tmp/part_000.follow.cmd',
+    });
+    expect(valueAfter(args, '-vf')).toBe('crop=3840:2160:0:840');
+  });
+
+  it('keeps the colours and the fade after the crop', () => {
+    const { args } = planEncode(
+      part({ format: '9x16', follow, grade: LOOKS[1].grade, fade: 0.4 }),
+      SOURCE,
+      ['-c:v', 'x'],
+      { followCmd: 'C:/tmp/p.cmd' },
+    );
+    const vf = valueAfter(args, '-vf')!.split(',');
+    expect(vf[0]).toBe("sendcmd=f='C\\:/tmp/p.cmd'");
+    expect(vf[1]).toBe('crop@follow=2160:3840:840:0');
+    expect(vf[vf.length - 1]).toContain('fade=t=out');
+  });
+});

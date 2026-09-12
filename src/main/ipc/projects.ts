@@ -53,6 +53,9 @@ export function registerProjectIpc(s: Services): void {
   ipcMain.handle('projects:setLoudness', (_e, on: unknown) =>
     s.projects.setLoudness(z.boolean().parse(on)),
   );
+  ipcMain.handle('projects:setFollow', (_e, on: unknown) =>
+    s.projects.setFollow(z.boolean().parse(on)),
+  );
   ipcMain.handle('projects:setOrder', (_e, order: unknown) =>
     s.projects.setOrder(z.array(z.string()).max(5000).parse(order)),
   );

@@ -33,6 +33,21 @@ const TILES: { f: ExportFormat; label: string; sub: string; w: number; h: number
         <b class="text-xs font-semibold">{{ t.label }}</b>
       </button>
     </div>
+    <label v-if="format === '9x16'" class="mt-2 flex cursor-pointer items-start gap-2 text-xs">
+      <input
+        type="checkbox"
+        class="mt-0.5"
+        :checked="framing.follow.value"
+        @change="framing.setFollow(($event.target as HTMLInputElement).checked)"
+      />
+      <span>
+        <b class="block font-semibold text-fg">Let the frame follow the corners</b>
+        <span class="text-fg2">
+          The tall frame leans into the turn and comes back on the straights, so the road stays in
+          view. The frame you drag is where it rests.
+        </span>
+      </span>
+    </label>
     <div class="mt-2 text-xs text-fg3">
       {{
         format === 'original'

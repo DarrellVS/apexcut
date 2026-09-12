@@ -71,6 +71,15 @@ src/
    8-bit `curves` paths are avoided). Dark edges are a PNG mask (`VignetteMaskAction`, one ffmpeg
    `geq` frame per size and strength) overlaid before the telemetry overlay. Any grade forces an
    encode.
+   A vertical movie can let its crop window follow the corners (`follow` on the project, opt-in, 9:16
+   only, `core/framing/follow.ts`): the yaw rate says how hard and which way the bike is turning
+   (positive = right, checked against recordings), a deadband of 12°/s keeps steering corrections and
+   shoulder checks still, 45°/s uses the whole travel (60 % of the room towards that edge), and a
+   1 s smoother plus a speed limit of a quarter of the room per second make it a pan. The path is
+   walked over the whole recording once and sampled per part at the export frame rate; main writes
+   one `sendcmd` line per change and the crop becomes `crop@follow`, so the window moves during the
+   encode. The stage draws the same path live (`composables/useFollowFrame.ts`), so what the rider
+   frames is what the movie does.
    Then, in `finish()`: the music mix (`MusicMixAction`: songs trimmed, faded and concatenated, cut at
    the movie end, laid over the original audio with `amix`; video stream copied).
    Songs are referenced by path and served to the player through `apexcut://media/music/<base64url>`.

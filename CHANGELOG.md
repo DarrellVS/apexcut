@@ -5,6 +5,10 @@ notes (and the “What’s new” text in the update banner).
 
 ## Unreleased
 
+- **A vertical frame that follows the corners.** With Vertical 9:16 chosen, tick “Let the frame
+  follow the corners”: the tall frame leans into the turn and comes back on the straights, so the
+  road stays in view instead of sliding out of the picture. The frame you drag is where it rests,
+  and the window on the video shows exactly what the movie will do. Off unless you ask for it.
 - **The movie on the timeline.** The legend now has `This video | The movie`. The movie shows every
   part of every video back to back, exactly as it will play, with the music lined up underneath.
   Click a part to watch it, drag it to move it in the movie. Your own order is remembered with the

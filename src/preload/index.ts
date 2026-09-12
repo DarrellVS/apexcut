@@ -24,6 +24,7 @@ const api: ApexcutApi = {
     setFormat: (format) => invoke('projects:setFormat', format),
     setFramePos: (pos) => invoke('projects:setFramePos', pos),
     setLoudness: (on) => invoke('projects:setLoudness', on),
+    setFollow: (on) => invoke('projects:setFollow', on),
     setOrder: (order) => invoke('projects:setOrder', order),
     rideStats: () => invoke('projects:rideStats'),
   },

@@ -134,6 +134,13 @@ export const useProjectsStore = defineStore('projects', () => {
     await api.projects.setLoudness(on);
   }
 
+  /** vertical movies: the crop window leans into the corners */
+  async function setFollow(on: boolean): Promise<void> {
+    const p = active.value;
+    if (p) p.follow = on;
+    await api.projects.setFollow(on);
+  }
+
   /** the order the parts play in; optimistic so a drag lands at once */
   async function setOrder(order: string[]): Promise<void> {
     const p = active.value;
@@ -186,6 +193,7 @@ export const useProjectsStore = defineStore('projects', () => {
     setFormat,
     setFramePos,
     setLoudness,
+    setFollow,
     setOrder,
     setMusic,
     setOverlay,

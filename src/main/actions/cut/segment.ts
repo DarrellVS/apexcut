@@ -3,7 +3,9 @@
  * the telemetry overlay if the part has them, then run the arguments `plan.ts` built. NVENC decodes
  * on the GPU when it can, and falls back to the CPU when the driver refuses.
  */
+import { writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { followCommands } from '@core/framing';
 import { vignetteStrength } from '@core/grade';
 import { runFfmpeg } from '../../services/media';
 import type { JobContext } from '../../services/jobs';
@@ -11,7 +13,7 @@ import { overlayGraph } from '../overlay';
 import { VignetteMaskAction } from '../vignette';
 import { videoArgsFor } from './encode';
 import { gradeOf, needsEncode, planCopy, planEncode } from './plan';
-import { outputSize } from './quality';
+import { cropBox, outputSize } from './quality';
 import type { CutInput } from './types';
 
 export class CutSegmentAction {
@@ -57,7 +59,18 @@ export class CutSegmentAction {
           basename(input.dst, '.mp4'),
         )
       : null;
-    const plan = planEncode(input, info, encArgs, { mask, overlay });
+    // a crop window that leans into the corners: one command line per frame that moves it
+    let followCmd: string | null = null;
+    const box = cropBox(input.format, info.width, info.height, input.framePos);
+    if (input.follow && box && box.slackX > 0) {
+      followCmd = join(dir, `${basename(input.dst, '.mp4')}.follow.cmd`);
+      writeFileSync(
+        followCmd,
+        followCommands(input.follow.pos, input.follow.fps, box.slackX),
+        'utf8',
+      );
+    }
+    const plan = planEncode(input, info, encArgs, { mask, overlay, followCmd });
 
     if (enc === 'hevc_nvenc') {
       try {

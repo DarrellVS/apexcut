@@ -8,8 +8,11 @@
  */
 import { ffmpegGrade, isNeutral, type Grade } from '@core/grade';
 import type { ProbeResult } from '../../services/media';
-import { cropFilter } from './quality';
+import { cropBox } from './quality';
 import type { CutInput } from './types';
+
+/** a path inside a filter argument: ffmpeg reads \ and : as its own punctuation */
+const optPath = (p: string): string => p.replace(/\\/g, '/').replace(/:/g, '\\:');
 
 /** the filter-graph pieces of a telemetry overlay, already written to disk */
 export interface OverlayGraph {
@@ -30,7 +33,11 @@ export const gradeOf = (input: Pick<CutInput, 'grade'>): Grade | null =>
 
 /** Does this cut have to be re-encoded, or can the stream be copied as it is? */
 export const needsEncode = (input: CutInput): boolean =>
-  input.format !== 'original' || !!input.encode || !!input.overlay || !!gradeOf(input);
+  input.format !== 'original' ||
+  !!input.encode ||
+  !!input.overlay ||
+  !!input.follow ||
+  !!gradeOf(input);
 
 const durationOf = (input: CutInput): number => Math.max(0.1, input.endS - input.startS);
 const windowArgs = (input: CutInput): string[] => [
@@ -73,15 +80,25 @@ export function planEncode(
   input: CutInput,
   info: ProbeResult,
   encArgs: string[],
-  extras: { mask?: string | null; overlay?: OverlayGraph | null } = {},
+  extras: {
+    mask?: string | null;
+    overlay?: OverlayGraph | null;
+    /** the sendcmd file that moves the crop window (see core/framing) */
+    followCmd?: string | null;
+  } = {},
 ): SegmentPlan {
   const durationS = durationOf(input);
   const window = windowArgs(input);
   const common = [...window, '-map', '0:v:0', '-map', '0:a:0?'];
   const grade = gradeOf(input);
   const vf: string[] = [];
-  const crop = cropFilter(input.format, info.width, info.height, input.framePos);
-  if (crop) vf.push(crop);
+  const box = cropBox(input.format, info.width, info.height, input.framePos);
+  const follow = extras.followCmd && box && box.slackX > 0 ? extras.followCmd : null;
+  if (box) {
+    // the window that follows the corners is named, so the command stream can move its x
+    vf.push(`crop${follow ? '@follow' : ''}=${box.cw}:${box.ch}:${box.x}:${box.y}`);
+    if (follow) vf.unshift(`sendcmd=f='${optPath(follow)}'`);
+  }
   // colours before the fade, so the fade still ends in real black
   if (grade) vf.push(...ffmpegGrade(grade));
   const fading = input.fade > 0 && durationS > 2 * input.fade;

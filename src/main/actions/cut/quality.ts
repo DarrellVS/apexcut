@@ -9,8 +9,18 @@
 import { FORMAT_SPEC, type ExportFormat } from '@shared/ipc';
 import type { ProbeResult } from '../../services/media';
 
-/** `crop=w:h:x:y` for a format, or null when the whole frame is kept (square). */
-export function cropFilter(format: ExportFormat, w: number, h: number, pos: number): string | null {
+/** the crop window of a format: its size, where it sits, and the room it has left sideways */
+export interface CropBox {
+  cw: number;
+  ch: number;
+  x: number;
+  y: number;
+  /** pixels the window can still travel left to right (0 when the format keeps the full width) */
+  slackX: number;
+}
+
+/** The crop window for a format, or null when the whole frame is kept (square). */
+export function cropBox(format: ExportFormat, w: number, h: number, pos: number): CropBox | null {
   const spec = FORMAT_SPEC[format];
   if (!spec) return null;
   let cw = Math.min(spec.w, w);
@@ -28,7 +38,13 @@ export function cropFilter(format: ExportFormat, w: number, h: number, pos: numb
   const p = Math.min(1, Math.max(0, pos));
   const x = Math.floor(((w - cw) * p) / 2) * 2;
   const y = Math.floor(((h - ch) * p) / 2) * 2;
-  return `crop=${cw}:${ch}:${x}:${y}`;
+  return { cw, ch, x, y, slackX: Math.floor((w - cw) / 2) * 2 };
+}
+
+/** `crop=w:h:x:y` for a format, or null when the whole frame is kept (square). */
+export function cropFilter(format: ExportFormat, w: number, h: number, pos: number): string | null {
+  const box = cropBox(format, w, h, pos);
+  return box ? `crop=${box.cw}:${box.ch}:${box.x}:${box.y}` : null;
 }
 
 /** The output size of a format for a source of `w`×`h` (never bigger than the source). */

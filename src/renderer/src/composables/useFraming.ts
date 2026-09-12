@@ -12,10 +12,13 @@ import { useSettingsStore } from '@renderer/stores/settings';
 export interface Framing {
   format: ComputedRef<ExportFormat>;
   framePos: ComputedRef<number>;
+  /** vertical movies only: the crop window leans into the corners */
+  follow: ComputedRef<boolean>;
   /** the project's format; also remembered app-wide as the start for the next new project */
   setFormat(f: ExportFormat): Promise<void>;
   /** where the crop window sits; `commit` false while dragging, true on release */
   setFramePos(pos: number, commit?: boolean): Promise<void>;
+  setFollow(on: boolean): Promise<void>;
 }
 
 export function useFraming(): Framing {
@@ -28,6 +31,8 @@ export function useFraming(): Framing {
   const framePos = computed(
     () => projects.active?.framePos ?? settings.settings?.lastFramePos ?? 0.5,
   );
+  // only the vertical format has room to move sideways, so only there does following mean anything
+  const follow = computed(() => format.value === '9x16' && !!projects.active?.follow);
 
   async function setFormat(f: ExportFormat): Promise<void> {
     await Promise.all([projects.setFormat(f), settings.update({ lastFormat: f })]);
@@ -42,5 +47,7 @@ export function useFraming(): Framing {
     await Promise.all([projects.setFramePos(v), settings.update({ lastFramePos: v })]);
   }
 
-  return { format, framePos, setFormat, setFramePos };
+  const setFollow = (on: boolean): Promise<void> => projects.setFollow(on);
+
+  return { format, framePos, follow, setFormat, setFramePos, setFollow };
 }

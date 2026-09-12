@@ -51,6 +51,8 @@ export interface ProjectRecord {
   framePos?: number;
   /** even the volume of the movie out when it is made (actions/loudness.ts) */
   loudness?: boolean;
+  /** vertical only: let the crop window lean into the corners (core/framing) */
+  follow?: boolean;
   /** the order the parts play in, as `"<stem>:<part id>"`; absent = the natural order */
   order?: string[];
   /** telemetry overlay in the export */
@@ -206,6 +208,7 @@ export class Projects {
       format: p.format ?? null,
       framePos: p.framePos ?? null,
       loudness: !!p.loudness,
+      follow: !!p.follow,
       order: p.order ?? [],
     };
   }
@@ -230,6 +233,10 @@ export class Projects {
   /** even the volume of the open project's movie out */
   setLoudness(loudness: boolean): void {
     this.patchActive({ loudness });
+  }
+
+  setFollow(follow: boolean): void {
+    this.patchActive({ follow });
   }
 
   /** the order the parts play in; an empty list goes back to the natural one */

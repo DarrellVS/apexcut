@@ -129,6 +129,9 @@ from M videos · length`, made from all videos / only this one, name, 11 px caps
   card (`Ride/RideCardSheet.vue`): the picture itself, "on your clipboard", the file, `Open folder`,
   `Done`. The format and the crop position are **per project** (`composables/useFraming.ts`); the
   app only remembers the last choice as the starting point for a project that was never framed.
+  With the vertical format chosen, a checkbox under the tiles offers **Let the frame follow the
+  corners** (off unless asked): the tall window leans into the turn and comes back on the straights,
+  the frame the rider drags is where it rests, and the window drawn on the stage moves with it.
   Under the format tiles, **Made for** (`Movie/PlatformPresets.vue`) folds open into three rows —
   YouTube, Reels/Shorts/TikTok, Keep it as recorded — that set the shape and the sound in one click
   and say which one the movie matches now; nothing it does is hidden, the sections above still show

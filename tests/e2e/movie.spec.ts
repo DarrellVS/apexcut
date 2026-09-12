@@ -145,6 +145,35 @@ test('the same loudness for every movie is off unless you ask for it', async () 
   await expect.poll(loudness).toBe(false);
 });
 
+test('the frame that follows the corners belongs to the vertical format and is off unless asked', async () => {
+  const { page } = launched;
+  const follow = (): Promise<boolean> =>
+    page.evaluate(async () => {
+      const bridge = (window as unknown as { apexcut: unknown }).apexcut as {
+        projects: {
+          list(): Promise<{ id: string; follow: boolean }[]>;
+          active(): Promise<string>;
+        };
+      };
+      const [list, id] = await Promise.all([bridge.projects.list(), bridge.projects.active()]);
+      return !!list.find((p) => p.id === id)?.follow;
+    });
+  const box = page.getByRole('checkbox', { name: /follow the corners/i });
+  // the square and widescreen formats have no room to move sideways, so the option is not there
+  await page.getByRole('button', { name: /Square/ }).click();
+  await expect(box).toBeHidden();
+  await page.getByRole('button', { name: /Vertical 9:16/ }).click();
+  await expect(box).toBeVisible();
+  expect(await follow()).toBe(false);
+  await box.check();
+  await expect.poll(follow).toBe(true);
+  // the crop window on the video says what it does now
+  await expect(page.getByText('It leans into the corners from here')).toBeAttached();
+  await box.uncheck();
+  await expect.poll(follow).toBe(false);
+  await page.getByRole('button', { name: /Widescreen/ }).click();
+});
+
 test('“Made for” sets the shape and the sound in one click', async () => {
   const { page } = launched;
   const setup = (): Promise<{ format: string | null; loudness: boolean }> =>
