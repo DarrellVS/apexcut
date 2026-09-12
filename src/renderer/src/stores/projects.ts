@@ -100,6 +100,16 @@ export const useProjectsStore = defineStore('projects', () => {
     await api.projects.setPulls(on);
   }
 
+  /**
+   * Let the picture vote as well. Switching it on looks at every scanned video first, which runs as
+   * a job — the id comes back so the caller can wait for it.
+   */
+  async function setPicture(on: boolean): Promise<string | null> {
+    const p = projects.value.find((x) => x.id === activeId.value);
+    if (p) p.picture = on;
+    return api.projects.setPicture(on);
+  }
+
   async function setTransition(t: Transition): Promise<void> {
     await api.projects.setTransition(t);
     await refresh();
@@ -189,6 +199,7 @@ export const useProjectsStore = defineStore('projects', () => {
     remove,
     archive,
     setPulls,
+    setPicture,
     setTransition,
     setFormat,
     setFramePos,

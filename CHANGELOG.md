@@ -5,6 +5,12 @@ notes (and the “What’s new” text in the update banner).
 
 ## Unreleased
 
+- **Let the picture vote too.** A switch under “How picky?”: as well as the sensor, ApexCut looks at
+  the recording itself and gives moments that _look_ good a say — riding into a tunnel or under a
+  bridge, the light changing fast, low evening sun, a road full of traffic. It only ever adds
+  moments, never takes one away, and the first look costs about ten seconds per video. It judges
+  light, colour and detail; it does not know what is in the picture.
+
 - **Send the movie to your phone.** When a movie is ready, “Send to my phone” shows a QR code.
   Point your camera at it and the movie plays on your phone, straight from this computer over your
   own Wi-Fi — nothing is uploaded anywhere. Saving it from that page puts it in your camera roll,

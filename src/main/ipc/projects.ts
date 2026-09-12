@@ -8,6 +8,7 @@ import log from 'electron-log/main';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
+import { PICTURE_VOTE } from '@core/picture';
 import { PRESET_IDS } from '@core/presets';
 import {
   FORMATS,
@@ -86,6 +87,42 @@ export function registerProjectIpc(s: Services): void {
         s.analysis.rescore(c.stem, { ...(s.analysis.configOf(c.stem) ?? {}), pulls: on });
     }
     log.info(`pulls ${on ? 'on' : 'off'} for project ${s.projects.activeId}`);
+  });
+
+  /**
+   * Letting the picture vote: every scanned video of the project has to be looked at once (a pass
+   * over its proxy, cached), then everything is scored again. Switching it off is instant — the
+   * numbers stay on disk for the next time.
+   */
+  ipcMain.handle('projects:setPicture', (_e, onRaw: unknown) => {
+    const on = z.boolean().parse(onRaw);
+    s.projects.setPicture(on);
+    const clips = s.projects.clipInfos().filter((c) => c.analyzed);
+    const rescore = (): void => {
+      for (const c of clips) {
+        s.analysis.rescore(c.stem, {
+          ...(s.analysis.configOf(c.stem) ?? {}),
+          picture_weight: on ? PICTURE_VOTE : 0,
+        });
+      }
+      log.info(`picture vote ${on ? 'on' : 'off'} for project ${s.projects.activeId}`);
+    };
+    if (!on || !clips.length) {
+      rescore();
+      return null;
+    }
+    return s.jobs.start(
+      'picture',
+      clips.length === 1 ? 'Looking at the picture' : `Looking at ${clips.length} videos`,
+      async (ctx) => {
+        for (let i = 0; i < clips.length; i++) {
+          if (ctx.signal.aborted) throw new Error('cancelled');
+          await s.analysis.lookAtPicture(clips[i].stem, ctx, i / clips.length, 1 / clips.length);
+        }
+        rescore();
+        return { kind: 'picture', stems: clips.map((c) => c.stem) };
+      },
+    );
   });
 
   // ---- the `.apexcut` file: the videos' paths and the selections, never the video itself

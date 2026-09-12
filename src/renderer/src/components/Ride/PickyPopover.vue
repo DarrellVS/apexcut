@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import { PhCaretDown, PhPlus } from '@phosphor-icons/vue';
 import { PRESET_IDS, PRESETS, presetOf, type PresetId } from '@core/presets';
 import { AMOUNT_LEVELS, useEditorStore } from '@renderer/stores/editor';
+import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { fmtTime } from '@renderer/utils/format';
@@ -12,6 +13,7 @@ import { toast } from '@renderer/components/Base/ToastHost.vue';
 import { usePopover } from '@renderer/composables/usePopover';
 
 const editor = useEditorStore();
+const jobs = useJobsStore();
 const library = useLibraryStore();
 const projects = useProjectsStore();
 const picky = usePopover();
@@ -59,6 +61,33 @@ async function togglePulls(on: boolean): Promise<void> {
     );
   } finally {
     togglingPulls.value = false;
+  }
+}
+const picture = computed(() => projects.active?.picture ?? false);
+const looking = ref(false);
+/**
+ * The picture vote. Switching it on has to look at every scanned video once, so this waits for that
+ * job before it reads the new parts back.
+ */
+async function togglePicture(on: boolean): Promise<void> {
+  if (looking.value) return;
+  looking.value = true;
+  try {
+    const before = editor.parts.length;
+    const jobId = await projects.setPicture(on);
+    if (jobId) {
+      toast('Looking at the picture of every video…');
+      await jobs.finished(jobId);
+    }
+    if (editor.stem) await editor.open(editor.stem);
+    await Promise.all([library.refresh(), projects.refresh()]);
+    toast(
+      on
+        ? `The picture votes too: ${editor.parts.length} parts in this video (was ${before})`
+        : `Only the motion counts: ${editor.parts.length} parts in this video (was ${before})`,
+    );
+  } finally {
+    looking.value = false;
   }
 }
 function addHere(): void {
@@ -124,6 +153,23 @@ function addHere(): void {
           <span class="text-fg2">
             Straight-line pulls: opening up for a few seconds and gaining real speed. Normally only
             braking and acceleration near a corner count.
+          </span>
+        </span>
+      </label>
+      <label class="mt-2 flex cursor-pointer items-start gap-2 text-xs">
+        <input
+          type="checkbox"
+          class="mt-0.5"
+          :checked="picture"
+          :disabled="looking"
+          @change="togglePicture(($event.target as HTMLInputElement).checked)"
+        />
+        <span>
+          <b class="block font-semibold text-fg">Let the picture vote too</b>
+          <span class="text-fg2">
+            Looks at the recording as well as the sensor: tunnels and underpasses, light changing
+            fast, evening sun, a road full of traffic. It only adds moments, never takes any away.
+            Takes about ten seconds per video the first time.
           </span>
         </span>
       </label>

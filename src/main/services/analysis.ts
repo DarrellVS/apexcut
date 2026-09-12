@@ -10,10 +10,12 @@ import { Worker } from 'node:worker_threads';
 import type { DjmdHeader } from '@core/dji/djmd';
 import type { GoproHeader } from '@core/gopro';
 import type { ImuSignals } from '@core/imu';
+import { pictureScore, type PictureStats } from '@core/picture';
 import { compute, type ScoreResult, type ScoreSignals } from '@core/score';
 import { autoToParts, mergeSelection } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
+import { PictureStatsAction } from '../actions/picture';
 import { ThumbnailAction } from '../actions/thumbs';
 import type { JobContext } from './jobs';
 import type { ClipMeta, Library } from './library';
@@ -137,13 +139,11 @@ export class Analysis {
     const raw = await extractDataTrack(source, track.tag);
     if (ctx.signal.aborted) throw new Error('cancelled');
     prog(0.6, 'Reading your camera’s motion sensor');
-    const { header, imu, result } = await runAnalysisWorker(
-      raw,
-      cfg,
-      track.camera,
-      info.duration,
-      ctx.signal,
-    );
+    const {
+      header,
+      imu,
+      result: motionResult,
+    } = await runAnalysisWorker(raw, cfg, track.camera, info.duration, ctx.signal);
     prog(0.8, 'Scoring');
     const dir = this.dir(stem);
 
@@ -164,6 +164,14 @@ export class Analysis {
       tenBit: full.tenBit,
     };
     writeJson(join(dir, 'clip.json'), meta);
+
+    // when the rider let the picture vote, this video has to be looked at before it is scored
+    let result = motionResult;
+    if (cfg?.picture_weight) {
+      prog(0.82, 'Looking at the picture');
+      await this.lookAtPicture(stem, ctx, 0.82, 0.1);
+      result = compute(imu, cfg, this.pictureSignal(stem, cfg));
+    }
     // card thumbnail for the video list: a frame 10 % in, past the parking-lot start
     await new ThumbnailAction()
       .execute(stem, source, info.duration * 0.1, 160, 'thumb.jpg')
@@ -231,7 +239,7 @@ export class Analysis {
       yawRateDps: new Float64Array(0),
       aVertG: new Float64Array(0),
     };
-    const result = compute(imu, cfg);
+    const result = compute(imu, cfg, this.pictureSignal(stem, cfg));
     this.storeHighlights(dir, result);
     const previous = this.readSelection(stem).parts;
     const merged = mergeSelection(previous, result.segments);
@@ -240,6 +248,44 @@ export class Analysis {
       `rescore ${stem}: ${result.segments.length} auto, selection now ${merged.length} parts (${merged.filter((p) => p.manual).length} manual, previous=${previous.length})`,
     );
     return this.timeline(stem);
+  }
+
+  /**
+   * What the picture had to say about this video, when the rider asked for it to vote. Null when
+   * the weight is zero or the video has not been looked at yet.
+   */
+  private pictureSignal(
+    stem: string,
+    cfg: Partial<ScoreConfig>,
+  ): ReturnType<typeof pictureScore> | null {
+    if (!cfg.picture_weight) return null;
+    const stats = this.picture(stem);
+    return stats ? pictureScore(stats) : null;
+  }
+
+  /** The cached picture numbers of a video, if it has been looked at. */
+  picture(stem: string): PictureStats | null {
+    return readJson<PictureStats | null>(join(this.dir(stem), 'picture.json'), null);
+  }
+
+  /**
+   * Look at the picture of a video and remember what it is like — a pass over the small proxy, ten
+   * seconds or so for a long recording. Cached, so switching the vote off and on again is free.
+   */
+  async lookAtPicture(stem: string, ctx: JobContext, base = 0, span = 1): Promise<PictureStats> {
+    const cached = this.picture(stem);
+    if (cached) return cached;
+    const source = this.library.proxyOf(stem);
+    const meta = readJson<ClipMeta | null>(join(this.dir(stem), 'clip.json'), null);
+    const stats = await new PictureStatsAction().execute(
+      source,
+      ctx.signal,
+      (f) => ctx.progress(base + f * span, 'Looking at the picture'),
+      meta?.durationS,
+    );
+    writeJson(join(this.dir(stem), 'picture.json'), stats);
+    log.info(`picture ${stem}: ${stats.t.length} frames looked at`);
+    return stats;
   }
 
   /** The config the clip was last scored with, or null when not analysed. */

@@ -42,6 +42,19 @@ export const useJobsStore = defineStore('jobs', () => {
     return () => listeners.delete(cb);
   }
 
+  /** resolves when a job is no longer running (done, failed or cancelled) */
+  function finished(id: string): Promise<JobState> {
+    const now = jobs.value.find((j) => j.id === id);
+    if (now && now.status !== 'running') return Promise.resolve(now);
+    return new Promise((resolve) => {
+      const off = onUpdate((job) => {
+        if (job.id !== id || job.status === 'running') return;
+        off();
+        resolve(job);
+      });
+    });
+  }
+
   function elapsed(job: JobState): number {
     return Math.max(0, now.value / 1000 - job.startedAt);
   }
@@ -58,6 +71,7 @@ export const useJobsStore = defineStore('jobs', () => {
     exportJob,
     exportJobId,
     exporting,
+    finished,
     init,
     onUpdate,
     elapsed,

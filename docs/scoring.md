@@ -80,6 +80,30 @@ from the score without pulls, so the switch can only add parts, never lose one (
 Braking on straights stays out (usually traffic). Off, the pipeline is unchanged, so the parity fixture is untouched; new scans and preset
 changes carry the project's switch (`projects.scoreConfig()`). Tests: `tests/core/pulls.test.ts`.
 
+## The picture votes too (switch, off by default)
+
+The sensor knows how the bike moved, not what the ride looked like. With “Let the picture vote too”
+under “How picky?” (per project, `ProjectRecord.picture`), ApexCut also looks at the recording
+itself: one ffmpeg pass over the proxy, two frames a second at 160 px
+(`main/actions/picture.ts`), giving brightness, saturation, the red-minus-blue balance and — the
+same frames through `edgedetect` — how much detail is in them. About ten seconds for a twenty
+minute recording, cached in `clips/<stem>/picture.json`, so switching the vote off and on again is
+free.
+
+`core/picture.ts` turns those into one 0..1 vote per moment: light changing fast (weight .5 — a
+tunnel, an underpass, coming out of the trees), warm **and** saturated at once (.3 — evening sun),
+and a picture full of detail (.2 — town, traffic, other riders), each measured against that
+recording's own middle (`robustScale`, so a grey day is judged as a grey day) and smoothed over 2 s.
+Scoring adds `picture_weight × vote` (0.35 when the switch is on, `PICTURE_VOTE`) on top of the
+motion score, and — like pulls — the threshold percentile is taken from the score _without_ it, so
+the vote can only add parts. Off, `picture_weight` is 0 and the pipeline is bit-for-bit the old one,
+so the parity fixture is untouched.
+
+What it cannot do: recognise _things_. No model runs, so it has no idea what a motorcycle, a bus or
+a viewpoint is; it only knows light, colour and detail. Measured on a real evening ride, its top
+moments were an underpass, a covered gallery, a tunnel mouth and two stretches of busy traffic.
+Tests: `tests/core/picture.test.ts`, `tests/e2e/picture.spec.ts`.
+
 ## Changing the rules
 
 Change `DEFAULT_CONFIG`/logic → regenerate the fixture from the Python oracle only if the change is

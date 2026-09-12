@@ -104,6 +104,13 @@ src/
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 
+### The picture vote
+
+`projects:setPicture` runs a job (kind `picture`, so the editor does not switch to the scanning
+screen) that looks at every scanned video of the project once — `PictureStatsAction`, one ffmpeg
+pass over the proxy — writes `clips/<stem>/picture.json`, then rescores every video with
+`picture_weight`. See `docs/scoring.md`.
+
 ## Persistence
 
 `%APPDATA%/ApexCut/data/`: `library.json` (every known video: stem, mp4, lrf), `projects.json`

@@ -61,6 +61,11 @@ export interface ApexcutApi {
     setLoudness(on: boolean): Promise<void>;
     /** vertical movies: let the crop window lean into the corners */
     setFollow(on: boolean): Promise<void>;
+    /**
+     * Let the picture vote on which moments are kept. Switching it on looks at every scanned video
+     * of the project first (a pass over the proxy), so this runs as a job.
+     */
+    setPicture(on: boolean): Promise<string | null>;
     /** the order the parts play in (`"<video>:<part id>"` keys); empty goes back to the natural one */
     setOrder(order: string[]): Promise<void>;
     /** the numbers of the open project for the ride card */

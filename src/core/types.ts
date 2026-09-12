@@ -19,6 +19,11 @@ export interface ScoreConfig {
   accel_lean_hi_deg: number;
   /** also count straight-line acceleration pulls (off = the Python parity behaviour) */
   pulls: boolean;
+  /**
+   * How much the picture itself may add to the score (`core/picture.ts`); 0 = it says nothing,
+   * which is the default and the Python parity behaviour. Purely additive, like pulls.
+   */
+  picture_weight: number;
   /** a pull: forward acceleration above this ... */
   pull_min_g: number;
   /** ... for at least this long ... */

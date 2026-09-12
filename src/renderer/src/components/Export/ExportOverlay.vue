@@ -45,7 +45,7 @@ function stop(): void {
 }
 function openFolder(): void {
   const r = job.value?.result;
-  if (!r || r.kind === 'analyze') return;
+  if (!r || r.kind === 'analyze' || r.kind === 'picture') return;
   api.shell.openFolder(r.kind === 'export' ? r.file : r.folder);
 }
 function onKey(e: KeyboardEvent): void {

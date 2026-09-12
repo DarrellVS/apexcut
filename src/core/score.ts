@@ -6,6 +6,7 @@
  * See docs/scoring.md for the rules and why they exist.
  */
 import type { ImuSignals } from './imu';
+import type { PictureSignal } from './picture';
 import {
   abs,
   clip01,
@@ -35,6 +36,7 @@ export const DEFAULT_CONFIG: ScoreConfig = {
   accel_lean_lo_deg: 8.0,
   accel_lean_hi_deg: 15.0,
   pulls: false,
+  picture_weight: 0,
   pull_min_g: 0.12,
   pull_min_s: 2.5,
   pull_min_dv_mps: 6.0,
@@ -92,7 +94,11 @@ export interface ScoreResult {
   config: ScoreConfig;
 }
 
-export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null): ScoreResult {
+export function compute(
+  imu: ImuSignals,
+  overrides?: Partial<ScoreConfig> | null,
+  picture?: PictureSignal | null,
+): ScoreResult {
   const cfg = mergeConfig(overrides);
   const fs = cfg.fs;
   const tEnd = imu.t[imu.t.length - 1];
@@ -180,7 +186,14 @@ export function compute(imu: ImuSignals, overrides?: Partial<ScoreConfig> | null
   const scoreRaw = nLean.map(
     (v, i) => (w.lean * v + w.yaw * nYaw[i] + w.accel * nAccel[i]) / totalW,
   );
-  const score = cfg.pulls ? scoreOf(nAccel) : scoreBase;
+  // ... and what the picture had to say, if the rider asked for it. Also purely additive, and also
+  // left out of the threshold below, so letting the picture vote can only add parts.
+  const pictureVote =
+    picture && picture.t.length && cfg.picture_weight > 0
+      ? interp(t, picture.t, picture.score)
+      : new Float64Array(nGrid);
+  const scoreMotion = cfg.pulls ? scoreOf(nAccel) : scoreBase;
+  const score = scoreMotion.map((v, i) => v + cfg.picture_weight * pictureVote[i]);
   const cornerPart = roll(
     nLean.map((v, i) => (w.lean * v + w.yaw * nYaw[i]) / totalW),
     smooth,

@@ -10,6 +10,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import log from 'electron-log/main';
+import { PICTURE_VOTE } from '@core/picture';
 import { PRESETS, type PresetId } from '@core/presets';
 import { autoToParts } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
@@ -37,6 +38,8 @@ export interface ProjectRecord {
   preset?: PresetId;
   /** straight-line acceleration pulls count as parts too */
   pulls?: boolean;
+  /** the picture itself votes on which moments are worth keeping (core/picture.ts) */
+  picture?: boolean;
   /** out of the way on the projects screen; never the open project */
   archived?: boolean;
   /** how parts are joined in the movie (crossfade when absent) */
@@ -200,6 +203,7 @@ export class Projects {
       thumbStem,
       preset: p.preset ?? 'sporty',
       pulls: !!p.pulls,
+      picture: !!p.picture,
       archived: !!p.archived,
       transition: p.transition ?? 'crossfade',
       music: p.music ?? DEFAULT_MUSIC,
@@ -269,6 +273,10 @@ export class Projects {
     this.patchActive({ pulls });
   }
 
+  setPicture(picture: boolean): void {
+    this.patchActive({ picture });
+  }
+
   setTransition(transition: Transition): void {
     this.patchActive({ transition });
   }
@@ -276,7 +284,11 @@ export class Projects {
   /** Scoring overrides of the open project: its preset plus the pulls switch. */
   scoreConfig(): Partial<ScoreConfig> {
     const p = this.active;
-    return { ...PRESETS[p.preset ?? 'sporty'].config, pulls: !!p.pulls };
+    return {
+      ...PRESETS[p.preset ?? 'sporty'].config,
+      pulls: !!p.pulls,
+      picture_weight: p.picture ? PICTURE_VOTE : 0,
+    };
   }
 
   create(name: string, transition?: Transition): ProjectInfo {
