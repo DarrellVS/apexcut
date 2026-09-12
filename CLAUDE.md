@@ -5,9 +5,11 @@ Read this first. Then `docs/architecture.md` for structure and `docs/design.md` 
 ## What this is
 
 Electron + Vue 3 + TypeScript desktop app that finds highlights (corners, braking, acceleration) in
-DJI Osmo Action motorcycle helmet-cam footage using the embedded 30 Hz IMU metadata, and exports a
-movie. Port of the Python prototype in `C:\Users\darre\dji-highlights` (the parity oracle — do not
-modify it).
+motorcycle helmet-cam footage using the IMU metadata the camera embeds, and exports a movie.
+Cameras: DJI Osmo Action (`djmd`, 30 Hz attitude + accelerometer) and GoPro Hero5 and newer (`gpmd`
+/ GPMF, accelerometer + gyroscope fused into an attitude — `docs/gopro-metadata.md`). Both end up as
+the same frames (`src/core/frames.ts`), so everything downstream is shared. Port of the Python
+prototype in `C:\Users\darre\dji-highlights` (the parity oracle — do not modify it).
 
 ## Hard rules
 
@@ -25,8 +27,9 @@ modify it).
 
 ## Structure (short)
 
-`src/core` pure TS (no Node/DOM) — `dji/` parsing, `imu.ts`, `numeric.ts` (the numpy/pandas
-behaviour the oracle needs), `score.ts`, `selection.ts`, `grade/`, `overlay/`, `edl.ts`. Unit-tested.
+`src/core` pure TS (no Node/DOM) — `dji/` and `gopro/` parsing (both end as `frames.ts`), `imu.ts`,
+`numeric.ts` (the numpy/pandas behaviour the oracle needs), `score.ts`, `selection.ts`, `grade/`,
+`overlay/`, `framing/`, `edl.ts`. Unit-tested.
 `src/main` Electron main — `ipc/` (one module per domain), `services/` (library, projects, analysis,
 jobs, media, protocol, storage, updater, windows), `actions/` (ffmpeg: `cut/` = quality rules, the
 pure argument plan, the run, joining and compiling), `workers/`, `startup.ts`.

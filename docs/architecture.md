@@ -44,10 +44,14 @@ src/
    in). `Projects` keeps the list and which one
    is open; every `library:*` call works on the open project. A video can be in several projects; its
    scan (`clips/<stem>/`) is shared, its selection is per project (`projects/<id>/<stem>.json`).
-1. User picks files → main `Library.add` registers MP4/LRF pairs (folders are walked three levels
+1. User picks files → main `Library.add` registers video + proxy pairs (a DJI `.LRF` has the same
+   name as its MP4, a GoPro `GL011234.LRV` belongs to `GX011234.MP4`) (folders are walked three levels
    deep, so the root of a memory card finds `DCIM/100MEDIA/*`) → `Projects.addClips` puts them in the
    open project (an already-scanned video starts from its automatic parts, no rescan) → renderer shows them.
-2. `analysis.run(stems)` job: ffmpeg stream-copies the `djmd` track → core parses → IMU → score →
+2. `analysis.run(stems)` job: ffprobe says which motion track the file has — `djmd` (DJI) or `gpmd`
+   (GoPro) — ffmpeg stream-copies it → core parses (`core/dji` hands over an attitude; `core/gopro`
+   parses GPMF and fuses accelerometer + gyroscope into one at 30 Hz, see `docs/gopro-metadata.md`)
+   → IMU → score →
    results written to `<appData>/ApexCut/data/clips/<stem>/{signals.json,highlights.json,clip.json}`.
    Progress events stream to the renderer. A video that cannot be read (no DJI track, damaged file)
    does not stop the others: the job finishes as `done` with a `failed: [{stem, error}]` list, the

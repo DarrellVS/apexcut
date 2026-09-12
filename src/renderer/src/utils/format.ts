@@ -44,10 +44,12 @@ export function dayLabel(day: string): string {
   });
 }
 
-/** "DJI_20260906104754_0034_D" → "Video 34" */
+/** "DJI_20260906104754_0034_D" → "Video 34"; "GX011234" → "Video 1234"; anything else as it is */
 export function shortName(stem: string): string {
-  const m = /_(\d{4})_/.exec(stem);
-  return m ? `Video ${parseInt(m[1], 10)}` : stem;
+  const dji = /_(\d{4})_/.exec(stem);
+  if (dji) return `Video ${parseInt(dji[1], 10)}`;
+  const gopro = /^G[XHL]\d{2}(\d{4})$/i.exec(stem);
+  return gopro ? `Video ${parseInt(gopro[1], 10)}` : stem;
 }
 
 /** "1 part", "6 parts" */

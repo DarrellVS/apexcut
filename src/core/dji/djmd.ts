@@ -8,6 +8,7 @@
  *   record.2.10 specific force (accelerometer) in g, camera frame: x forward, y right, z down
  * The MP4 and the LRF proxy carry identical records.
  */
+import type { FrameMeta } from '../frames';
 import { asMap, f32Fields, parse, utf8 } from './pb';
 
 export interface DjmdHeader {
@@ -18,20 +19,7 @@ export interface DjmdHeader {
   startTsUs: number | null;
 }
 
-export interface FrameMeta {
-  /** seconds since first frame */
-  t: Float64Array;
-  tsUs: Float64Array;
-  qw: Float64Array;
-  qx: Float64Array;
-  qy: Float64Array;
-  qz: Float64Array;
-  ax: Float64Array;
-  ay: Float64Array;
-  az: Float64Array;
-  /** fraction of frames that carried a quaternion */
-  quaternionCoverage: number;
-}
+export type { FrameMeta };
 
 export interface DjmdResult {
   header: DjmdHeader;

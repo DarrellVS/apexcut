@@ -13,7 +13,7 @@ import { dayLabel, plural } from '@renderer/utils/format';
 
 const AUDIO = /\.(mp3|m4a|aac|wav|flac|ogg|opus)$/i;
 const NOTHING_FOUND =
-  'No DJI videos found there. On the memory card they are in DCIM › 100MEDIA, as .MP4 with a small .LRF next to each.';
+  'No videos found there. On the memory card they are in DCIM, as .MP4 files — with a small .LRF (DJI) or .LRV (GoPro) next to each.';
 
 export interface Import {
   /** the days of a pick that needs a decision; the import sheet shows them */
@@ -42,7 +42,7 @@ export function useImport(opts: {
     if (todo.length) await api.analysis.run(todo);
   }
 
-  /** what a pick or drop holds, per riding day; empty when there are no DJI videos in it */
+  /** what a pick or drop holds, per riding day; empty when there are no camera videos in it */
   async function daysIn(paths: string[]): Promise<ImportGroup[]> {
     if (!paths.length) return [];
     const groups = await api.library.inspect(paths);

@@ -5,6 +5,12 @@ notes (and the “What’s new” text in the update banner).
 
 ## Unreleased
 
+- **GoPro recordings work now.** Add videos from a GoPro Hero5 or newer and ApexCut reads their
+  motion track the same way it reads a DJI one: the corners, braking and acceleration are found,
+  scored and cut exactly as before. GoPro cameras before the Hero8 do not store which way they were
+  pointing, so ApexCut works that out from their accelerometer and gyroscope; on a Hero8, which does
+  store it, the two agree within a few degrees. The small `.LRV` copy the camera writes next to the
+  recording is used for playing and scrubbing when you copy it along.
 - **A vertical frame that follows the corners.** With Vertical 9:16 chosen, tick “Let the frame
   follow the corners”: the tall frame leans into the turn and comes back on the straights, so the
   road stays in view instead of sliding out of the picture. The frame you drag is where it rests,

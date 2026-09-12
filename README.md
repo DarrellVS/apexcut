@@ -1,10 +1,12 @@
 # ApexCut
 
-Finds the fun parts of your DJI helmet-cam motorcycle footage — corners, acceleration, braking — and
+Finds the fun parts of your helmet-cam motorcycle footage — corners, acceleration, braking — and
 turns them into one movie. Windows desktop app (Electron + Vue 3 + TypeScript), everything runs locally.
 
-- Reads the motion sensor data DJI Osmo Action cameras embed in every recording (30 Hz attitude
-  quaternion + accelerometer). No re-encoding, no cloud, originals are never modified.
+- Reads the motion sensor data the camera already embeds in every recording: DJI Osmo Action (30 Hz
+  attitude quaternion + accelerometer) and GoPro Hero5 and newer (GPMF accelerometer + gyroscope,
+  fused into an attitude — see `docs/gopro-metadata.md`). No re-encoding, no cloud, originals are
+  never modified.
 - Projects: one per ride/movie, each with its own videos and picks; a video can be in several projects
   without being scanned twice. Export a project as a small `.apexcut` file and import it elsewhere.
 - Timeline editor: filmstrip background, score curves, parts as blocks, join suggestions, undo/redo,

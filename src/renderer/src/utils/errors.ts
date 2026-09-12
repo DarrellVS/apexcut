@@ -9,10 +9,10 @@ export interface FriendlyError {
 
 const RULES: [RegExp, FriendlyError][] = [
   [
-    /no motion data|quaternion|no 'djmd' track|djmd/i,
+    /no motion data|quaternion|sensor track|no '(djmd|gpmd)' track|djmd|gpmd/i,
     {
       title: 'This video has no motion data',
-      hint: 'ApexCut needs a DJI Osmo Action recording with its sensor track. Screen recordings, edited copies and other cameras are not supported yet.',
+      hint: 'ApexCut needs the recording straight from a DJI Osmo Action or a GoPro Hero 5 or newer, with its sensor track. Screen recordings, edited copies and other cameras are not supported.',
     },
   ],
   [

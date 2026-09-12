@@ -5,9 +5,10 @@
  * project (`selectionFile` is provided by the Projects service).
  */
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import type { DjmdHeader } from '@core/dji/djmd';
+import type { GoproHeader } from '@core/gopro';
 import type { ImuSignals } from '@core/imu';
 import { compute, type ScoreResult, type ScoreSignals } from '@core/score';
 import { autoToParts, mergeSelection } from '@core/selection';
@@ -57,15 +58,17 @@ interface StoredHighlights {
 function runAnalysisWorker(
   raw: Uint8Array,
   cfg: Partial<ScoreConfig> | undefined,
+  camera: Camera,
+  durationS: number,
   signal: AbortSignal,
-): Promise<{ header: DjmdHeader; imu: ImuSignals; result: ScoreResult }> {
+): Promise<{ header: CameraHeader; imu: ImuSignals; result: ScoreResult }> {
   return new Promise((resolve, reject) => {
     // bundled next to this file by electron-vite; unpacked from the asar in the packaged app
     const script = join(__dirname, 'workers', 'analyze.js').replace(
       'app.asar',
       'app.asar.unpacked',
     );
-    const worker = new Worker(script, { workerData: { raw, cfg } });
+    const worker = new Worker(script, { workerData: { raw, cfg, camera, durationS } });
     const stop = (): void => {
       worker.terminate().catch(() => undefined);
       reject(new Error('cancelled'));
@@ -74,7 +77,7 @@ function runAnalysisWorker(
     worker.once('message', (m: { error?: string } & Record<string, unknown>) => {
       signal.removeEventListener('abort', stop);
       if (m.error) reject(new Error(m.error));
-      else resolve(m as unknown as { header: DjmdHeader; imu: ImuSignals; result: ScoreResult });
+      else resolve(m as unknown as { header: CameraHeader; imu: ImuSignals; result: ScoreResult });
     });
     worker.once('error', (e) => {
       signal.removeEventListener('abort', stop);
@@ -82,6 +85,15 @@ function runAnalysisWorker(
     });
   });
 }
+
+/** which camera wrote the motion track of a video */
+export type Camera = 'dji' | 'gopro';
+type CameraHeader = Partial<DjmdHeader> & Partial<GoproHeader> & { model: string };
+/** the data track each camera writes, in the order we look for them */
+const TRACKS: { tag: string; camera: Camera }[] = [
+  { tag: 'djmd', camera: 'dji' },
+  { tag: 'gpmd', camera: 'gopro' },
+];
 
 const round = (v: number, d: number): number | null =>
   Number.isFinite(v) ? Math.round(v * 10 ** d) / 10 ** d : null;
@@ -115,10 +127,23 @@ export class Analysis {
     const source = this.library.proxyOf(stem);
     const prog = (f: number, m: string): void => ctx.progress(base + f * span, m);
     prog(0.05, 'Reading metadata');
-    const [raw, info] = await Promise.all([extractDataTrack(source, 'djmd'), probe(source)]);
+    const info = await probe(source);
+    const track = TRACKS.find((t) => info.dataTags.includes(t.tag));
+    if (!track) {
+      throw new Error(
+        `This video has no motion data (no camera sensor track in ${basename(source)}).`,
+      );
+    }
+    const raw = await extractDataTrack(source, track.tag);
     if (ctx.signal.aborted) throw new Error('cancelled');
     prog(0.6, 'Reading your camera’s motion sensor');
-    const { header, imu, result } = await runAnalysisWorker(raw, cfg, ctx.signal);
+    const { header, imu, result } = await runAnalysisWorker(
+      raw,
+      cfg,
+      track.camera,
+      info.duration,
+      ctx.signal,
+    );
     prog(0.8, 'Scoring');
     const dir = this.dir(stem);
 

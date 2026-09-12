@@ -52,7 +52,7 @@ export function registerLibraryIpc(s: Services): void {
   ipcMain.handle('library:pick', async (e, kind: unknown) => {
     const k = z.enum(['files', 'dir']).parse(kind);
     const paths = await pickPaths(e, {
-      title: k === 'files' ? 'Choose your DJI videos' : 'Choose the folder with your DJI videos',
+      title: k === 'files' ? 'Choose your videos' : 'Choose the folder with your videos',
       properties: k === 'files' ? ['openFile', 'multiSelections'] : ['openDirectory'],
       filters: k === 'files' ? VIDEO_FILTER : [],
     });

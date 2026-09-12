@@ -7,6 +7,8 @@
  *   `APEXCUT_E2E_VIDEO`, else the smallest `.LRF` in one of the folders below (the proxy carries the
  *   same motion data as the MP4 and reads fast). Tests that need it skip when there is none.
  * - `bigDjiVideos()` the paths in `APEXCUT_E2E_BIG_VIDEO` (`;`-separated, for the "stop scanning" test).
+ * - `goproVideo()` one of GoPro's own sample recordings, when they have been downloaded to
+ *   `~/Videos/GoPro-samples` (see tests/fixtures/gopro/README.md); tests that need it skip otherwise.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -68,6 +70,23 @@ export function realDjiVideo(): string | null {
       .map((f) => ({ file: join(dir, f), size: statSync(join(dir, f)).size }))
       .sort((a, b) => a.size - b.size);
     if (candidates.length) return candidates[0].file;
+  }
+  return null;
+}
+
+/**
+ * A GoPro recording with its motion track: `APEXCUT_E2E_GOPRO`, else a sample downloaded from
+ * gopro/gpmf-parser into `~/Videos/GoPro-samples` (hero5.mp4 is the longest, so it has the most to
+ * find). The metadata of the same recordings is committed under tests/fixtures/gopro for the unit
+ * tests; the videos themselves are too big for the repository.
+ */
+export function goproVideo(): string | null {
+  const env = process.env.APEXCUT_E2E_GOPRO;
+  if (env && existsSync(env)) return env;
+  const dir = join(homedir(), 'Videos', 'GoPro-samples');
+  if (!existsSync(dir)) return null;
+  for (const name of ['hero5.mp4', 'hero8.mp4', 'hero7.mp4']) {
+    if (existsSync(join(dir, name))) return join(dir, name);
   }
   return null;
 }

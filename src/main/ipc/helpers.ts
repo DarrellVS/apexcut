@@ -8,7 +8,9 @@ import { BrowserWindow, dialog, type IpcMainInvokeEvent } from 'electron';
 export const winOf = (e: IpcMainInvokeEvent): BrowserWindow =>
   BrowserWindow.fromWebContents(e.sender) as BrowserWindow;
 
-export const VIDEO_FILTER = [{ name: 'DJI video', extensions: ['MP4', 'mp4', 'LRF', 'lrf'] }];
+export const VIDEO_FILTER = [
+  { name: 'Camera video', extensions: ['MP4', 'mp4', 'MOV', 'mov', 'LRF', 'lrf', 'LRV', 'lrv'] },
+];
 export const PROJECT_FILTER = [{ name: 'ApexCut project', extensions: ['apexcut'] }];
 export const AUDIO_EXT = ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus'];
 

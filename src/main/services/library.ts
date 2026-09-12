@@ -12,7 +12,8 @@ import { paths, readJson, writeJson } from './store';
 import { mediaUrl } from './protocol';
 
 const VIDEO_EXT = new Set(['.mp4', '.mov']);
-const PROXY_EXT = new Set(['.lrf']);
+/** the small copy the camera writes next to the recording: DJI calls it LRF, GoPro LRV */
+const PROXY_EXT = new Set(['.lrf', '.lrv']);
 /** how deep a picked folder is searched: card root → DCIM → 100MEDIA → files */
 const MAX_DEPTH = 3;
 const SKIP_DIRS = new Set(['System Volume Information', '$RECYCLE.BIN', 'MISC', 'node_modules']);
@@ -56,13 +57,17 @@ export class Library {
    */
   static discover(inputs: string[]): ClipRecord[] {
     const byStem = new Map<string, ClipRecord>();
+    const proxies: { stem: string; file: string }[] = [];
     const consider = (file: string): void => {
       const ext = extname(file).toLowerCase();
       if (!VIDEO_EXT.has(ext) && !PROXY_EXT.has(ext)) return;
       const stem = basename(file, extname(file));
+      if (PROXY_EXT.has(ext)) {
+        proxies.push({ stem, file });
+        return;
+      }
       const rec = byStem.get(stem) ?? { stem, mp4: null, lrf: null };
-      if (VIDEO_EXT.has(ext)) rec.mp4 = file;
-      else rec.lrf = file;
+      rec.mp4 = file;
       byStem.set(stem, rec);
     };
     const walk = (dir: string, depth: number): void => {
@@ -92,16 +97,44 @@ export class Library {
         walk(input, 0);
       } else {
         consider(input);
-        // pick up the sibling proxy/original next to a single picked file
+        // pick up the sibling proxy/original next to a single picked file — the same name for DJI,
+        // GL… next to GX…/GH… for GoPro
         const dir = join(input, '..');
         const stem = basename(input, extname(input));
-        for (const ext of ['.LRF', '.lrf', '.MP4', '.mp4']) {
-          const sib = join(dir, stem + ext);
-          if (sib !== input && existsSync(sib)) consider(sib);
+        const tail = /^G[XHL](\d{6})$/i.exec(stem)?.[1];
+        const stems = new Set([stem]);
+        if (tail) for (const p of ['GX', 'GH', 'GL']) stems.add(p + tail);
+        for (const st of stems) {
+          for (const ext of ['.LRF', '.lrf', '.LRV', '.lrv', '.MP4', '.mp4']) {
+            const sib = join(dir, st + ext);
+            if (sib !== input && existsSync(sib)) consider(sib);
+          }
         }
       }
     }
+    for (const { stem, file } of proxies) {
+      const owner = Library.videoOf(stem, [...byStem.keys()]);
+      const rec = byStem.get(owner) ?? { stem: owner, mp4: null, lrf: null };
+      rec.lrf = file;
+      byStem.set(owner, rec);
+    }
     return [...byStem.values()];
+  }
+
+  /**
+   * Which recording a small copy belongs to. DJI names both the same (`DJI_…_0034_D`); GoPro names
+   * the copy `GL011234` next to `GX011234` or `GH011234`, so the last six characters decide. A copy
+   * whose recording is not there keeps its own name and is treated as the recording itself.
+   */
+  static videoOf(proxyStem: string, videoStems: string[]): string {
+    if (videoStems.includes(proxyStem)) return proxyStem;
+    const gopro = /^GL(\d{6})$/i.exec(proxyStem);
+    if (gopro) {
+      const tail = gopro[1];
+      const match = videoStems.find((s) => new RegExp(`^G[XH]${tail}$`, 'i').test(s));
+      if (match) return match;
+    }
+    return proxyStem;
   }
 
   /** Recording day of a video ("YYYY-MM-DD") from the DJI file name, else the file's mtime. */
