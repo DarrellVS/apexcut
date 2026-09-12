@@ -3,7 +3,7 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
-## Unreleased
+## 1.3.1
 
 - **The crop frame on the video was wrong for GoPro.** It assumed a square recording, so on a 16:9
   GoPro it drew a band across the picture for Widescreen 16:9 instead of the whole frame, and cropped
