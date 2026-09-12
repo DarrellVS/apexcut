@@ -1,6 +1,10 @@
 <script setup lang="ts">
-/** Full-screen scan progress: what is happening, how far, and which videos are done. */
-import { computed } from 'vue';
+/**
+ * Full-screen scan progress: what is happening, how far, which videos are done, and a way out
+ * (Stop: the videos not scanned yet can be scanned later from their menu).
+ */
+import { api } from '@renderer/api';
+import { computed, ref } from 'vue';
 import { PhCheck } from '@phosphor-icons/vue';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -8,6 +12,14 @@ import { shortName } from '@renderer/utils/format';
 
 const jobs = useJobsStore();
 const library = useLibraryStore();
+const stopping = ref(false);
+function stop(): void {
+  const job = jobs.analyzeJob;
+  if (!job) return;
+  stopping.value = true;
+  // the cancel channel stops any job by id
+  api.exporter.cancel(job.id);
+}
 const progress = computed(() => jobs.analyzeJob?.progress ?? 0);
 const done = computed(() => library.analyzed.length);
 const stage = computed(() => {
@@ -52,9 +64,19 @@ const pct = computed(() => Math.round(progress.value * 100));
           </span>
         </li>
       </ul>
-      <p class="m-0 mt-4 text-xs text-fg3">
-        Only the camera’s motion data is read; your video files are not changed.
-      </p>
+      <div class="mt-4 flex items-center gap-3">
+        <p class="m-0 min-w-0 flex-1 text-xs text-fg3">
+          Only the camera’s motion data is read; your video files are not changed.
+        </p>
+        <button
+          class="btn btn-mini flex-none"
+          :disabled="stopping"
+          title="Stop after the current video; the rest can be scanned later from their menu"
+          @click="stop"
+        >
+          {{ stopping ? 'Stopping…' : 'Stop scanning' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>

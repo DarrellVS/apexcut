@@ -26,7 +26,8 @@ state, square-ish clips, small tabular type, the same three-plus-one layout, a u
   recolours the native buttons on every theme change (`window:setOverlay` with `--bg0` / `--fg2`) and
   the bar dims to 60 % when the window is not focused. Height is `TITLEBAR_HEIGHT` in `shared/ipc.ts`.
 - **Splitters**: the hairline between panels has a 6 px invisible grip; widths are remembered per
-  side (`composables/usePanelWidth.ts`, localStorage).
+  side (`composables/usePanelWidth.ts`, localStorage). A panel grows to 520 px at most, and never so
+  far that the stage keeps less than 420 px; double-click puts a splitter back to 300 px.
 - **Panels** are `.panel` (flat `--bg1`) with a 32 px `.panel-head` (11 px caps) or a 32 px tab strip
   with a 2 px `--ink` underline under the open tab.
 - Title bar centre shows the active part (hover, selection or playing): `Corners · 7:28 – 7:38 ·
@@ -71,17 +72,26 @@ semantic and identical in meaning across themes. Theme: `data-theme="light|dark"
   on video or the timeline (transport, toolbars, hover readout): dark in both themes because it is over
   media.
 - `.label-caps` 11 px / 600 / 0.04em; `.num` tabular numerals — on every time, count and size.
+- `--chip-danger` (`text-chip-danger`): the one destructive text colour on a `.chip` (Delete, Remove),
+  fixed because chips are dark in both themes. No other hex lives in components.
 
 ## Screens
 
 - **Projects**: left-aligned page header, `Import project…` (neutral) and `New project` (primary).
+  Dropping videos here makes a project per recording day, named after it (`Sunday, 6 Sep`), and opens
+  the first; music dropped here says to open a project first.
   Cards (min 280 px) with a 16:9 thumbnail, name, `N videos · N parts · length`, last edit. The open
   project has an `Open` tag and an `--sel` border; `···` opens Rename / Export project… / Archive /
   Delete (inline confirm). New project is an inline card. Search + sort appear with more than three
   projects; archived ones collapse at the bottom.
 - **Empty project**: a dashed drop zone with `Choose videos…` (primary) and `Whole memory card…`.
 - **Scanning**: title + percentage, a 4 px `--ink` bar, the stage text and `n of m videos done`, then
-  the list of videos ticking off.
+  the list of videos ticking off, and `Stop scanning` (mini button; the rest can be scanned later from
+  each video's menu). A video that cannot be read never stops the others.
+- **Stage notice** (`Stage/VideoStage.vue`): when nothing can play, the black box carries a centred
+  message — `No scanned video yet` · `Video 12 is not scanned yet` + `Scan now` · the friendly reason
+  of a failed scan + `Scan again` · `Video 12 was not found` — so the rail, the stage and the timeline
+  always tell the same story (an unscanned row clears the previous video instead of keeping it).
 - **Ride rail** (`Ride/RideRail.vue`, left): the app's real model is one ride = several videos =
   one movie of parts, so the left panel is the ride, not a media bin. Head: `Ride` and the picky
   popover (`Sporty ▾`: preset segment, Fewer/More slider, “Count acceleration pulls too”, “Add part
@@ -89,13 +99,21 @@ semantic and identical in meaning across themes. Theme: `data-theme="light|dark"
   hardest braking, twistiest minute) that jump to the moment. Then the **outline**: every video as a
   row (grip · fold caret · thumb · name · `kept parts · length`, `···` menu: find moved file, scan
   again, EDL, how parts are picked, remove) with its parts underneath (checkbox, colour tick, time,
-  reason, length, star). A part of any video opens that video and jumps there; drag a video row to
-  change the movie's order. Footer: `+ Videos`, `+ Folder`.
+  reason, length, star). The row's status reads `7 · 1:12 min`, `scanning…`, `not scanned`,
+  `scan failed` (danger, the plain-words reason as tooltip) or `not found` (danger). A part of any
+  video opens that video and jumps there; drag a video row to change the movie's order. Footer:
+  `+ Videos`, `+ Folder`.
 - **Movie panel** (`Movie/MoviePanel.vue`, right, always visible — no tabs): head `Movie · N parts
 from M videos · length`, made from all videos / only this one, name, 11 px caps labels over tiles
   (`One movie` / `Separate clips`; four formats), segments for transition and riding-data overlay,
   the result; the primary button is a fixed footer under the scrolling content. The ride card lives in the project menu
-  of the title bar (`Make ride card`, `composables/useRideCard.ts`). Sections are 20 px apart; tiles
+  of the title bar (`Make ride card`, `composables/useRideCard.ts`), and what it made is shown as a
+  card (`Ride/RideCardSheet.vue`): the picture itself, "on your clipboard", the file, `Open folder`,
+  `Done`. The format and the crop position are **per project** (`composables/useFraming.ts`); the
+  app only remembers the last choice as the starting point for a project that was never framed.
+  Videos whose files are not
+  found are skipped with a dashed danger note under the name (“2 videos not found · their parts are
+  skipped”); an empty name becomes `my-ride`. Sections are 20 px apart; tiles
   carry an icon and a name only, the explanation is the tooltip. The crop frame is on the
   video whenever the format is not square; its drag hint appears on hover.
 - **Colour** (`Movie/ColourSection.vue`, in the Movie panel): `Colour · the movie` or `Colour · this
@@ -113,7 +131,11 @@ part`. Seven **looks** as 4-column tiles, each the open video's thumbnail with t
   else the movie's) and shows a `Colours on` chip. Colours are per project (`ProjectRecord.grade`)
   and per part (`Part.grade`).
 - **Settings**: near-fullscreen popover, left nav grouped App / Editing / Advanced, 640 px reading
-  width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned.
+  width. `Ctrl+,` toggles, Esc closes, focus is trapped and returned. **How parts are picked**
+  (Advanced) groups the scoring knobs as What makes a moment fun / How much gets picked / What to
+  ignore; each knob reads as plain words with a number field, a slider and one line that ends with
+  the technical name (`min_dur_s`) — the only place jargon is allowed, and nothing is applied until
+  `Try it on this video`.
 - **Import sheet**, **Export overlay**, **Error card**, **Quick tour**: centred popovers, base
   16 px titles, mini progress dots for the tour.
 - **Update banner**: 32 px bar under the title bar; downloading shows the percentage and a 1 px
@@ -140,7 +162,9 @@ Ruler (20 px, `--bg0`, minor + major ticks, clock labels, a triangular playhead 
 `--block-mix` tint of the same colour as fill (40 % dark, 60 % light), `--fg` label + tabular length; left-out parts are 45 % with a
 dashed stripe; the selection is a 1 px inset `--sel` ring. Join suggestions are 10 px dashed
 `--corner` bars above chains that belong together. The playhead is a 1 px `--play` line in every
-lane. Music lane: 28 px header (Music · Add music… · Music / Ride sound sliders · a hint that the lane
+lane. Keyboard: a focused block owns Space (in/out), Enter (play), ←/→ (neighbour) and Delete — the
+window shortcuts step aside for those keys; elsewhere ←/→ seek 5 s, Shift+←/→ 1 s, Home/End jump to
+the ends (`src/renderer/src/shortcuts.ts` is the one list, shown under Settings → Shortcuts). Music lane: 28 px header (Music · Add music… · Music / Ride sound sliders · a hint that the lane
 runs in movie time) and a 32 px lane with `--brake` blocks (dashed `--danger` when the file is
 missing). The song under the playhead plays whenever the playhead is inside a kept part, preview or
 not, with the ride sound ducked. Legend row: swatches, the movie

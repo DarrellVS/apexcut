@@ -9,3 +9,5 @@ coverage
 *.local
 # local analysis output / caches
 .apexcut-cache
+test-results
+playwright-report

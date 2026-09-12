@@ -44,6 +44,15 @@ export function fmtWhen(ts: number): string {
   });
 }
 
+/** "2026-09-06" → "Sunday, 6 Sep" — the name a ride gets when it becomes its own project */
+export function dayLabel(day: string): string {
+  return new Date(`${day}T12:00:00`).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 /** "DJI_20260906104754_0034_D" → "Video 34" */
 export function shortName(stem: string): string {
   const m = /_(\d{4})_/.exec(stem);

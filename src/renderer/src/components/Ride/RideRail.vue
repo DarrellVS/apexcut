@@ -27,6 +27,7 @@ import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useUiStore } from '@renderer/stores/ui';
+import { friendlyError } from '@renderer/utils/errors';
 import { fmtDuration, fmtTime, plural, shortName } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import { useDismiss } from '@renderer/composables/useDismiss';
@@ -234,6 +235,7 @@ const totalParts = computed(() => library.analyzed.reduce((a, c) => a + (c.nEnab
             :title="`${c.stem}${c.width ? ` · ${c.width}×${c.height}` : ''}${c.model ? ` · ${c.model}` : ''}`"
             draggable="true"
             data-row-menu
+            :data-clip="c.stem"
             @click="library.current = c.stem"
             @dragstart="onDragStart($event, c.stem)"
           >
@@ -267,6 +269,12 @@ const totalParts = computed(() => library.analyzed.reduce((a, c) => a + (c.nEnab
                 >{{ enabledOf(c.stem) }} · {{ fmtDuration(c.highlightS ?? 0) }}</template
               >
               <template v-else-if="jobs.analyzeJob">scanning…</template>
+              <span
+                v-else-if="library.scanErrors[c.stem]"
+                class="text-danger"
+                :title="`${friendlyError(library.scanErrors[c.stem]).title}. ${friendlyError(library.scanErrors[c.stem]).hint}`"
+                >scan failed</span
+              >
               <template v-else>not scanned</template>
             </span>
             <button
@@ -283,20 +291,26 @@ const totalParts = computed(() => library.analyzed.reduce((a, c) => a + (c.nEnab
               role="menu"
               @click.stop
             >
-              <button v-if="!c.exists" class="menu-item" @click="relink('file', c.stem)">
+              <button
+                v-if="!c.exists"
+                class="menu-item"
+                role="menuitem"
+                @click="relink('file', c.stem)"
+              >
                 <PhMagnifyingGlass :size="14" /> Find the moved file…
               </button>
-              <button class="menu-item" @click="rescan(c)">
+              <button class="menu-item" role="menuitem" @click="rescan(c)">
                 <PhArrowsClockwise :size="14" /> {{ c.analyzed ? 'Scan again' : 'Scan now' }}
               </button>
-              <button v-if="c.analyzed" class="menu-item" @click="exportEdl(c)">
+              <button v-if="c.analyzed" class="menu-item" role="menuitem" @click="exportEdl(c)">
                 <PhExport :size="14" /> Export for Resolve / Premiere
               </button>
-              <button class="menu-item" @click="ui.openSettings('scoring')">
+              <button class="menu-item" role="menuitem" @click="ui.openSettings('scoring')">
                 Change how parts are picked…
               </button>
               <button
                 class="menu-item text-danger"
+                role="menuitem"
                 title="The video and its scan stay available for other projects"
                 @click="remove(c)"
               >

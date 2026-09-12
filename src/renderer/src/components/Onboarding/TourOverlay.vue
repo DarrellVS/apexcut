@@ -33,7 +33,7 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="make"]',
     title: 'Make my movie exports it',
-    text: 'Pick a format first in the Movie tab on the right — square, widescreen or vertical for your phone.',
+    text: 'Pick a format first in the Movie panel on the right — square, widescreen or vertical for your phone.',
     place: 'below',
   },
 ];

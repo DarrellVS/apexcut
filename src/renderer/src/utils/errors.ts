@@ -9,10 +9,24 @@ export interface FriendlyError {
 
 const RULES: [RegExp, FriendlyError][] = [
   [
-    /no motion data|quaternion/i,
+    /no motion data|quaternion|no 'djmd' track|djmd/i,
     {
       title: 'This video has no motion data',
       hint: 'ApexCut needs a DJI Osmo Action recording with its sensor track. Screen recordings, edited copies and other cameras are not supported yet.',
+    },
+  ],
+  [
+    /invalid data found|moov atom|no video stream|end of file|not a video/i,
+    {
+      title: 'This file could not be read as a video',
+      hint: 'It may be damaged, still copying from the memory card, or not a video at all. Copy it again from the card and scan it once more.',
+    },
+  ],
+  [
+    /no music files/i,
+    {
+      title: 'The songs under your movie could not be found',
+      hint: 'A music file moved or was deleted. Remove it from the Music lane or add it again, then make the movie.',
     },
   ],
   [
@@ -33,8 +47,9 @@ const RULES: [RegExp, FriendlyError][] = [
     /EACCES|EPERM|permission/i,
     { title: 'ApexCut may not write there', hint: 'Choose another output folder in Settings.' },
   ],
+  // encoding only: an ffprobe failure while scanning must not blame the graphics card
   [
-    /nvenc|cuda|encoder|ffmpeg/i,
+    /nvenc|cuda|qsv|amf|encoder|ffmpeg exit/i,
     {
       title: 'Making the video failed',
       hint: 'Usually the graphics card driver. Update it, restart ApexCut and try again; the details below say what ffmpeg reported.',

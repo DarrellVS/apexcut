@@ -565,7 +565,7 @@ const zoomInput = computed({
         >
           Join with next
         </button>
-        <button class="chip-btn text-[#ff8080]" @click="del">Delete</button>
+        <button class="chip-btn text-chip-danger" @click="del">Delete</button>
       </div>
     </div>
     <MusicLane />

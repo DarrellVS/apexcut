@@ -16,6 +16,7 @@ import type { Part, ScoreConfig, Segment } from '@core/types';
 import {
   projectFileSchema,
   type ClipInfo,
+  type ExportFormat,
   type ProjectFile,
   type MusicSettings,
   type OverlaySpecDto,
@@ -44,6 +45,10 @@ export interface ProjectRecord {
   music?: MusicSettings;
   /** the movie's colours (core/grade.ts) */
   grade?: Grade;
+  /** shape of the movie; absent = the app's last choice (settings.lastFormat) */
+  format?: ExportFormat;
+  /** where the crop window sits on the cropped axis (0..1); absent = the app's last choice */
+  framePos?: number;
   /** telemetry overlay in the export */
   overlay?: OverlaySpecDto | null;
 }
@@ -194,7 +199,23 @@ export class Projects {
       music: p.music ?? DEFAULT_MUSIC,
       overlay: p.overlay ?? null,
       grade: p.grade ?? null,
+      format: p.format ?? null,
+      framePos: p.framePos ?? null,
     };
+  }
+
+  /** shape of the open project's movie */
+  setFormat(format: ExportFormat): void {
+    const p = this.active;
+    p.format = format;
+    this.touch(p);
+  }
+
+  /** where the crop window sits for the open project (0..1) */
+  setFramePos(pos: number): void {
+    const p = this.active;
+    p.framePos = Math.min(1, Math.max(0, pos));
+    this.touch(p);
   }
 
   setOverlay(overlay: OverlaySpecDto | null): void {

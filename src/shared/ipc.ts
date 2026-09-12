@@ -134,6 +134,10 @@ export interface ProjectInfo {
   overlay: OverlaySpecDto | null;
   /** the movie's colours, null = as recorded */
   grade: Grade | null;
+  /** shape of this movie; null = the app's last choice (`settings.lastFormat`) */
+  format: ExportFormat | null;
+  /** where the crop window sits on the cropped axis (0..1); null = the app's last choice */
+  framePos: number | null;
 }
 
 export interface TimelinePayload {
@@ -161,8 +165,14 @@ export interface JobState {
   error: string | null;
 }
 
+/** one video of a scan that could not be read; the others were still scanned */
+export interface ScanFailure {
+  stem: string;
+  error: string;
+}
+
 export type JobResult =
-  | { kind: 'analyze'; stems: string[] }
+  | { kind: 'analyze'; stems: string[]; failed?: ScanFailure[] }
   | { kind: 'export'; file: string; url: string; sizeMb: number }
   | { kind: 'extract'; folder: string; files: string[] };
 
@@ -323,6 +333,10 @@ export interface ApexcutApi {
     setOverlay(overlay: OverlaySpecDto | null): Promise<void>;
     /** the movie's colours; `id` targets another project (copy to…), default the open one */
     setGrade(grade: Grade | null, id?: string): Promise<void>;
+    /** shape of the open project's movie */
+    setFormat(format: ExportFormat): Promise<void>;
+    /** where the crop window sits for the open project (0..1) */
+    setFramePos(pos: number): Promise<void>;
     /** the numbers of the open project for the ride card */
     rideStats(): Promise<RideStats>;
     /**
@@ -421,6 +435,8 @@ export interface ApexcutApi {
     report(): Promise<{ file: string }>;
     /** renderer warnings/errors also land in main.log */
     log(level: 'warn' | 'error', message: string): void;
+    /** quit and start ApexCut again (the error card's "Restart ApexCut") */
+    relaunch(): void;
     /** main-process crash that the renderer should show */
     onFatal(cb: (err: { message: string; stack?: string }) => void): () => void;
     /** save a PNG data URL into the output folder and put it on the clipboard; returns the file */

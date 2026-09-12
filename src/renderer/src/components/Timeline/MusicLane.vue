@@ -296,7 +296,7 @@ const selPlaced = computed(() => placed.value.find((p) => p.track.id === selecte
         >
           <PhCaretRight :size="12" weight="bold" />
         </button>
-        <button class="chip-btn text-[#ff8080]" @click="remove(sel.id)">
+        <button class="chip-btn text-chip-danger" @click="remove(sel.id)">
           <PhTrash :size="12" /> Remove
         </button>
       </div>

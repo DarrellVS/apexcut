@@ -5,7 +5,13 @@ import type { Grade } from '@core/grade';
 import { api } from '@renderer/api';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { MusicSettings, OverlaySpecDto, ProjectInfo, Transition } from '@shared/ipc';
+import type {
+  ExportFormat,
+  MusicSettings,
+  OverlaySpecDto,
+  ProjectInfo,
+  Transition,
+} from '@shared/ipc';
 import { logger } from '@renderer/utils/logger';
 
 export type ProjectSort = 'edited' | 'name' | 'length';
@@ -107,6 +113,20 @@ export const useProjectsStore = defineStore('projects', () => {
     await refresh();
   }
 
+  /** shape of this project's movie; optimistic so the tiles and the crop frame react at once */
+  async function setFormat(f: ExportFormat): Promise<void> {
+    const p = active.value;
+    if (p) p.format = f;
+    await api.projects.setFormat(f);
+  }
+
+  /** where the crop window sits (0..1) */
+  async function setFramePos(pos: number): Promise<void> {
+    const p = active.value;
+    if (p) p.framePos = pos;
+    await api.projects.setFramePos(pos);
+  }
+
   async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.overlay = o;
@@ -149,6 +169,8 @@ export const useProjectsStore = defineStore('projects', () => {
     archive,
     setPulls,
     setTransition,
+    setFormat,
+    setFramePos,
     setMusic,
     setOverlay,
     setGrade,

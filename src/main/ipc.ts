@@ -25,6 +25,7 @@ import { PRESET_IDS } from '@core/presets';
 import type { Part, ScoreConfig } from '@core/types';
 import {
   exportRequestSchema,
+  FORMATS,
   musicSettingsSchema,
   overlaySpecSchema,
   partSchema,
@@ -33,6 +34,7 @@ import {
   type JobState,
   type MusicTrack,
   type RideStats,
+  type ScanFailure,
   type Settings,
   gradeSchema,
 } from '@shared/ipc';
@@ -118,6 +120,12 @@ export function registerIpc(s: Services): void {
   );
   ipcMain.handle('projects:setGrade', (_e, g: unknown, id: unknown) =>
     s.projects.setGrade(gradeSchema.nullable().parse(g), z.string().optional().parse(id)),
+  );
+  ipcMain.handle('projects:setFormat', (_e, f: unknown) =>
+    s.projects.setFormat(z.enum(FORMATS).parse(f)),
+  );
+  ipcMain.handle('projects:setFramePos', (_e, pos: unknown) =>
+    s.projects.setFramePos(z.number().min(0).max(1).parse(pos)),
   );
   ipcMain.handle('projects:setOverlay', (_e, o: unknown) =>
     s.projects.setOverlay(overlaySpecSchema.nullable().parse(o)),
@@ -300,11 +308,24 @@ export function registerIpc(s: Services): void {
       'analyze',
       list.length === 1 ? `Scanning ${list[0]}` : `Scanning ${list.length} videos`,
       async (ctx) => {
+        // one unreadable video must not stop the others: remember its error, carry on
+        const done: string[] = [];
+        const failed: ScanFailure[] = [];
         for (let i = 0; i < list.length; i++) {
           if (ctx.signal.aborted) throw new Error('cancelled');
-          await s.analysis.analyze(list[i], config, ctx, i / list.length, 1 / list.length);
+          try {
+            await s.analysis.analyze(list[i], config, ctx, i / list.length, 1 / list.length);
+            done.push(list[i]);
+          } catch (e) {
+            if (ctx.signal.aborted) throw e;
+            const msg = e instanceof Error ? e.message : String(e);
+            log.warn(`scan ${list[i]} failed:`, msg);
+            failed.push({ stem: list[i], error: msg });
+          }
         }
-        return { kind: 'analyze', stems: list };
+        // nothing readable at all: the job itself fails (the toast carries the reason)
+        if (!done.length && failed.length) throw new Error(failed[0].error);
+        return { kind: 'analyze', stems: done, failed: failed.length ? failed : undefined };
       },
     );
   });
@@ -580,6 +601,12 @@ export function registerIpc(s: Services): void {
     const file = await createReport(s.jobs.list());
     shell.showItemInFolder(file);
     return { file };
+  });
+  // the error card's "Restart ApexCut": a real restart, so a broken main process comes back too
+  ipcMain.on('app:relaunch', () => {
+    log.info('relaunching on request');
+    app.relaunch();
+    app.exit(0);
   });
   ipcMain.on('app:log', (_e, level: unknown, message: unknown) => {
     const text = `[renderer] ${String(message).slice(0, 4000)}`;

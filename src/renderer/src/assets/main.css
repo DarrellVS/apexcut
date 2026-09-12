@@ -31,6 +31,8 @@
   /* theme swatches in Settings → Appearance: fixed, whatever theme is active */
   --swatch-light: #f3f3f5;
   --swatch-dark: #16171a;
+  /* destructive text on a .chip (always dark, over media): fixed, whatever theme is active */
+  --chip-danger: #ff8080;
   --shadow: 0 4px 16px rgba(20, 20, 30, 0.14);
   --r-ctl: 4px;
   --r-card: 6px;
@@ -89,6 +91,7 @@
   --color-play: var(--play);
   --color-swatch-light: var(--swatch-light);
   --color-swatch-dark: var(--swatch-dark);
+  --color-chip-danger: var(--chip-danger);
   --radius-ctl: var(--r-ctl);
   --radius-card: var(--r-card);
   --radius-block: var(--r-block);

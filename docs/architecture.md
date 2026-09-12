@@ -34,14 +34,21 @@ src/
 
 ## Data flow
 
-0. A project is one movie: a name plus an ordered set of videos. `Projects` keeps the list and which one
+0. A project is one movie: a name, an ordered set of videos, and how that movie is made — transition,
+   music, colours, telemetry overlay, **format and crop position** (`format` / `framePos`, absent =
+   the app's last choice in `settings.lastFormat` / `lastFramePos`, which is only a starting point). `Projects` keeps the list and which one
    is open; every `library:*` call works on the open project. A video can be in several projects; its
    scan (`clips/<stem>/`) is shared, its selection is per project (`projects/<id>/<stem>.json`).
-1. User picks files → main `Library.add` registers MP4/LRF pairs → `Projects.addClips` puts them in the
+1. User picks files → main `Library.add` registers MP4/LRF pairs (folders are walked three levels
+   deep, so the root of a memory card finds `DCIM/100MEDIA/*`) → `Projects.addClips` puts them in the
    open project (an already-scanned video starts from its automatic parts, no rescan) → renderer shows them.
 2. `analysis.run(stems)` job: ffmpeg stream-copies the `djmd` track → core parses → IMU → score →
    results written to `<appData>/ApexCut/data/clips/<stem>/{signals.json,highlights.json,clip.json}`.
-   Progress events stream to the renderer.
+   Progress events stream to the renderer. A video that cannot be read (no DJI track, damaged file)
+   does not stop the others: the job finishes as `done` with a `failed: [{stem, error}]` list, the
+   renderer keeps the reason per video (`library.scanErrors`) for the rail row and the stage notice;
+   only when nothing at all could be read does the job itself fail. The scan can be stopped from
+   the progress screen (the generic job cancel).
 3. Renderer loads `timeline(stem)` (10 Hz signals + selection) and renders. Edits are saved with a
    250 ms debounce via `selection.save`.
 4. Export job: `CutSegmentAction` per part (2 in parallel, GPU decode + encode, fallback chain) →
@@ -87,10 +94,24 @@ same files re-discovers them next to the recorded paths and scans what has not b
 `APEXCUT_USER_DATA=<folder>` points a run at its own data folder (and single-instance lock) — used for
 smoke tests next to a running installed copy.
 
+The error card's "Restart ApexCut" sends `app:relaunch`, and main does `app.relaunch()` + `app.exit(0)`:
+a reload would bring back only the renderer, while the fatal error is often in the main process.
+
 ## Quality gates
 
 `npm run check` = ESLint + Prettier check + `tsc`/`vue-tsc` + Vitest. CI runs it on every push; a `v*`
 tag builds and publishes the Windows installer + portable exe + update feed.
+
+`npm run test:e2e` = `electron-vite build`, then Playwright drives the built app
+(`playwright.config.ts`, `tests/**/*.spec.ts`; `_electron.launch` on `out/main/index.js`). Every test
+gets a throw-away data folder with its own output folder (`tests/e2e/app.ts`), so runs never touch
+the real library and do not collide with a running ApexCut. `tests/e2e/fixtures.ts` makes a plain
+non-DJI MP4 and a corrupt file with the bundled ffmpeg; tests that need a real recording take
+`APEXCUT_E2E_VIDEO` (or a small `.LRF` under `~/Downloads/dji-examples`) and skip without one;
+`APEXCUT_E2E_BIG_VIDEO` (one or more large recordings, `;`-separated) enables the "stop scanning" test. Specs: `tests/smoke.spec.ts` (start-up),
+`tests/e2e/projects.spec.ts` (projects screen, settings), `tests/e2e/scan-errors.spec.ts` (unreadable
+videos, memory-card folders), `tests/e2e/editor.spec.ts` (scan → parts, keyboard, panels, export
+name).
 
 ## Renderer → main calls
 

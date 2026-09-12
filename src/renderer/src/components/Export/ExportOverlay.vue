@@ -121,8 +121,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             <button class="btn btn-mini" autofocus @click="confirming = false">Keep going</button>
           </div>
           <p v-else class="m-0 mt-5 text-xs text-fg2">
-            Your originals are untouched. You can keep watching; the project is locked until this is
-            done.
+            Your originals are untouched. You can keep working; this movie is made from the parts as
+            they were when you pressed the button.
           </p>
         </template>
 

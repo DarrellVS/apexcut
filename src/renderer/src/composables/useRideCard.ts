@@ -1,14 +1,33 @@
 /**
  * The ride card: the numbers of the project as a shareable picture (portrait + landscape), saved
  * next to the movies and put on the clipboard. Offered from the project menu in the title bar.
+ * The state is module-level so the title bar can start it and the shell can show the result
+ * (`Ride/RideCardSheet.vue`) — the same way the export shows what it made.
  */
 import { ref, type Ref } from 'vue';
 import { api } from '@renderer/api';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import { renderRideCard } from '@renderer/utils/rideCard';
 
-export function useRideCard(): { busy: Ref<boolean>; make: () => Promise<void> } {
-  const busy = ref(false);
+export interface RideCardResult {
+  /** the saved portrait PNG (the landscape one sits next to it) */
+  file: string;
+  /** data URL of the portrait card, for the preview */
+  preview: string;
+}
+
+const busy = ref(false);
+const result = ref<RideCardResult | null>(null);
+
+export interface RideCard {
+  busy: Ref<boolean>;
+  /** the card just made, until it is dismissed */
+  result: Ref<RideCardResult | null>;
+  make: () => Promise<void>;
+  close: () => void;
+}
+
+export function useRideCard(): RideCard {
   async function make(): Promise<void> {
     if (busy.value) return;
     busy.value = true;
@@ -23,12 +42,15 @@ export function useRideCard(): { busy: Ref<boolean>; make: () => Promise<void> }
       const landscape = await renderRideCard(stats, thumbs, 'landscape', dark);
       await api.app.saveImage(landscape, `${base} (wide)`);
       const r = await api.app.saveImage(portrait, base);
-      toast(`Ride card copied to the clipboard and saved next to your movies: ${r.file}`, 8000);
+      result.value = { file: r.file, preview: portrait };
     } catch (e) {
       toast(`Could not make the ride card: ${(e as Error).message}`, 6000);
     } finally {
       busy.value = false;
     }
   }
-  return { busy, make };
+  function close(): void {
+    result.value = null;
+  }
+  return { busy, result, make, close };
 }

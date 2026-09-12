@@ -11,7 +11,7 @@ const settings = useSettingsStore();
     <div class="card">
       <b class="block text-[13px] font-semibold text-fg">Transition for new projects</b>
       <span class="text-xs text-fg2">
-        Each project keeps its own choice in the Movie tab; this is where new projects start.
+        Each project keeps its own choice in the Movie panel; this is where new projects start.
       </span>
       <div class="seg mt-2" role="radiogroup">
         <button
@@ -38,8 +38,8 @@ const settings = useSettingsStore();
         <b class="block text-[13px] font-semibold text-fg">Snap while dragging</b>
         <span class="text-xs text-fg2">
           Part edges click onto the boundaries the scan found, quiet moments in the score, other
-          parts and whole seconds. A thin blue line shows where it snapped. Hold <kbd>Alt</kbd> to
-          get the opposite while dragging.
+          parts and whole seconds. A thin line shows where it snapped. Hold <kbd>Alt</kbd> to get
+          the opposite while dragging.
         </span>
       </span>
     </label>

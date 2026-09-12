@@ -3,6 +3,44 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 0.5.0
+
+- A video that cannot be read (no DJI motion data, a damaged or half-copied file) no longer stops
+  the scan of the others. Its row says “scan failed” with the reason as tooltip, the stage explains
+  it in plain words and offers “Scan again”, and one toast sums the scan up.
+- A scan can be stopped from the progress screen; the remaining videos can be scanned later from
+  their menu.
+- “Whole memory card…” now finds the videos in `DCIM/100MEDIA` when you pick the card itself.
+- Clicking a video that is not scanned yet clears the stage and the timeline instead of keeping the
+  previous video on screen.
+- An empty movie name becomes “my-ride” instead of an error card; a failed export request shows a
+  toast, not the error card. Parts of videos whose files are not found are skipped, with a note in
+  the Movie panel.
+- Keyboard on a timeline block no longer fires twice (Space toggled the part _and_ playback; ←/→
+  moved and seeked; Delete deleted twice). New: Shift+←/→ seek 1 s, Home/End jump to the ends; quick
+  key presses in a row start from the new position.
+- Side panels can no longer squash the stage below 420 px; double-click a splitter to reset it.
+- Plain-words reasons for a video without a DJI track, an unreadable file and missing music; an
+  ffprobe failure while scanning no longer blames the graphics card.
+- Colour sliders no longer reload the other videos' parts on every pixel.
+- Copy fixes (“Movie tab” → “Movie panel”, no “blue line”, the export does not lock the project),
+  “1 parts” → “1 part”, a tooltip on the disabled “Make my movie”, no broken look thumbnails for an
+  unscanned video.
+- The shape of your movie (square, widescreen, 4:3, vertical) and the crop you dragged on the video
+  are now remembered **per project**, not app-wide — one ride is filmed one way. Your last choice is
+  still the starting point for a new project.
+- “Make ride card” now shows the picture it made, with the file and Open folder, instead of a toast
+  that scrolls away.
+- Dropping videos on the projects screen makes a project per riding day instead of doing nothing.
+- “Restart ApexCut” on the error card really restarts the app (it used to reload the window only,
+  which left a broken background process as it was).
+- Settings → How parts are picked reads as plain words (“Fun enough from”, “Too slow below”) with
+  the technical name at the end of each explanation, grouped in three blocks, and applies only when
+  you press “Try it on this video”.
+- End-to-end tests with Playwright (`npm run test:e2e`): start-up, projects screen and settings,
+  unreadable videos and memory-card folders, and — with a DJI recording on the machine — scan →
+  parts, keyboard, panels, export name.
+
 ## 0.4.18
 
 - **Colours.** The Movie panel has a Colour section: seven looks previewed on your own footage

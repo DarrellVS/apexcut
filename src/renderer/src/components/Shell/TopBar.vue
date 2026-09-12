@@ -244,6 +244,7 @@ function onDblClick(e: MouseEvent): void {
           <button
             class="btn btn-pri rounded-r-none"
             :disabled="!canMake"
+            :title="canMake ? 'Make the movie of all videos' : 'Pick at least one part first'"
             data-tour="make"
             @click="choose('all')"
           >

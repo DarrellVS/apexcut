@@ -21,8 +21,9 @@ async function report(): Promise<void> {
     reporting.value = false;
   }
 }
+/** a real restart: the main process is started again too (a reload would keep it as it is) */
 function restart(): void {
-  location.reload();
+  api.app.relaunch();
 }
 </script>
 

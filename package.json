@@ -25,7 +25,10 @@
     "test:coverage": "vitest run --coverage",
     "check": "npm run lint && npm run typecheck && npm run test",
     "postinstall": "electron-builder install-app-deps",
-    "prepare": "husky"
+    "prepare": "husky",
+    "pretest:e2e": "electron-vite build",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -45,6 +48,7 @@
     "@electron-toolkit/eslint-config-prettier": "3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.19.1",
     "@vitejs/plugin-vue": "^6.0.2",

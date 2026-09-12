@@ -22,6 +22,8 @@ export const SHORTCUTS: ShortcutGroup[] = [
       { keys: [','], label: 'One frame back' },
       { keys: ['.'], label: 'One frame forward' },
       { keys: ['←', '→'], label: '5 seconds back / forward' },
+      { keys: ['Shift', '←', '→'], label: '1 second back / forward' },
+      { keys: ['Home', 'End'], label: 'Start / end of the video' },
       { keys: ['['], label: 'Previous part' },
       { keys: [']'], label: 'Next part' },
     ],

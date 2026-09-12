@@ -7,6 +7,7 @@ import { computed, reactive, ref } from 'vue';
 import { PhX } from '@phosphor-icons/vue';
 import type { ImportGroup } from '@shared/ipc';
 import { useProjectsStore } from '@renderer/stores/projects';
+import { dayLabel } from '@renderer/utils/format';
 
 const props = defineProps<{ groups: ImportGroup[] }>();
 const emit = defineEmits<{
@@ -15,10 +16,6 @@ const emit = defineEmits<{
 }>();
 const projects = useProjectsStore();
 
-function dayLabel(day: string): string {
-  const d = new Date(`${day}T12:00:00`);
-  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-}
 const mode = ref<'one' | 'perDay'>('perDay');
 const checked = reactive<Record<string, boolean>>(
   Object.fromEntries(props.groups.map((g) => [g.day, true])),

@@ -100,9 +100,11 @@ function applyToOwnParts(): void {
 const ownParts = computed(() => editor.parts.filter((p) => p.grade).length);
 
 // ---- look tiles preview on a frame of the open video
-const thumb = computed(() =>
-  library.current ? `apexcut://media/clip/${encodeURIComponent(library.current)}/thumb.jpg` : null,
-);
+const thumb = computed(() => {
+  // only a scanned video has a thumbnail; an unscanned one would show broken images
+  const c = library.currentClip;
+  return c?.analyzed ? `apexcut://media/clip/${encodeURIComponent(c.stem)}/thumb.jpg` : null;
+});
 const lookFilters = computed(() =>
   LOOKS.map((l) => ({ id: l.id, markup: gradeFilterMarkup(l.grade) })),
 );
@@ -172,7 +174,6 @@ const title = computed(() =>
         v-for="l in LOOKS"
         :key="l.id"
         class="tile flex flex-col gap-1 p-1 text-center"
-        :aria-pressed="currentLook?.id === l.id"
         :title="l.hint"
         role="radio"
         :aria-checked="currentLook?.id === l.id"
@@ -185,6 +186,7 @@ const title = computed(() =>
             alt=""
             class="h-full w-full object-cover"
             :style="l.id === 'none' ? {} : { filter: `url(#apexcut-look-${l.id})` }"
+            @error="($event.target as HTMLImageElement).style.visibility = 'hidden'"
           />
         </span>
         <span class="truncate text-[11px] leading-tight" :title="l.label">{{ l.label }}</span>

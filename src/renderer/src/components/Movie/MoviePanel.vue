@@ -30,10 +30,12 @@ import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
+import { useFraming } from '@renderer/composables/useFraming';
 import { friendlyError } from '@renderer/utils/errors';
 import { isNeutral, type Grade } from '@core/grade';
 import ColourSection from './ColourSection.vue';
-import { fmtDuration, shortName } from '@renderer/utils/format';
+import { fmtDuration, plural, shortName } from '@renderer/utils/format';
+import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const scope = ref<'all' | 'current'>('all');
 const editor = useEditorStore();
@@ -43,7 +45,10 @@ const settings = useSettingsStore();
 const projects = useProjectsStore();
 
 const separate = ref(false);
-const format = computed<ExportFormat>(() => settings.settings?.lastFormat ?? '16x9');
+// format and crop position belong to the project (useFraming); the app only remembers the last
+// choice as the starting point for a project that has never been framed
+const framing = useFraming();
+const format = framing.format;
 const name = ref(settings.settings?.lastName ?? 'my-ride');
 watch(
   () => settings.settings?.lastName,
@@ -75,37 +80,43 @@ const toItem = (stem: string, p: Part): Item => ({
   grade: gradeFor(p),
 });
 
+/** videos in scope whose files are not on this computer right now: their parts are skipped */
+const missing = computed(() =>
+  library.analyzed.filter(
+    (c) => !c.exists && (scope.value === 'all' || c.stem === library.current),
+  ),
+);
 const items = computed(() => {
   const out: Item[] = [];
-  const clips = library.analyzed.filter((c) => scope.value === 'all' || c.stem === library.current);
+  const clips = library.analyzed.filter(
+    (c) => c.exists && (scope.value === 'all' || c.stem === library.current),
+  );
   for (const c of clips) {
-    if (c.stem === editor.stem) {
-      for (const p of editor.enabledParts) out.push(toItem(c.stem, p));
-    } else out.push(...(otherParts.value[c.stem] ?? []));
+    const parts = c.stem === editor.stem ? editor.enabledParts : (otherParts.value[c.stem] ?? []);
+    for (const p of parts) out.push(toItem(c.stem, p));
   }
   return onlyStarred.value ? out.filter((i) => i.starred) : out;
 });
 const nStarred = computed(() => {
   let n = editor.parts.filter((p) => p.enabled && p.starred).length;
-  for (const list of Object.values(otherParts.value)) n += list.filter((i) => i.starred).length;
+  for (const list of Object.values(otherParts.value)) n += list.filter((p) => p.starred).length;
   return n;
 });
-/** parts of the videos that are not open; loaded lazily */
-const otherParts = ref<Record<string, Item[]>>({});
+/**
+ * Enabled parts of the videos that are not open; loaded lazily. Raw parts: the movie's colours are
+ * applied when the items are built, so a live colour slider never reloads these.
+ */
+const otherParts = ref<Record<string, Part[]>>({});
 async function loadOthers(): Promise<void> {
   for (const c of library.analyzed) {
     if (c.stem === editor.stem || otherParts.value[c.stem]) continue;
     const tl = await api.analysis.timeline(c.stem);
-    otherParts.value[c.stem] = tl.parts.filter((p) => p.enabled).map((p) => toItem(c.stem, p));
+    otherParts.value[c.stem] = tl.parts.filter((p) => p.enabled);
   }
 }
 // any change in what is picked (per-video counts) or which video is open invalidates the cache
 watch(
-  () => [
-    editor.stem,
-    JSON.stringify(projects.active?.grade ?? null),
-    library.clips.map((c) => `${c.stem}:${c.nEnabled}:${c.highlightS}`).join(),
-  ],
+  () => [editor.stem, library.clips.map((c) => `${c.stem}:${c.nEnabled}:${c.highlightS}`).join()],
   () => {
     otherParts.value = {};
     loadOthers();
@@ -164,31 +175,40 @@ const summary = computed(() => {
   const it = items.value;
   if (!it.length) return 'no parts selected yet';
   const n = new Set(it.map((i) => i.stem)).size;
-  return `${it.length} parts${n > 1 ? ` from ${n} videos` : ''} · ${fmtDuration(movieLength.value)}`;
+  return `${plural(it.length, 'part')}${n > 1 ? ` from ${plural(n, 'video')}` : ''} · ${fmtDuration(movieLength.value)}`;
 });
 
 async function go(): Promise<void> {
-  await loadOthers();
-  await settings.update({ lastName: name.value });
-  const id = await api.exporter.start({
-    items: items.value,
-    separate: separate.value,
-    format: format.value,
-    framePos: settings.settings?.lastFramePos ?? 0.5,
-    name: name.value,
-    transition: transition.value,
-    // plain copy: reactive proxies cannot cross the IPC bridge
-    music: separate.value
-      ? DEFAULT_MUSIC
-      : JSON.parse(JSON.stringify(projects.active?.music ?? DEFAULT_MUSIC)),
-    overlay: overlay.value
-      ? {
-          spec: { ...overlay.value },
-          sprites: renderOverlaySprites(overlay.value, exportSize().w, exportSize().h),
-        }
-      : null,
-  });
-  jobs.exportJobId = id;
+  // an empty name is not an error, it is "my-ride"
+  const movieName = name.value.trim().slice(0, 80) || 'my-ride';
+  name.value = movieName;
+  try {
+    await loadOthers();
+    await settings.update({ lastName: movieName });
+    const id = await api.exporter.start({
+      items: items.value,
+      separate: separate.value,
+      format: format.value,
+      framePos: framing.framePos.value,
+      name: movieName,
+      transition: transition.value,
+      // plain copy: reactive proxies cannot cross the IPC bridge
+      music: separate.value
+        ? DEFAULT_MUSIC
+        : JSON.parse(JSON.stringify(projects.active?.music ?? DEFAULT_MUSIC)),
+      overlay: overlay.value
+        ? {
+            spec: { ...overlay.value },
+            sprites: renderOverlaySprites(overlay.value, exportSize().w, exportSize().h),
+          }
+        : null,
+    });
+    jobs.exportJobId = id;
+  } catch (e) {
+    // the request never became a job (a missing file, a rejected value): say so, no error card
+    const f = friendlyError((e as Error).message);
+    toast(`${f.title}. ${f.hint}`, 8000);
+  }
 }
 const job = computed(() => jobs.exportJob);
 const emit = defineEmits<{ watch: [url: string] }>();
@@ -204,13 +224,28 @@ defineExpose({ format, openMovie, framingActive });
 
 <template>
   <aside class="panel flex min-h-0 flex-col">
-    <div class="panel-head justify-between">
+    <div class="panel-head justify-between gap-2">
       <span>Movie</span>
-      <span class="num font-normal tracking-normal normal-case text-fg3">{{ summary }}</span>
+      <span class="num min-w-0 truncate font-normal tracking-normal normal-case text-fg3">{{
+        summary
+      }}</span>
     </div>
     <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-auto p-3">
       <section class="flex flex-col gap-2">
-        <input v-model="name" class="input w-full" placeholder="Name of your movie" />
+        <input
+          v-model="name"
+          class="input w-full"
+          placeholder="Name of your movie"
+          maxlength="80"
+          aria-label="Name of your movie"
+        />
+        <div
+          v-if="missing.length"
+          class="rounded-ctl border border-dashed border-danger/50 px-2 py-1.5 text-xs text-fg2"
+        >
+          <b class="text-danger">{{ plural(missing.length, 'video') }} not found</b> · their parts
+          are skipped. Find the files from the Ride panel.
+        </div>
         <div class="seg" role="radiogroup" aria-label="What to make">
           <button
             class="seg-item"
@@ -264,7 +299,7 @@ defineExpose({ format, openMovie, framingActive });
             class="tile flex h-[68px] flex-col items-center justify-center gap-1.5"
             :aria-pressed="format === t.f"
             :title="t.sub"
-            @click="settings.update({ lastFormat: t.f })"
+            @click="framing.setFormat(t.f)"
           >
             <div
               class="rounded-[2px] border border-fg2 bg-fg3/30"

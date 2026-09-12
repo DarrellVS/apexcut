@@ -24,6 +24,7 @@ build with NVENC/QSV/AMF).
 npm install
 npm run dev          # Electron + Vite with HMR
 npm run check        # lint + typecheck + tests
+npm run test:e2e     # builds, then drives the Electron app with Playwright (tests/**/*.spec.ts)
 npm run build:win    # installer + portable exe in dist/
 ```
 

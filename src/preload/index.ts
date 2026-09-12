@@ -21,6 +21,8 @@ const api: ApexcutApi = {
     setMusic: (music) => invoke('projects:setMusic', music),
     setOverlay: (overlay) => invoke('projects:setOverlay', overlay),
     setGrade: (grade, id) => invoke('projects:setGrade', grade, id),
+    setFormat: (format) => invoke('projects:setFormat', format),
+    setFramePos: (pos) => invoke('projects:setFramePos', pos),
     rideStats: () => invoke('projects:rideStats'),
   },
   library: {
@@ -97,6 +99,7 @@ const api: ApexcutApi = {
     version: () => invoke('app:version'),
     report: () => invoke('app:report'),
     log: (level, message) => ipcRenderer.send('app:log', level, message),
+    relaunch: () => ipcRenderer.send('app:relaunch'),
     onFatal: (cb) => {
       const handler = (_e: unknown, err: { message: string; stack?: string }): void => cb(err);
       ipcRenderer.on('app:fatal', handler);

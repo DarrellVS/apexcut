@@ -22,10 +22,12 @@ import ErrorScreen from '@renderer/components/Base/ErrorScreen.vue';
 import ExportOverlay from '@renderer/components/Export/ExportOverlay.vue';
 import SettingsModal from '@renderer/components/Settings/SettingsModal.vue';
 import { friendlyError } from '@renderer/utils/errors';
+import { dayLabel, plural } from '@renderer/utils/format';
 import ScanProgress from '@renderer/components/ScanProgress.vue';
 import ProjectsHome from '@renderer/components/Projects/ProjectsHome.vue';
 import TopBar from '@renderer/components/Shell/TopBar.vue';
 import RideRail from '@renderer/components/Ride/RideRail.vue';
+import RideCardSheet from '@renderer/components/Ride/RideCardSheet.vue';
 import VideoStage from '@renderer/components/Stage/VideoStage.vue';
 import MoviePanel from '@renderer/components/Movie/MoviePanel.vue';
 import Timeline from '@renderer/components/Timeline/Timeline.vue';
@@ -39,9 +41,23 @@ const settings = useSettingsStore();
 const ui = useUiStore();
 const updater = useUpdaterStore();
 
-// side panels: drag the hairline between panels; widths are remembered
-const left = usePanelWidth('ride', 300, 240, 520, 1);
-const right = usePanelWidth('movie', 300, 240, 520, -1);
+// side panels: drag the hairline between panels; widths are remembered. Either panel may grow to
+// 520 px, but never so far that the stage in the middle drops under 420 px
+const STAGE_MIN = 420;
+const left = usePanelWidth(
+  'ride',
+  300,
+  240,
+  () => Math.min(520, window.innerWidth - right.width.value - STAGE_MIN),
+  1,
+);
+const right = usePanelWidth(
+  'movie',
+  300,
+  240,
+  () => Math.min(520, window.innerWidth - left.width.value - STAGE_MIN),
+  -1,
+);
 
 const stage = ref<InstanceType<typeof VideoStage> | null>(null);
 const movie = ref<InstanceType<typeof MoviePanel> | null>(null);
@@ -60,7 +76,11 @@ const timeKey = (): string => `apexcut.time.${projects.activeId}`;
 async function openClip(stem: string, seekTo?: number): Promise<void> {
   const clip = library.clips.find((c) => c.stem === stem);
   library.current = stem;
-  if (!clip?.analyzed) return;
+  if (!clip?.analyzed) {
+    // no scan yet (or it failed): the stage explains; the previous video must not stay on screen
+    await editor.close();
+    return;
+  }
   await editor.open(stem);
   localStorage.setItem(videoKey(), stem);
   if (seekTo) stage.value?.seek(seekTo);
@@ -97,7 +117,10 @@ async function importPaths(paths: string[]): Promise<void> {
   if (!paths.length) return;
   const groups = await api.library.inspect(paths);
   if (!groups.length) {
-    toast('No DJI videos found in what you picked');
+    toast(
+      'No DJI videos found there. On the memory card they are in DCIM › 100MEDIA, as .MP4 with a small .LRF next to each.',
+      7000,
+    );
     return;
   }
   if (groups.length > 1) {
@@ -123,22 +146,41 @@ async function pickAndScan(kind: 'files' | 'dir'): Promise<void> {
   await importPaths(await library.pick(kind));
 }
 
-// ---- drop MP4/LRF files or folders from Explorer anywhere in the window (into the open project)
+// ---- drop MP4/LRF files or folders from Explorer anywhere in the window: into the open project,
+// or — on the projects screen — as a new project per recording day
 const dropping = ref(false);
 function onDragOver(e: DragEvent): void {
-  if (phase.value !== 'projects' && e.dataTransfer?.types.includes('Files')) {
+  if (e.dataTransfer?.types.includes('Files')) {
     e.preventDefault();
     dropping.value = true;
   }
 }
+/** a drop on the projects screen: one project per day, named after it, the first one opens */
+async function importAsProjects(paths: string[]): Promise<void> {
+  if (!paths.length) return;
+  const groups = await api.library.inspect(paths);
+  if (!groups.length) {
+    toast(
+      'No DJI videos found there. On the memory card they are in DCIM › 100MEDIA, as .MP4 with a small .LRF next to each.',
+      7000,
+    );
+    return;
+  }
+  await confirmImport(groups.map((g) => ({ name: dayLabel(g.day), paths: [...g.paths] })));
+}
 async function onDrop(e: DragEvent): Promise<void> {
   dropping.value = false;
   const files = e.dataTransfer?.files;
-  if (!files?.length || phase.value === 'projects') return;
+  if (!files?.length) return;
   e.preventDefault();
   const paths = Array.from(files).map((f) => api.files.pathOf(f));
   // music files go under the movie, everything else is looked at as video
   const audio = paths.filter((p) => /\.(mp3|m4a|aac|wav|flac|ogg|opus)$/i.test(p));
+  if (phase.value === 'projects') {
+    if (audio.length) toast('Open a project first — music goes under its movie', 5000);
+    await importAsProjects(paths.filter((p) => !audio.includes(p)));
+    return;
+  }
   if (audio.length && projects.active) {
     const tracks = await api.music.add(audio);
     if (tracks.length) {
@@ -166,21 +208,40 @@ onMounted(async () => {
     }
     await Promise.all([library.refresh(), projects.refresh()]);
     if (job.kind === 'analyze' && job.status === 'done') {
+      const failed = job.result?.kind === 'analyze' ? (job.result.failed ?? []) : [];
+      library.noteScanFailures(failed);
       const target =
         library.analyzed.find((c) => c.stem === library.current) ?? library.analyzed[0];
       if (target && phase.value === 'editor') {
         await openClip(target.stem);
         const n = editor.parts.length;
         const corners = editor.parts.filter((p) => p.reden !== 'accel/rem').length;
-        toast(
-          `Done! Found ${n} fun parts${corners ? `, ${corners} with corners` : ''}. Press ▶ for a preview.`,
-        );
-        stage.value?.startPreview();
+        if (failed.length) {
+          const f = friendlyError(failed[0].error);
+          toast(
+            `${plural(failed.length, 'video')} could not be scanned (${f.title.toLowerCase()}); the rest is done. See the Ride panel.`,
+            8000,
+          );
+        } else {
+          toast(
+            `Done! Found ${n} fun parts${corners ? `, ${corners} with corners` : ''}. Press ▶ for a preview.`,
+          );
+          stage.value?.startPreview();
+        }
       }
     }
     if (job.kind === 'analyze' && job.status === 'error') {
+      // nothing could be read: every video of that scan carries the reason
+      library.noteScanFailures(
+        library.clips
+          .filter((c) => !c.analyzed)
+          .map((c) => ({ stem: c.stem, error: job.error ?? '' })),
+      );
       const f = friendlyError(job.error);
       toast(`${f.title}. ${f.hint}`, 8000);
+    }
+    if (job.kind === 'analyze' && job.status === 'cancelled') {
+      toast('Scan stopped. Videos that were not scanned yet can be scanned from their menu.', 6000);
     }
   });
   window.addEventListener('keydown', onKey);
@@ -226,8 +287,14 @@ function onKey(e: KeyboardEvent): void {
     editor.redo();
     return;
   }
-  const tag = (e.target as HTMLElement).tagName;
-  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+  const target = e.target as HTMLElement;
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+  // a focused timeline block handles these itself (Timeline.blockKey); no second action here
+  if (
+    target.closest('[data-part]') &&
+    [' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'Delete', 'Backspace'].includes(e.key)
+  )
+    return;
   // I / O: set an edge of the selected part at the playhead (a new part when none is selected)
   const trim = (edge: 'start_s' | 'end_s', toCore: boolean): void => {
     let p = editor.selectedParts.length === 1 ? editor.selectedParts[0] : null;
@@ -274,10 +341,16 @@ function onKey(e: KeyboardEvent): void {
       ui.openSettings('shortcuts');
       break;
     case 'ArrowLeft':
-      stage.value?.seek(editor.time - 5);
+      stage.value?.seek(editor.time - (e.shiftKey ? 1 : 5));
       break;
     case 'ArrowRight':
-      stage.value?.seek(editor.time + 5);
+      stage.value?.seek(editor.time + (e.shiftKey ? 1 : 5));
+      break;
+    case 'Home':
+      stage.value?.seek(0);
+      break;
+    case 'End':
+      stage.value?.seek(editor.duration);
       break;
     case ']':
       stage.value?.seekPart(1);
@@ -320,7 +393,11 @@ function onKey(e: KeyboardEvent): void {
       v-if="dropping"
       class="pointer-events-none absolute inset-2 z-40 grid place-items-center rounded-card border border-dashed border-line2 bg-bg0/80 text-sm font-semibold text-fg"
     >
-      Drop your videos to add them to “{{ projects.active?.name }}”
+      {{
+        phase === 'projects'
+          ? 'Drop your videos to make a project of that ride'
+          : `Drop your videos to add them to “${projects.active?.name}”`
+      }}
     </div>
     <TopBar
       :in-editor="phase === 'editor'"
@@ -354,13 +431,21 @@ function onKey(e: KeyboardEvent): void {
         <div
           class="splitter"
           :class="{ 'is-dragging': left.dragging.value }"
+          title="Drag to resize · double-click to reset"
           @mousedown="left.start"
+          @dblclick="left.reset"
         />
-        <VideoStage ref="stage" :framing="movie?.framingActive ?? false" />
+        <VideoStage
+          ref="stage"
+          :framing="movie?.framingActive ?? false"
+          @scan="api.analysis.run([$event])"
+        />
         <div
           class="splitter"
           :class="{ 'is-dragging': right.dragging.value }"
+          title="Drag to resize · double-click to reset"
           @mousedown="right.start"
+          @dblclick="right.reset"
         />
         <MoviePanel ref="movie" @watch="stage?.watchResult($event)" />
       </main>
@@ -373,6 +458,7 @@ function onKey(e: KeyboardEvent): void {
       @cancel="pendingGroups = null"
     />
     <SettingsModal />
+    <RideCardSheet />
     <ExportOverlay @watch="stage?.watchResult($event)" />
     <TourOverlay />
     <ErrorScreen />

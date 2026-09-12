@@ -13,6 +13,9 @@ import { mediaUrl } from './protocol';
 
 const VIDEO_EXT = new Set(['.mp4', '.mov']);
 const PROXY_EXT = new Set(['.lrf']);
+/** how deep a picked folder is searched: card root → DCIM → 100MEDIA → files */
+const MAX_DEPTH = 3;
+const SKIP_DIRS = new Set(['System Volume Information', '$RECYCLE.BIN', 'MISC', 'node_modules']);
 
 export interface ClipRecord {
   stem: string;
@@ -46,7 +49,11 @@ export class Library {
     writeJson(paths.libraryFile, [...this.clips.values()]);
   }
 
-  /** Pair MP4/LRF files by stem from files and/or folders (non-recursive, like the camera's DCIM layout). */
+  /**
+   * Pair MP4/LRF files by stem from files and/or folders. Folders are walked a few levels deep so
+   * the root of a memory card works (the camera writes to `DCIM/100MEDIA/`); system folders are
+   * skipped.
+   */
   static discover(inputs: string[]): ClipRecord[] {
     const byStem = new Map<string, ClipRecord>();
     const consider = (file: string): void => {
@@ -58,10 +65,31 @@ export class Library {
       else rec.lrf = file;
       byStem.set(stem, rec);
     };
+    const walk = (dir: string, depth: number): void => {
+      let entries: string[];
+      try {
+        entries = readdirSync(dir);
+      } catch {
+        return;
+      }
+      for (const f of entries) {
+        if (SKIP_DIRS.has(f) || f.startsWith('.')) continue;
+        const p = join(dir, f);
+        let isDir = false;
+        try {
+          isDir = statSync(p).isDirectory();
+        } catch {
+          continue;
+        }
+        if (isDir) {
+          if (depth < MAX_DEPTH) walk(p, depth + 1);
+        } else consider(p);
+      }
+    };
     for (const input of inputs) {
       if (!existsSync(input)) continue;
       if (statSync(input).isDirectory()) {
-        for (const f of readdirSync(input)) consider(join(input, f));
+        walk(input, 0);
       } else {
         consider(input);
         // pick up the sibling proxy/original next to a single picked file

@@ -4,7 +4,15 @@
  * and the draggable framing window shown while a cropped format is being chosen.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { PhCircleHalf, PhPause, PhPlay, PhSkipBack, PhSkipForward } from '@phosphor-icons/vue';
+import {
+  PhArrowsClockwise,
+  PhCircleHalf,
+  PhFilmSlate,
+  PhPause,
+  PhPlay,
+  PhSkipBack,
+  PhSkipForward,
+} from '@phosphor-icons/vue';
 import { FORMAT_SPEC } from '@shared/ipc';
 import { drawOverlayFrame, overlayLayout, type Ctx2D, type Sample } from '@core/overlay';
 import { musicUrl, useMovieTime } from '@renderer/composables/useMovieTime';
@@ -12,17 +20,18 @@ import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
-import { useSettingsStore } from '@renderer/stores/settings';
-import { fmtTime } from '@renderer/utils/format';
+import { useFraming } from '@renderer/composables/useFraming';
+import { friendlyError } from '@renderer/utils/errors';
+import { fmtTime, shortName } from '@renderer/utils/format';
 import { gradeFilterMarkup, vignetteCss } from '@renderer/utils/gradeSvg';
 import { isNeutral, type Grade } from '@core/grade';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const props = defineProps<{ framing: boolean }>();
+const emit = defineEmits<{ scan: [stem: string] }>();
 const editor = useEditorStore();
 const library = useLibraryStore();
 const jobs = useJobsStore();
-const settings = useSettingsStore();
 const projects = useProjectsStore();
 
 const video = ref<HTMLVideoElement | null>(null);
@@ -35,11 +44,46 @@ const src = computed(() => watchingResult.value ?? library.currentClip?.proxyUrl
 
 watch(src, async (s) => {
   const v = video.value;
-  if (!v || !s) return;
+  if (!v) return;
+  if (!s) {
+    // no playable video (not scanned, failed, missing): the previous one must not linger
+    v.removeAttribute('src');
+    v.load();
+    return;
+  }
   const wasPlaying = !v.paused;
   v.src = s;
   await nextTick();
   if (wasPlaying) v.play().catch(() => undefined);
+});
+
+// ---- nothing to show: say why and what to do (the rail row highlights the video meanwhile)
+const notice = computed<{ title: string; hint: string; scan: boolean } | null>(() => {
+  if (watchingResult.value) return null;
+  const clip = library.currentClip;
+  if (!clip) {
+    return library.clips.length
+      ? { title: 'No scanned video yet', hint: 'Pick a video in the Ride panel.', scan: false }
+      : null;
+  }
+  if (!clip.exists)
+    return {
+      title: `${shortName(clip.stem)} was not found`,
+      hint: 'The file moved or the memory card is not plugged in. Use “Find the moved file…” in its menu.',
+      scan: false,
+    };
+  if (clip.analyzed) return null;
+  if (jobs.analyzeJob) return { title: 'Scanning…', hint: '', scan: false };
+  const err = library.scanErrors[clip.stem];
+  if (err) {
+    const f = friendlyError(err);
+    return { title: f.title, hint: f.hint, scan: true };
+  }
+  return {
+    title: `${shortName(clip.stem)} is not scanned yet`,
+    hint: 'Scan it to find its corners, braking and acceleration.',
+    scan: true,
+  };
 });
 // a relinked video keeps its URL: reload the element once its file is back
 watch(
@@ -78,6 +122,9 @@ function seek(t: number): void {
   if (!v) return;
   if (watchingResult.value) watchingResult.value = null;
   v.currentTime = Math.max(0, Math.min(editor.duration || t, t));
+  // the clock follows at once: a second key press right after this one must start from here,
+  // not from the time before 'timeupdate' has fired
+  editor.time = v.currentTime;
 }
 function play(t?: number): void {
   const v = video.value;
@@ -164,8 +211,10 @@ function measure(): void {
   }
   box.value = { left: PAD + (W - w) / 2, top: PAD + (H - h) / 2, width: w, height: h };
 }
-const format = computed(() => settings.settings?.lastFormat ?? '16x9');
-const framePos = computed(() => settings.settings?.lastFramePos ?? 0.5);
+// the shape of the movie and where the crop sits belong to the project (composables/useFraming.ts)
+const frame = useFraming();
+const format = frame.format;
+const framePos = frame.framePos;
 const isVertical = computed(() => format.value === '9x16');
 const winFrac = computed(() => {
   const spec = FORMAT_SPEC[format.value];
@@ -186,21 +235,24 @@ function frameDrag(e: MouseEvent): void {
   const sx = e.clientX;
   const sy = e.clientY;
   const free = 1 - winFrac.value;
-  const move = (ev: MouseEvent): void => {
+  const posOf = (ev: MouseEvent): number => {
     const d = isVertical.value
       ? (ev.clientX - sx) / (box.value.width * free)
       : (ev.clientY - sy) / (box.value.height * free);
-    settings.update({ lastFramePos: Math.min(1, Math.max(0, start + d)) });
+    return Math.min(1, Math.max(0, start + d));
   };
-  const up = (): void => {
+  // live while dragging, written once on release (one IPC call, one undo-free change)
+  const move = (ev: MouseEvent): void => void frame.setFramePos(posOf(ev), false);
+  const up = (ev: MouseEvent): void => {
     window.removeEventListener('mousemove', move);
     window.removeEventListener('mouseup', up);
+    frame.setFramePos(posOf(ev), true);
   };
   window.addEventListener('mousemove', move);
   window.addEventListener('mouseup', up);
 }
 function resetFrame(): void {
-  settings.update({ lastFramePos: 0.5 });
+  frame.setFramePos(0.5);
   toast('Frame centered');
 }
 watch(
@@ -351,6 +403,27 @@ defineExpose({ seek, play, togglePlay, shuttle, frameStep, seekPart, startPrevie
         @pause="onPause"
         @click="togglePlay"
       />
+    </div>
+    <!-- nothing playable: why, and the one thing to do about it -->
+    <div
+      v-if="notice"
+      class="absolute inset-2 z-[6] grid place-items-center p-6"
+      role="status"
+      data-stage-notice
+    >
+      <div class="flex max-w-[380px] flex-col items-center gap-2 text-center">
+        <PhFilmSlate :size="26" class="text-fg3" />
+        <b class="text-[13px] font-semibold text-fg">{{ notice.title }}</b>
+        <p v-if="notice.hint" class="m-0 text-xs text-fg2">{{ notice.hint }}</p>
+        <button
+          v-if="notice.scan && library.currentClip"
+          class="btn btn-pri mt-1"
+          @click="emit('scan', library.currentClip.stem)"
+        >
+          <PhArrowsClockwise :size="14" />
+          {{ library.scanErrors[library.currentClip.stem] ? 'Scan again' : 'Scan now' }}
+        </button>
+      </div>
     </div>
     <!-- the live colour filter (same maths as the export) and the dark edges over the video box -->
     <svg class="absolute h-0 w-0" aria-hidden="true">
