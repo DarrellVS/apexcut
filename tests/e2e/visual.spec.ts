@@ -121,6 +121,14 @@ test.describe('the editor', () => {
     await page.keyboard.press('Escape');
   });
 
+  test('the timeline in movie mode', async () => {
+    const { page } = launched;
+    await page.getByRole('radio', { name: 'The movie' }).click();
+    await expect(page.locator('[data-movie-part]').first()).toBeVisible();
+    await expect(page.locator('footer')).toHaveScreenshot('timeline-movie.png');
+    await page.getByRole('radio', { name: 'This video' }).click();
+  });
+
   test('the colour section, folded out', async () => {
     const { page } = launched;
     const panel = page.locator('aside').nth(1);

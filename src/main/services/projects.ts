@@ -51,6 +51,8 @@ export interface ProjectRecord {
   framePos?: number;
   /** even the volume of the movie out when it is made (actions/loudness.ts) */
   loudness?: boolean;
+  /** the order the parts play in, as `"<stem>:<part id>"`; absent = the natural order */
+  order?: string[];
   /** telemetry overlay in the export */
   overlay?: OverlaySpecDto | null;
 }
@@ -204,6 +206,7 @@ export class Projects {
       format: p.format ?? null,
       framePos: p.framePos ?? null,
       loudness: !!p.loudness,
+      order: p.order ?? [],
     };
   }
 
@@ -227,6 +230,11 @@ export class Projects {
   /** even the volume of the open project's movie out */
   setLoudness(loudness: boolean): void {
     this.patchActive({ loudness });
+  }
+
+  /** the order the parts play in; an empty list goes back to the natural one */
+  setOrder(order: string[]): void {
+    this.patchActive({ order: order.length ? order : undefined });
   }
 
   setOverlay(overlay: OverlaySpecDto | null): void {

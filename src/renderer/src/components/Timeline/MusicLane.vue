@@ -18,20 +18,13 @@ import MusicToolbar from './MusicToolbar.vue';
 
 const projects = useProjectsStore();
 const editor = useEditorStore();
-const { movieLen, movieTimeOf, placed } = useMovieTime();
+const { movieLen, movieTimeOf, placed, laneLen } = useMovieTime();
 
 const lane = ref<HTMLElement | null>(null);
 const selected = ref<string | null>(null);
 const tracks = useMusicTracks(selected);
 const { music, missing, save, patchTrack } = tracks;
 
-const laneLen = computed(() =>
-  Math.max(
-    1,
-    movieLen.value,
-    placed.value.reduce((a, p) => a + p.lengthS, 0),
-  ),
-);
 const pct = (s: number): number => (s / laneLen.value) * 100;
 const playheadPct = computed(() => pct(movieTimeOf(editor.time)));
 

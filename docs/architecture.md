@@ -38,7 +38,10 @@ src/
 
 0. A project is one movie: a name, an ordered set of videos, and how that movie is made — transition,
    music, colours, telemetry overlay, **format and crop position** (`format` / `framePos`, absent =
-   the app's last choice in `settings.lastFormat` / `lastFramePos`, which is only a starting point). `Projects` keeps the list and which one
+   the app's last choice in `settings.lastFormat` / `lastFramePos`, which is only a starting point),
+   whether the sound is evened out (`loudness`) and, when the rider dragged the parts around, the
+   order the movie plays in (`order`: `"<stem>:<part id>"` keys; empty = the order they were ridden
+   in). `Projects` keeps the list and which one
    is open; every `library:*` call works on the open project. A video can be in several projects; its
    scan (`clips/<stem>/`) is shared, its selection is per project (`projects/<id>/<stem>.json`).
 1. User picks files → main `Library.add` registers MP4/LRF pairs (folders are walked three levels

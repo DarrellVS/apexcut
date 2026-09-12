@@ -15,6 +15,8 @@ import { useTimelineView } from '@renderer/composables/useTimelineView';
 import { useEditorStore } from '@renderer/stores/editor';
 import { fmtDuration } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
+import MovieLane from './MovieLane.vue';
+import MovieRuler from './MovieRuler.vue';
 import MusicLane from './MusicLane.vue';
 import PartBlock from './PartBlock.vue';
 import PartToolbar from './PartToolbar.vue';
@@ -22,7 +24,13 @@ import ScoreLane from './ScoreLane.vue';
 import TimelineLegend from './TimelineLegend.vue';
 import TimelineRuler from './TimelineRuler.vue';
 
-const emit = defineEmits<{ seek: [t: number]; play: [t: number] }>();
+const emit = defineEmits<{
+  seek: [t: number];
+  play: [t: number];
+  open: [stem: string, t: number];
+}>();
+/** the lane shows the open video's own time, or the movie from end to end */
+const mode = ref<'video' | 'movie'>('video');
 const editor = useEditorStore();
 const duration = computed(() => editor.duration);
 const view = useTimelineView(duration);
@@ -209,10 +217,17 @@ function del(): void {
   <footer
     class="panel flex h-[300px] flex-none flex-col overflow-hidden border-t border-line select-none"
   >
-    <TimelineRuler :view="view" @scrub="scrub" />
-    <ScoreLane :view="view" @scrub="scrub" />
+    <template v-if="mode === 'video'">
+      <TimelineRuler :view="view" @scrub="scrub" />
+      <ScoreLane :view="view" @scrub="scrub" />
+    </template>
+    <template v-if="mode === 'movie'">
+      <MovieRuler />
+      <MovieLane @play="(stem, t) => emit('open', stem, t)" />
+    </template>
     <!-- parts lane -->
     <div
+      v-if="mode === 'video'"
       ref="lane"
       class="relative flex-1 bg-bg1"
       data-tour="parts"
@@ -275,6 +290,6 @@ function del(): void {
       />
     </div>
     <MusicLane />
-    <TimelineLegend :view="view" />
+    <TimelineLegend :view="view" :mode="mode" @mode="mode = $event" />
   </footer>
 </template>

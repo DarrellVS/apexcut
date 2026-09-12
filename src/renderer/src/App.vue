@@ -6,7 +6,7 @@
  * composables.
  */
 import { api } from '@renderer/api';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -101,6 +101,15 @@ async function openProject(id: string): Promise<void> {
   // videos whose scan never ran or failed (e.g. the app was closed mid-scan) get scanned now
   const todo = library.clips.filter((c) => !c.analyzed && c.exists).map((c) => c.stem);
   if (todo.length && !jobs.analyzeJob) await api.analysis.run(todo);
+}
+
+/** a part of any video, from the movie lane: open its video, then play it */
+async function openPart(stem: string, t: number): Promise<void> {
+  if (library.current !== stem) {
+    await openClip(stem);
+    await nextTick();
+  }
+  stage.value?.play(t);
 }
 
 async function goHome(): Promise<void> {
@@ -219,7 +228,7 @@ watch(phase, (p) => {
         <PanelSplitter :panel="right" />
         <MoviePanel ref="movie" @watch="stage?.watchResult($event)" />
       </main>
-      <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" />
+      <Timeline @seek="stage?.seek($event)" @play="stage?.play($event)" @open="openPart" />
     </template>
     <ImportSheet
       v-if="pendingGroups"

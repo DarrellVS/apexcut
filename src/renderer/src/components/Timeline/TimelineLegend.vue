@@ -6,7 +6,8 @@ import type { TimelineView } from '@renderer/composables/useTimelineView';
 import { useEditorStore } from '@renderer/stores/editor';
 import { fmtDuration, plural } from '@renderer/utils/format';
 
-const props = defineProps<{ view: TimelineView }>();
+const props = defineProps<{ view: TimelineView; mode: 'video' | 'movie' }>();
+defineEmits<{ mode: [mode: 'video' | 'movie'] }>();
 const editor = useEditorStore();
 const zoomInput = computed({
   get: () => props.view.zoom.value,
@@ -18,26 +19,51 @@ const zoomInput = computed({
   <div
     class="num flex h-7 flex-none items-center gap-3.5 border-t border-line px-3 text-[11px] text-fg2"
   >
-    <span><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-fg align-[-1px]" />score</span>
-    <span
-      ><span
-        class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-corner align-[-1px]"
-      />leaning</span
-    >
-    <span
-      ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-brake align-[-1px]" />braking &amp;
-      acceleration</span
-    >
-    <span
-      ><span class="mr-1.5 inline-block w-3 border-t border-dashed border-fg3 align-[2px]" />“fun
-      enough” line</span
-    >
+    <div class="seg" role="radiogroup" aria-label="What the lane shows">
+      <button
+        class="seg-item"
+        role="radio"
+        :aria-checked="mode === 'video'"
+        title="This video, in its own time"
+        @click="$emit('mode', 'video')"
+      >
+        This video
+      </button>
+      <button
+        class="seg-item"
+        role="radio"
+        :aria-checked="mode === 'movie'"
+        title="The movie: every part of every video, back to back"
+        @click="$emit('mode', 'movie')"
+      >
+        The movie
+      </button>
+    </div>
+    <template v-if="mode === 'video'">
+      <span
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-fg align-[-1px]" />score</span
+      >
+      <span
+        ><span
+          class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-corner align-[-1px]"
+        />leaning</span
+      >
+      <span
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-brake align-[-1px]" />braking
+        &amp; acceleration</span
+      >
+      <span
+        ><span class="mr-1.5 inline-block w-3 border-t border-dashed border-fg3 align-[2px]" />“fun
+        enough” line</span
+      >
+    </template>
+    <span v-else class="text-fg3">Drag a part to move it in the movie</span>
     <span class="flex-1" />
     <b class="font-semibold text-fg"
       >{{ plural(editor.enabledParts.length, 'part') }} · movie
       {{ fmtDuration(editor.movieLength) }}</b
     >
-    <label class="flex items-center gap-1.5">
+    <label v-if="mode === 'video'" class="flex items-center gap-1.5">
       Zoom
       <input
         v-model.number="zoomInput"
@@ -49,7 +75,7 @@ const zoomInput = computed({
         aria-label="Zoom"
       />
     </label>
-    <button class="btn btn-mini" @click="view.fit()">Fit</button>
+    <button v-if="mode === 'video'" class="btn btn-mini" @click="view.fit()">Fit</button>
     <button
       class="btn btn-ghost btn-mini px-1"
       title="click a block = select · shift+click = select more · drag the edges · scroll = zoom · shift+scroll = pan"

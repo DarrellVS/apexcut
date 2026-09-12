@@ -134,6 +134,13 @@ export const useProjectsStore = defineStore('projects', () => {
     await api.projects.setLoudness(on);
   }
 
+  /** the order the parts play in; optimistic so a drag lands at once */
+  async function setOrder(order: string[]): Promise<void> {
+    const p = active.value;
+    if (p) p.order = order;
+    await api.projects.setOrder([...order]);
+  }
+
   async function setOverlay(o: OverlaySpecDto | null): Promise<void> {
     const p = projects.value.find((x) => x.id === activeId.value);
     if (p) p.overlay = o;
@@ -179,6 +186,7 @@ export const useProjectsStore = defineStore('projects', () => {
     setFormat,
     setFramePos,
     setLoudness,
+    setOrder,
     setMusic,
     setOverlay,
     setGrade,

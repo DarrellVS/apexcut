@@ -122,6 +122,12 @@ export interface ProjectInfo {
   framePos: number | null;
   /** even the volume of the movie out when it is made */
   loudness: boolean;
+  /**
+   * The order the parts play in, as `"<video>:<part id>"` keys. Empty = the natural order (the
+   * videos in the order of the ride, each part after the one before it). A part that is not in the
+   * list plays after the ones that are, in its natural place.
+   */
+  order: string[];
 }
 
 export interface TimelinePayload {

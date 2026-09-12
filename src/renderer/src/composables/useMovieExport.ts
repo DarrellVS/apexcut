@@ -16,6 +16,7 @@ import {
   type Transition,
 } from '@shared/ipc';
 import { useFraming } from '@renderer/composables/useFraming';
+import { useMovieOrder } from '@renderer/composables/useMovieOrder';
 import { useRideParts } from '@renderer/composables/useRideParts';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
@@ -56,6 +57,7 @@ export function useMovieExport(): MovieExport {
   const settings = useSettingsStore();
   const framing = useFraming();
   const ride = useRideParts();
+  const order = useMovieOrder();
 
   const scope = ref<'all' | 'current'>('all');
   const separate = ref(false);
@@ -83,11 +85,11 @@ export function useMovieExport(): MovieExport {
   });
 
   const missing = computed(() => library.analyzed.filter((c) => !c.exists && inScope(c)));
+  /** the parts that go in, in the order the movie lane shows them */
   const items = computed(() => {
-    const out: ExportItem[] = [];
-    for (const c of library.analyzed.filter((c) => c.exists && inScope(c))) {
-      for (const p of ride.partsOf(c.stem)) if (p.enabled) out.push(toItem(c.stem, p));
-    }
+    const out = order.parts.value
+      .filter((p) => library.analyzed.some((c) => c.stem === p.stem && c.exists && inScope(c)))
+      .map((p) => toItem(p.stem, p.part));
     return onlyStarred.value ? out.filter((i) => i.starred) : out;
   });
   const nStarred = computed(() =>

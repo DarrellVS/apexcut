@@ -1,11 +1,12 @@
 /**
- * Movie time: the timeline shows one video's own time, the movie is all enabled parts of all videos
- * back to back. The music lane and the preview need to map between the two.
+ * Movie time: the parts lane shows one video's own time, the movie is every part of every video back
+ * to back, in the order `useMovieOrder` keeps. The music lane, the movie lane and the preview all
+ * map between the two through here.
  */
 import { computed, type ComputedRef } from 'vue';
 import type { MusicTrack } from '@shared/ipc';
+import { useMovieOrder } from '@renderer/composables/useMovieOrder';
 import { useEditorStore } from '@renderer/stores/editor';
-import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 
 export interface PlacedTrack {
@@ -17,9 +18,11 @@ export interface PlacedTrack {
 }
 
 export interface MovieTime {
-  /** length of the whole movie (all videos, enabled parts) */
+  /** length of the whole movie (all videos, the parts that are in it) */
   movieLen: ComputedRef<number>;
-  /** movie time of the playhead in the open video */
+  /** the width the lanes span: the movie, or the music when that runs on longer */
+  laneLen: ComputedRef<number>;
+  /** movie time of a moment in the open video */
   movieTimeOf: (t: number) => number;
   /** songs laid back to back from movie time 0 */
   placed: ComputedRef<PlacedTrack[]>;
@@ -29,27 +32,23 @@ export interface MovieTime {
 
 export function useMovieTime(): MovieTime {
   const editor = useEditorStore();
-  const library = useLibraryStore();
   const projects = useProjectsStore();
+  const movie = useMovieOrder();
 
-  /** enabled seconds of the open video come from the editor (live), of the others from the list */
-  const lengthOf = (stem: string): number =>
-    stem === editor.stem
-      ? editor.enabledParts.reduce((a, p) => a + p.end_s - p.start_s, 0)
-      : (library.clips.find((c) => c.stem === stem)?.highlightS ?? 0);
+  const movieLen = movie.movieLen;
 
-  const movieLen = computed(() => library.analyzed.reduce((a, c) => a + lengthOf(c.stem), 0));
-
+  /**
+   * Where a moment of the open video falls in the movie: inside a part, its own offset plus how far
+   * in you are; between parts, the start of the next one; after the last, the end of the movie.
+   */
   function movieTimeOf(t: number): number {
-    let before = 0;
-    for (const c of library.analyzed) {
-      if (c.stem === editor.stem) break;
-      before += lengthOf(c.stem);
-    }
-    const inside = editor.enabledParts
-      .filter((p) => p.start_s < t)
-      .reduce((a, p) => a + Math.min(p.end_s, t) - p.start_s, 0);
-    return before + inside;
+    const mine = movie.parts.value.filter((p) => p.stem === editor.stem);
+    const inside = mine.find((p) => t >= p.part.start_s && t < p.part.end_s);
+    if (inside) return inside.offsetS + (t - inside.part.start_s);
+    const next = mine.find((p) => p.part.start_s >= t);
+    if (next) return next.offsetS;
+    const last = mine[mine.length - 1];
+    return last ? last.offsetS + last.lengthS : 0;
   }
 
   const placed = computed<PlacedTrack[]>(() => {
@@ -63,9 +62,17 @@ export function useMovieTime(): MovieTime {
     return out;
   });
 
+  const laneLen = computed(() =>
+    Math.max(
+      1,
+      movieLen.value,
+      placed.value.reduce((a, p) => a + p.lengthS, 0),
+    ),
+  );
+
   function trackAt(movieT: number): PlacedTrack | null {
     return placed.value.find((p) => movieT >= p.offsetS && movieT < p.offsetS + p.lengthS) ?? null;
   }
 
-  return { movieLen, movieTimeOf, placed, trackAt };
+  return { movieLen, laneLen, movieTimeOf, placed, trackAt };
 }

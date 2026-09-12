@@ -3,6 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## Unreleased
+
+- **The movie on the timeline.** The legend now has `This video | The movie`. The movie shows every
+  part of every video back to back, exactly as it will play, with the music lined up underneath.
+  Click a part to watch it, drag it to move it in the movie. Your own order is remembered with the
+  project, and one click puts the ride's own order back.
+
 ## 1.1.0
 
 - **Compare your colours.** With colours on the movie, the stage offers `Compare`: the recording on

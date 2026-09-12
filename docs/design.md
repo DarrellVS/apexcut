@@ -17,7 +17,7 @@ state, square-ish clips, small tabular type, the same three-plus-one layout, a u
 ┌ title bar 40 px (drag handle; native ─ ☐ ✕ drawn by the OS at the right) ───────────────────┐
 │ ⋀ ApexCut / Eifel test ▾  Video 24 · Saved     [Corners · 7:28 – 7:38 · 11 sec]   ↶ ↷ ⚙ [Make my movie ▾] │
 ├ Ride rail (300, draggable) │ stage (video in an 8 px black inset) │ Movie panel (300, draggable) ┤
-├ timeline 300: ruler 20 · score 40 · parts lane · music 28+32 · legend 28 ───────────────────────┤
+├ timeline 300: ruler 20 · score 40 · parts lane (or the movie lane) · music 28+32 · legend 28 ───┤
 ```
 
 - **Title bar** (`Shell/TopBar.vue`): `titleBarStyle: 'hidden'` + `titleBarOverlay` so Windows keeps
@@ -67,8 +67,8 @@ The shell (`App.vue`) only decides the phase and hangs the overlays; the editor'
 `StageNotice`, `FramingWindow`, `OverlayGauge`, `StageTransport`) and `Movie/MoviePanel.vue` (with
 `FormatSection`, `ColourSection` → `LookTiles` / `GradeSliders` / `GradeDonor` / `GradeCopy`,
 `OverlaySection`, `ExportResultCard`); the timeline is `Timeline/Timeline.vue` with `TimelineRuler`,
-`ScoreLane`, `PartBlock`, `PartToolbar`, `MusicLane` (+ `MusicMixHeader`, `MusicToolbar`) and
-`TimelineLegend`. Shared behaviour: `useDrag` (every drag), `usePopover` + `useDismiss` (every
+`ScoreLane`, `PartBlock`, `PartToolbar`, `MovieRuler`, `MovieLane`, `MusicLane`
+(+ `MusicMixHeader`, `MusicToolbar`) and `TimelineLegend`. Shared behaviour: `useDrag` (every drag), `usePopover` + `useDismiss` (every
 floating thing), `useCanvasPainter` (every canvas), `usePanelWidth`, `useFraming`, `useLiveGrade`,
 `useVideoTransport`, `useMusicSync`, `useEdgeSnap`, `useImport`, `useEditorShortcuts`,
 `useScanLifecycle`, `useMovieExport`, `useRideParts`.
@@ -193,5 +193,15 @@ window shortcuts step aside for those keys; elsewhere ←/→ seek 5 s, Shift+�
 the ends (`src/renderer/src/shortcuts.ts` is the one list, shown under Settings → Shortcuts). Music lane: 28 px header (Music · Add music… · Music / Ride sound sliders · a hint that the lane
 runs in movie time) and a 32 px lane with `--brake` blocks (dashed `--danger` when the file is
 missing). The song under the playhead plays whenever the playhead is inside a kept part, preview or
-not, with the ride sound ducked. Legend row: swatches, the movie
-length, Zoom slider, Fit, help.
+not, with the ride sound ducked.
+
+The legend row starts with a `This video | The movie` segmented control. **This video** is the lane
+described above, in the open video's own time. **The movie** swaps the ruler, the score lane and the
+parts lane for `MovieRuler` (20 px, movie time) and `MovieLane`: every part of every video back to
+back, in the order the movie plays, the same blocks and colours, a `Star` for starred parts and a
+half-circle for parts with their own colours. Click one to open its video and play that part, drag
+one onto another to put it in front of it or onto the empty end to put it last. A moved part writes
+an explicit order on the project; a `Your own order · Reset` chip at the bottom right shows that and
+takes it back. The music lane keeps its place under both, because both run on the same movie time.
+Rest of the legend row: the swatches (This video) or the drag hint (The movie), the movie length, and
+Zoom + Fit, which belong to the video's lane and are hidden in movie mode.

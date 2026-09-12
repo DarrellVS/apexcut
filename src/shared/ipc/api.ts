@@ -58,6 +58,8 @@ export interface ApexcutApi {
     setFramePos(pos: number): Promise<void>;
     /** even the volume of the open project's movie out when it is made */
     setLoudness(on: boolean): Promise<void>;
+    /** the order the parts play in (`"<video>:<part id>"` keys); empty goes back to the natural one */
+    setOrder(order: string[]): Promise<void>;
     /** the numbers of the open project for the ride card */
     rideStats(): Promise<RideStats>;
     /**

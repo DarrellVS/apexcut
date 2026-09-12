@@ -128,3 +128,48 @@ test('delete removes a part and undo brings it back', async () => {
   await page.keyboard.press('Control+z');
   await expect(blocks).toHaveCount(before);
 });
+
+test('the movie lane shows every part back to back and plays the one you click', async () => {
+  const { page } = launched;
+  await page.getByRole('radio', { name: 'The movie' }).click();
+  const blocks = page.locator('[data-movie-part]');
+  await expect.poll(async () => blocks.count()).toBe((await legend(page)).parts);
+  // the lane runs in movie time, so the blocks sit left to right without a gap
+  const boxes = await blocks.evaluateAll((els) =>
+    els.map((e) => ({
+      left: (e as HTMLElement).offsetLeft,
+      width: (e as HTMLElement).offsetWidth,
+    })),
+  );
+  for (let i = 1; i < boxes.length; i++) {
+    expect(Math.abs(boxes[i].left - (boxes[i - 1].left + boxes[i - 1].width))).toBeLessThan(2);
+  }
+  // the score lane and its zoom belong to the video, not to the movie
+  await expect(page.locator('footer')).toContainText('Drag a part to move it in the movie');
+  await expect(page.locator('footer input[aria-label="Zoom"]')).toBeHidden();
+  // clicking a block opens that part: the title bar reads it, and the parts lane has it selected
+  await blocks.nth(1).click();
+  await expect(page.getByRole('banner')).toContainText(/Corners|Braking|Joined|Added by you/);
+  await expect(page.locator('[data-movie-part][aria-pressed="true"]')).toHaveCount(1);
+  await page.getByRole('radio', { name: 'This video' }).click();
+});
+
+test('dragging a part in the movie lane changes the order the movie plays in', async () => {
+  const { page } = launched;
+  await page.getByRole('radio', { name: 'The movie' }).click();
+  const blocks = page.locator('[data-movie-part]');
+  const keys = async (): Promise<string[]> =>
+    blocks.evaluateAll((els) => els.map((e) => e.getAttribute('data-movie-part')!));
+  const before = await keys();
+  test.skip(before.length < 3, 'needs three parts to reorder');
+  // the third part moves in front of the first
+  await blocks.nth(2).dragTo(blocks.nth(0), { targetPosition: { x: 4, y: 8 } });
+  await expect.poll(keys).toEqual([before[2], before[0], before[1], ...before.slice(3)]);
+  await expect(page.locator('footer')).toContainText('Your own order');
+  // the movie is the same length, only the order changed
+  await expect.poll(async () => (await legend(page)).parts).toBe(before.length);
+  await page.locator('footer').getByRole('button', { name: 'Reset' }).click();
+  await expect.poll(keys).toEqual(before);
+  await expect(page.locator('footer')).not.toContainText('Your own order');
+  await page.getByRole('radio', { name: 'This video' }).click();
+});
