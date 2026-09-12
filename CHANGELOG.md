@@ -3,6 +3,14 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## Unreleased
+
+- **The crop frame on the video was wrong for GoPro.** It assumed a square recording, so on a 16:9
+  GoPro it drew a band across the picture for Widescreen 16:9 instead of the whole frame, and cropped
+  the wrong side for 4:3. The exported movie was always right; only the frame you drag was lying.
+- “Same loudness as your other movies” now reads **“Make every movie equally loud”**, which is what
+  it does.
+
 ## 1.3.0
 
 - **Let the picture vote too.** A switch under “How picky?”: as well as the sensor, ApexCut looks at
@@ -37,7 +45,7 @@ notes (and the “What’s new” text in the update banner).
 
 - **Compare your colours.** With colours on the movie, the stage offers `Compare`: the recording on
   one side of a line you drag, your colours on the other. Nothing changes by looking.
-- **Same loudness as your other movies.** A checkbox under Sound in the Movie panel evens the volume
+- **Make every movie equally loud.** A checkbox under Sound in the Movie panel evens the volume
   of the finished movie out to the level phones and websites expect, so one ride is not twice as
   loud as the next. Off unless you ask for it.
 - **Made for.** Folded under the format tiles: YouTube, Reels/Shorts/TikTok, or keep it as recorded.

@@ -145,10 +145,10 @@ defineExpose({ openMovie, framingActive });
               @change="projects.setLoudness(($event.target as HTMLInputElement).checked)"
             />
             <span>
-              <b class="block font-semibold text-fg">Same loudness as your other movies</b>
+              <b class="block font-semibold text-fg">Make every movie equally loud</b>
               <span class="text-fg2">
-                Evens the volume of the whole movie out to the level phones and websites expect, so
-                one ride is not twice as loud as the next. Adds a short step at the end.
+                Evens the whole movie out to the level phones and websites play at, so this ride is
+                not twice as loud as the last one you made. Adds a short step at the end.
               </span>
             </span>
           </label>

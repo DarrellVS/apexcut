@@ -138,7 +138,7 @@ test('the same loudness for every movie is off unless you ask for it', async () 
       return !!list.find((p) => p.id === id)?.loudness;
     });
   expect(await loudness()).toBe(false);
-  const box = page.getByRole('checkbox', { name: /Same loudness/ });
+  const box = page.getByRole('checkbox', { name: /equally loud/ });
   await box.check();
   await expect.poll(loudness).toBe(true);
   await box.uncheck();
@@ -211,7 +211,7 @@ test('making the movie writes a real file', async () => {
   await panel.getByRole('checkbox', { name: /Starred only/ }).check();
   await page.getByRole('button', { name: 'Square' }).click();
   await page.getByRole('radio', { name: 'Cut', exact: true }).click();
-  await page.getByRole('checkbox', { name: /Same loudness/ }).check();
+  await page.getByRole('checkbox', { name: /equally loud/ }).check();
   await page.getByLabel('Name of your movie').fill('e2e-movie');
   await panel.getByRole('button', { name: 'Make my movie' }).click();
 

@@ -5,7 +5,6 @@
  * to the project (composables/useFraming.ts).
  */
 import { computed } from 'vue';
-import { FORMAT_SPEC } from '@shared/ipc';
 import { startDrag } from '@renderer/composables/useDrag';
 import { useFollowFrame } from '@renderer/composables/useFollowFrame';
 import { useFraming } from '@renderer/composables/useFraming';
@@ -14,17 +13,12 @@ import { toast } from '@renderer/components/Base/ToastHost.vue';
 
 const props = defineProps<{ box: Box }>();
 const frame = useFraming();
-const format = frame.format;
 const framePos = frame.framePos;
 const follow = useFollowFrame();
 
-const isVertical = computed(() => format.value === '9x16');
-/** how much of the frame the format keeps along the axis it crops */
-const winFrac = computed(() => {
-  const spec = FORMAT_SPEC[format.value];
-  if (!spec) return 1;
-  return isVertical.value ? spec.w / spec.h : spec.h / spec.w;
-});
+// which way the window slides, and how much it keeps, depend on the shape of this recording too
+const isVertical = computed(() => frame.window.value.horizontal);
+const winFrac = computed(() => frame.window.value.frac);
 /** where the window is drawn: its resting place, or where the corner has taken it */
 const shownPos = computed(() => (follow.on.value ? follow.pos.value : framePos.value));
 const winStyle = computed(() => {

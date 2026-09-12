@@ -6,12 +6,28 @@
  */
 import { computed, type ComputedRef } from 'vue';
 import type { ExportFormat } from '@shared/ipc';
+import { FORMAT_SPEC } from '@shared/ipc';
+import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
 import { useSettingsStore } from '@renderer/stores/settings';
+
+/** the crop window a format makes on the open video */
+export interface CropWindow {
+  /** how much of the frame it keeps along the axis it crops (1 = the whole frame) */
+  frac: number;
+  /** it slides left and right (a tall format on a wide video), rather than up and down */
+  horizontal: boolean;
+}
 
 export interface Framing {
   format: ComputedRef<ExportFormat>;
   framePos: ComputedRef<number>;
+  /**
+   * What the chosen format crops out of this recording. Which way the window slides depends on both
+   * shapes, not on the format alone: 16:9 keeps the whole frame of a GoPro that already films 16:9,
+   * while it takes a band out of DJI's square picture.
+   */
+  window: ComputedRef<CropWindow>;
   /** vertical movies only: the crop window leans into the corners */
   follow: ComputedRef<boolean>;
   /** the project's format; also remembered app-wide as the start for the next new project */
@@ -22,6 +38,7 @@ export interface Framing {
 }
 
 export function useFraming(): Framing {
+  const library = useLibraryStore();
   const projects = useProjectsStore();
   const settings = useSettingsStore();
 
@@ -31,6 +48,17 @@ export function useFraming(): Framing {
   const framePos = computed(
     () => projects.active?.framePos ?? settings.settings?.lastFramePos ?? 0.5,
   );
+  const window = computed<CropWindow>(() => {
+    const spec = FORMAT_SPEC[format.value];
+    const clip = library.currentClip;
+    const source = (clip?.width ?? 1) / (clip?.height ?? 1);
+    if (!spec || !Number.isFinite(source) || source <= 0) return { frac: 1, horizontal: false };
+    const want = spec.w / spec.h;
+    return want < source
+      ? { frac: want / source, horizontal: true }
+      : { frac: source / want, horizontal: false };
+  });
+
   // only the vertical format has room to move sideways, so only there does following mean anything
   const follow = computed(() => format.value === '9x16' && !!projects.active?.follow);
 
@@ -49,5 +77,5 @@ export function useFraming(): Framing {
 
   const setFollow = (on: boolean): Promise<void> => projects.setFollow(on);
 
-  return { format, framePos, follow, setFormat, setFramePos, setFollow };
+  return { format, framePos, window, follow, setFormat, setFramePos, setFollow };
 }

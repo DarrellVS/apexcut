@@ -7,7 +7,6 @@
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { PhCircleHalf } from '@phosphor-icons/vue';
-import { FORMAT_SPEC } from '@shared/ipc';
 import { useFraming } from '@renderer/composables/useFraming';
 import { useLiveGrade } from '@renderer/composables/useLiveGrade';
 import { useMusicSync } from '@renderer/composables/useMusicSync';
@@ -85,13 +84,9 @@ onMounted(() => {
 // ---- the crop the chosen format makes, for the gauge preview and the crop window
 const frame = useFraming();
 const framePos = frame.framePos;
-const isVertical = computed(() => frame.format.value === '9x16');
+const isVertical = computed(() => frame.window.value.horizontal);
 const cropped = computed(() => frame.format.value !== 'original');
-const winFrac = computed(() => {
-  const spec = FORMAT_SPEC[frame.format.value];
-  if (!spec) return 1;
-  return isVertical.value ? spec.w / spec.h : spec.h / spec.w;
-});
+const winFrac = computed(() => frame.window.value.frac);
 
 defineExpose({
   seek: transport.seek,
