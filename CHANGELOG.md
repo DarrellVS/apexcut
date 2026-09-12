@@ -3,7 +3,7 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
-## Unreleased
+## 1.2.0
 
 - **GoPro recordings work now.** Add videos from a GoPro Hero5 or newer and ApexCut reads their
   motion track the same way it reads a DJI one: the corners, braking and acceleration are found,
