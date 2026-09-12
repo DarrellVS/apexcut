@@ -141,6 +141,11 @@ from M videos · length`, made from all videos / only this one, name, 11 px caps
   skipped”); an empty name becomes `my-ride`. Sections are 20 px apart; tiles
   carry an icon and a name only, the explanation is the tooltip. The crop frame is on the
   video whenever the format is not square; its drag hint appears on hover.
+- **Send to my phone** (`Movie/ShareSheet.vue`, from the export result card): a modal with the QR
+  code of the link (240 px, white plate, `qrcode` drawn to a data URL), the address in `num` type
+  with `Copy`, one line about what sharing means (on this computer, on your Wi-Fi, stops in N
+  minutes) and `Stop sharing` / `Done`. Same shape as the ride-card sheet, because it is the same
+  kind of moment.
 - **Colour** (`Movie/ColourSection.vue`, in the Movie panel): `Colour · the movie` or `Colour · this
 part`. Seven **looks** as 4-column tiles, each the open video's thumbnail with that look's filter on
   it (As recorded, Moody, Punchy, Sunny, Golden hour, Film, Black & white); the matching one is

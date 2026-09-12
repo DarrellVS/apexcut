@@ -18,6 +18,7 @@ import type {
   ProjectInfo,
   RideStats,
   Settings,
+  ShareState,
   StorageInfo,
   TimelinePayload,
   UpdateStatus,
@@ -132,6 +133,14 @@ export interface ApexcutApi {
   };
   shell: {
     openFolder(path: string): Promise<void>;
+  };
+  /** hand a finished movie to a phone on the same network (main/services/share.ts) */
+  share: {
+    /** start sharing one movie; any share already running is replaced */
+    start(file: string): Promise<ShareState>;
+    stop(): Promise<void>;
+    /** what is being shared right now, if anything */
+    current(): Promise<ShareState | null>;
   };
   storage: {
     info(): Promise<StorageInfo>;

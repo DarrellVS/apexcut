@@ -13,7 +13,7 @@ import {
 } from 'electron';
 import log from 'electron-log/main';
 import { existsSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { z } from 'zod';
 import pkg from '../../../package.json';
 import { settingsSchema, TITLEBAR_HEIGHT, type Settings } from '@shared/ipc';
@@ -23,6 +23,14 @@ import { createReport } from '../services/report';
 import { paths } from '../services/store';
 import { pickPaths, sanitize } from './helpers';
 import type { Services } from './services';
+
+/** a file ApexCut itself wrote into the output folders — nothing else may be shared */
+function isOwnOutput(s: Services, file: string): boolean {
+  const target = resolve(file).toLowerCase();
+  return (['movies', 'clips'] as const).some((sub) =>
+    target.startsWith(resolve(s.settings.outputDir(sub)).toLowerCase() + sep),
+  );
+}
 
 export function registerSystemIpc(s: Services): void {
   // ---- settings
@@ -36,6 +44,16 @@ export function registerSystemIpc(s: Services): void {
     return s.settings.set(clean as Partial<Settings>);
   });
   ipcMain.handle('settings:encoders', () => encoders());
+
+  // ---- sharing a movie with a phone on the same network
+  ipcMain.handle('share:start', (_e, file: unknown) => {
+    const path = z.string().parse(file);
+    // only the app's own output is ever served, never a file someone else names
+    if (!isOwnOutput(s, path)) throw new Error('only movies ApexCut made can be shared');
+    return s.share.start(path);
+  });
+  ipcMain.handle('share:stop', () => s.share.stop());
+  ipcMain.handle('share:current', () => s.share.current());
   ipcMain.handle('settings:pickOutputDir', async (e) => {
     const [dir] = await pickPaths(e, {
       title: 'Where should your movies go?',

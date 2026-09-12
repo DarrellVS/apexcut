@@ -7,6 +7,7 @@ import { Analysis } from '../services/analysis';
 import { Jobs } from '../services/jobs';
 import { Library } from '../services/library';
 import { Projects } from '../services/projects';
+import { ShareService } from '../services/share';
 import { Storage } from '../services/storage';
 import { Updater } from '../services/updater';
 import { SettingsStore } from '../services/store';
@@ -19,6 +20,7 @@ export interface Services {
   settings: SettingsStore;
   updater: Updater;
   storage: Storage;
+  share: ShareService;
 }
 
 export function createServices(): Services {
@@ -33,5 +35,6 @@ export function createServices(): Services {
     settings: new SettingsStore(),
     updater: new Updater(app.isPackaged),
     storage: new Storage(projects, jobs),
+    share: new ShareService(),
   };
 }

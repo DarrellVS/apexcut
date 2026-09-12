@@ -75,6 +75,11 @@ const api: ApexcutApi = {
   shell: {
     openFolder: (path) => invoke('shell:openFolder', path),
   },
+  share: {
+    start: (file) => invoke('share:start', file),
+    stop: () => invoke('share:stop'),
+    current: () => invoke('share:current'),
+  },
   storage: {
     info: () => invoke('storage:info'),
     cleanup: () => invoke('storage:cleanup'),

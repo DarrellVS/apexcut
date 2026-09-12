@@ -94,6 +94,13 @@ src/
    `drawtext@num`, `drawbox@bar`, all driven per frame from the 30 Hz signals). Ride card:
    `projects:rideStats` sums the project, `analysis:frame` grabs frames of the best parts, the renderer
    draws the PNG (`utils/rideCard.ts`) and `app:saveImage` stores it next to the movies + clipboard.
+   4b. Sharing a movie with a phone (`services/share.ts`): a plain HTTP server on an ephemeral port,
+   bound to the machine's own network address, serving exactly one file behind a 32-character random
+   path — `/<token>` a small page with a `<video>` and a save link, `/<token>/video` the file itself
+   with Range support (phones ask for pieces). Only files under the app's own output folders may be
+   shared (`share:start` refuses anything else), one share at a time, and it closes itself after 30
+   minutes, on `share:stop`, or when the app quits. Windows asks once for permission to accept
+   connections; nothing leaves the local network.
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 

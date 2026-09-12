@@ -206,6 +206,17 @@ export type UpdateStatus =
   | { state: 'error'; message: string };
 
 /** Settings → Storage: size of the scan cache and which scans no project uses any more. */
+/** a movie being handed to a phone over the local network (main/services/share.ts) */
+export interface ShareState {
+  /** the address to open on the phone */
+  url: string;
+  /** the movie being shared, and its file name */
+  file: string;
+  name: string;
+  /** when the share closes itself (epoch ms) */
+  until: number;
+}
+
 export interface StorageInfo {
   dataRoot: string;
   cacheBytes: number;

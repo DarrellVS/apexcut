@@ -133,6 +133,8 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+  // a movie being handed to a phone is served only while ApexCut is open
+  app.on('will-quit', () => services.share.stop());
 });
 
 app.on('window-all-closed', () => {

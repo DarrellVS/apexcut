@@ -3,6 +3,13 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## Unreleased
+
+- **Send the movie to your phone.** When a movie is ready, “Send to my phone” shows a QR code.
+  Point your camera at it and the movie plays on your phone, straight from this computer over your
+  own Wi-Fi — nothing is uploaded anywhere. Saving it from that page puts it in your camera roll,
+  ready for Instagram. The link works for half an hour, and “Stop sharing” ends it at once.
+
 ## 1.2.0
 
 - **GoPro recordings work now.** Add videos from a GoPro Hero5 or newer and ApexCut reads their

@@ -1,13 +1,22 @@
 <script setup lang="ts">
 /** What became of the export, in the panel: the file, the way to watch it, or why it failed. */
+import { ref } from 'vue';
 import { api } from '@renderer/api';
-import { PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
+import { PhDeviceMobile, PhFolderOpen, PhPlay } from '@phosphor-icons/vue';
 import type { JobState } from '@shared/ipc';
+import { useShare } from '@renderer/composables/useShare';
 import { friendlyError } from '@renderer/utils/errors';
+import ShareSheet from './ShareSheet.vue';
 
 defineProps<{ job: JobState }>();
 const emit = defineEmits<{ watch: [url: string] }>();
 const openFolder = (p: string): Promise<void> => api.shell.openFolder(p);
+const share = useShare();
+const sharing = ref(false);
+async function sendToPhone(file: string): Promise<void> {
+  sharing.value = true;
+  await share.start(file);
+}
 </script>
 
 <template>
@@ -30,6 +39,14 @@ const openFolder = (p: string): Promise<void> => api.shell.openFolder(p);
         <PhPlay :size="12" weight="fill" /> Watch
       </button>
       <button
+        v-if="job.result.kind === 'export'"
+        class="btn btn-mini"
+        title="Watch it on your phone over your own Wi-Fi — nothing is uploaded"
+        @click="sendToPhone(job.result.file)"
+      >
+        <PhDeviceMobile :size="12" /> Send to my phone
+      </button>
+      <button
         class="btn btn-mini"
         @click="
           openFolder(
@@ -44,6 +61,7 @@ const openFolder = (p: string): Promise<void> => api.shell.openFolder(p);
         <PhFolderOpen :size="12" /> Open folder
       </button>
     </div>
+    <ShareSheet v-if="sharing" :share="share" @close="sharing = false" />
   </div>
   <div v-else-if="job.status === 'error'" class="card border-danger/40 text-xs">
     <b class="text-fg">{{ friendlyError(job.error).title }}.</b>
