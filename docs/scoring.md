@@ -104,6 +104,12 @@ a viewpoint is; it only knows light, colour and detail. Measured on a real eveni
 moments were an underpass, a covered gallery, a tunnel mouth and two stretches of busy traffic.
 Tests: `tests/core/picture.test.ts`, `tests/e2e/picture.spec.ts`.
 
+## The rider's own marks (switch, off by default)
+
+Two fingers held up to the camera mean "keep this bit". It is not scoring at all: the marks become
+manual parts, so nothing about the score or the threshold changes and a rescore leaves them alone.
+See `docs/gestures.md` for what is measured and how well it works.
+
 ## Changing the rules
 
 Change `DEFAULT_CONFIG`/logic → regenerate the fixture from the Python oracle only if the change is

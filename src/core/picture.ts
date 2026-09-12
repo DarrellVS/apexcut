@@ -29,10 +29,22 @@ export interface PictureStats {
   edges: number[];
 }
 
+/** what made the picture vote for a moment; the order is the order of `PICTURE_WEIGHTS` */
+export const PICTURE_REASONS = ['light', 'golden', 'busy'] as const;
+export type PictureReason = (typeof PICTURE_REASONS)[number];
+/** the same in words a rider would use */
+export const PICTURE_REASON_LABEL: Record<PictureReason, string> = {
+  light: 'the light changed fast',
+  golden: 'low evening sun',
+  busy: 'a busy road',
+};
+
 export interface PictureSignal {
   t: Float64Array;
   /** 0..1, how much this moment is worth watching for what it looks like */
   score: Float64Array;
+  /** which of `PICTURE_REASONS` counted most at that moment */
+  why: Uint8Array;
 }
 
 /** how much each part of the picture counts towards its vote */
@@ -75,7 +87,9 @@ function smooth(values: Float64Array, win: number): Float64Array {
  */
 export function pictureScore(stats: PictureStats): PictureSignal {
   const n = Math.min(stats.t.length, stats.bright.length);
-  if (n < 3) return { t: new Float64Array(0), score: new Float64Array(0) };
+  if (n < 3) {
+    return { t: new Float64Array(0), score: new Float64Array(0), why: new Uint8Array(0) };
+  }
   const fps = stats.fps > 0 ? stats.fps : 2;
 
   // light changing fast: how much the brightness moves per second, against this ride's own middle
@@ -93,14 +107,19 @@ export function pictureScore(stats: PictureStats): PictureSignal {
   // a full picture: hedges, houses, traffic, other riders — as opposed to an empty road
   const busy = overMiddle(stats.edges.slice(0, n), 2);
 
-  const raw = change.map(
-    (v, i) =>
-      PICTURE_WEIGHTS.change * v +
-      PICTURE_WEIGHTS.golden * golden[i] +
-      PICTURE_WEIGHTS.busy * busy[i],
-  );
+  const raw = new Float64Array(n);
+  // which of the three counted most right there, so a part can say why it was picked
+  const why = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = PICTURE_WEIGHTS.change * change[i];
+    const b = PICTURE_WEIGHTS.golden * golden[i];
+    const c = PICTURE_WEIGHTS.busy * busy[i];
+    raw[i] = a + b + c;
+    why[i] = a >= b && a >= c ? 0 : b >= c ? 1 : 2;
+  }
   return {
     t: Float64Array.from(stats.t.slice(0, n)),
     score: smooth(raw, Math.max(1, Math.round(PICTURE_SMOOTH_S * fps))).map(clip01),
+    why,
   };
 }

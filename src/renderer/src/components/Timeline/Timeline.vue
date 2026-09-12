@@ -17,6 +17,7 @@ import { fmtDuration } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import MovieLane from './MovieLane.vue';
 import MovieRuler from './MovieRuler.vue';
+import MarkFlags from './MarkFlags.vue';
 import MusicLane from './MusicLane.vue';
 import PartBlock from './PartBlock.vue';
 import PartToolbar from './PartToolbar.vue';
@@ -238,6 +239,7 @@ function del(): void {
         ref="stripCv"
         class="strip pointer-events-none absolute inset-0 h-full w-full saturate-[.6]"
       />
+      <MarkFlags :view="view" @seek="emit('seek', $event)" />
       <PartBlock
         v-for="p in editor.parts"
         :key="p.id"

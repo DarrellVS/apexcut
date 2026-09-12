@@ -4,6 +4,7 @@
  * when it is, how long, how far you leant and how hard you braked. Otherwise the movie so far.
  */
 import { computed } from 'vue';
+import { PICTURE_REASON_LABEL } from '@core/picture';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useEditorStore } from '@renderer/stores/editor';
@@ -20,6 +21,11 @@ function why(p: Part): string {
   if (p.max_lean_deg) bits.push(`up to ${Math.round(p.max_lean_deg)}° lean`);
   if (brake > 0.25) bits.push(`braking ${brake.toFixed(1)} g`);
   if (accel > 0.25) bits.push(`acceleration ${accel.toFixed(1)} g`);
+  if (p.marked && p.marked_at !== undefined) bits.push(`you marked it at ${fmtTime(p.marked_at)}`);
+  // parts the picture voted in say what it saw there, since the sensor numbers explain nothing
+  if (p.picture) {
+    bits.push(`found in the picture: ${PICTURE_REASON_LABEL[p.picture_why ?? 'light']}`);
+  }
   if (p.parts) bits.push(`${p.parts.length} parts joined`);
   if (!p.enabled) bits.push('left out');
   return bits.join(' · ');
@@ -46,7 +52,9 @@ const summary = computed(() => {
       leave-to-class="opacity-0"
     >
       <span v-if="part" :key="part.id" class="num max-w-full truncate text-xs leading-7">
-        <b class="text-fg">{{ REASON_LABEL[reasonOf(part)] }}</b>
+        <b :class="part.marked ? 'text-mark' : 'text-fg'">
+          {{ part.marked ? 'You marked this' : REASON_LABEL[reasonOf(part)] }}
+        </b>
         <span class="ml-1.5 text-fg2">{{ why(part) }}</span>
       </span>
       <span v-else class="num text-xs leading-7 text-fg3">{{ summary }}</span>

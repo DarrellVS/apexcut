@@ -12,9 +12,11 @@ import type { GoproHeader } from '@core/gopro';
 import type { ImuSignals } from '@core/imu';
 import { pictureScore, type PictureStats } from '@core/picture';
 import { compute, type ScoreResult, type ScoreSignals } from '@core/score';
-import { autoToParts, mergeSelection } from '@core/selection';
+import type { GestureMark } from '@core/gesture';
+import { autoToParts, marksToParts, mergeSelection } from '@core/selection';
 import type { Part, ScoreConfig, Segment } from '@core/types';
 import type { TimelinePayload } from '@shared/ipc';
+import { GestureScanAction } from '../actions/gesture';
 import { PictureStatsAction } from '../actions/picture';
 import { ThumbnailAction } from '../actions/thumbs';
 import type { JobContext } from './jobs';
@@ -37,6 +39,7 @@ const SIGNAL_COLUMNS = [
   'nYaw',
   'nAccel',
   'score',
+  'picture',
 ] as const satisfies readonly (keyof ScoreSignals)[];
 
 interface StoredSignals {
@@ -286,6 +289,42 @@ export class Analysis {
     writeJson(join(this.dir(stem), 'picture.json'), stats);
     log.info(`picture ${stem}: ${stats.t.length} frames looked at`);
     return stats;
+  }
+
+  /** The moments the rider marked with two fingers, if this video has been looked at. */
+  marks(stem: string): GestureMark[] | null {
+    return readJson<GestureMark[] | null>(join(this.dir(stem), 'marks.json'), null);
+  }
+
+  /**
+   * Look through a video for the rider's own marks and put them in the selection as parts. Cached
+   * like the picture numbers, so switching it off and on again costs nothing.
+   */
+  async lookForMarks(stem: string, ctx: JobContext, base = 0, span = 1): Promise<GestureMark[]> {
+    let marks = this.marks(stem);
+    if (!marks) {
+      const meta = readJson<ClipMeta | null>(join(this.dir(stem), 'clip.json'), null);
+      marks = await new GestureScanAction().execute(
+        this.library.proxyOf(stem),
+        ctx.signal,
+        (f) => ctx.progress(base + f * span, 'Looking for your marks'),
+        meta?.durationS,
+      );
+      writeJson(join(this.dir(stem), 'marks.json'), marks);
+      log.info(`marks ${stem}: ${marks.length} found`);
+    }
+    this.applyMarks(stem, marks);
+    return marks;
+  }
+
+  /** Put the marks of a video into its selection (or take them out again when `on` is false). */
+  applyMarks(stem: string, marks: GestureMark[] | null): void {
+    const sel = this.readSelection(stem);
+    const meta = readJson<ClipMeta | null>(join(this.dir(stem), 'clip.json'), null);
+    const others = sel.parts.filter((p) => !p.marked);
+    const mine = marks ? marksToParts(marks, meta?.durationS ?? 0) : [];
+    const parts = [...others, ...mine].sort((a, b) => a.start_s - b.start_s);
+    this.writeSelection(stem, { ...sel, parts });
   }
 
   /** The config the clip was last scored with, or null when not analysed. */

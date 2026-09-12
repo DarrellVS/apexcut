@@ -3,6 +3,19 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## Unreleased
+
+- **Keep the bits you point at.** Hold two fingers up to the camera for about a second while you
+  ride and ApexCut keeps that spot: the ten seconds before your hand went up become a part of their
+  own. Your own marks are unmistakable — pink, named "You marked this", with a flag on the timeline
+  at the moment you made it — and nothing the app decides can push them out. Off unless you ask for
+  it, under "How picky?". It works on what the camera sees, not on recognising hands, so hold the
+  gesture up for a second; in the dark it may mark something wrong about once every twenty minutes.
+- **Parts the picture found now say why.** Hover one and the title bar reads "found in the picture:
+  the light changed fast", "low evening sun" or "a busy road", and the timeline marks them with a
+  blue line and an eye instead of leaving you guessing.
+- Blocks on the timeline no longer fade out at their right edge.
+
 ## 1.3.1
 
 - **The crop frame on the video was wrong for GoPro.** It assumed a square recording, so on a 16:9

@@ -1,4 +1,5 @@
 import type { Grade } from './grade';
+import type { PictureReason } from './picture';
 /** Reason keys are stored on disk; the UI maps them to English labels. */
 export type Reason = 'bochten' | 'accel/rem' | 'beide' | 'handmatig' | 'samengeplakt';
 
@@ -51,6 +52,10 @@ export interface Segment {
   max_brake_g: number;
   max_accel_g: number;
   reden: Reason;
+  /** only in the movie because of what it looks like: the sensor alone stayed under the line */
+  picture?: boolean;
+  /** and what the picture saw there (`PICTURE_REASONS`) */
+  picture_why?: PictureReason;
 }
 
 /** A part as the user sees and edits it. */
@@ -67,4 +72,8 @@ export interface Part extends Partial<Omit<Segment, 'start_s' | 'end_s' | 'reden
   starred?: boolean;
   /** its own colours, instead of the movie's (see core/grade.ts) */
   grade?: Grade;
+  /** the rider marked this spot themselves, with two fingers to the camera (core/gesture.ts) */
+  marked?: boolean;
+  /** the moment the fingers went up, seconds into the video */
+  marked_at?: number;
 }

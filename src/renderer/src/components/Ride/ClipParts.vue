@@ -4,7 +4,8 @@
  * it happens, what it is and how long. Click one to go there, double-click to play it.
  */
 import { nextTick } from 'vue';
-import { PhCircleHalf, PhStar } from '@phosphor-icons/vue';
+import { PhCircleHalf, PhEye, PhHandPeace, PhStar } from '@phosphor-icons/vue';
+import { PICTURE_REASON_LABEL } from '@core/picture';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import type { Part } from '@core/types';
 import { useEditorStore } from '@renderer/stores/editor';
@@ -80,8 +81,24 @@ function until(ok: () => boolean, ms = 4000): Promise<void> {
       <span v-else class="h-3 w-3 flex-none" />
       <span class="h-3 w-[3px] flex-none rounded-[1px]" :style="{ background: colorOf(p) }" />
       <span class="w-9 text-fg2">{{ fmtTime(p.start_s) }}</span>
-      <span class="min-w-0 flex-1 truncate">{{ REASON_LABEL[reasonOf(p)] }}</span>
+      <span class="min-w-0 flex-1 truncate" :class="{ 'font-semibold text-mark': p.marked }">
+        {{ p.marked ? 'You marked this' : REASON_LABEL[reasonOf(p)] }}
+      </span>
       <span class="text-fg2">{{ fmtDuration(p.end_s - p.start_s) }}</span>
+      <PhHandPeace
+        v-if="p.marked"
+        :size="12"
+        weight="fill"
+        class="flex-none text-mark"
+        title="You marked this spot yourself, with two fingers to the camera"
+      />
+      <PhEye
+        v-if="p.picture"
+        :size="11"
+        weight="fill"
+        class="flex-none text-picture"
+        :title="`In the movie for what it looks like: ${PICTURE_REASON_LABEL[p.picture_why ?? 'light']}`"
+      />
       <PhCircleHalf
         v-if="p.grade"
         :size="11"

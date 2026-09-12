@@ -141,6 +141,12 @@ from M videos · length`, made from all videos / only this one, name, 11 px caps
   skipped”); an empty name becomes `my-ride`. Sections are 20 px apart; tiles
   carry an icon and a name only, the explanation is the tooltip. The crop frame is on the
   video whenever the format is not square; its drag hint appears on hover.
+- **A part you marked yourself** stands out from everything the app chose: `--mark` (pink) as a 2 px
+  inset ring and left stripe on the block, a hand icon and the words "You marked this" instead of the
+  reason, the same pink in the ride rail row and in the title bar, a flag on the parts lane at the
+  moment the fingers went up (`Timeline/MarkFlags.vue`, click to jump there), and "your own marks" in
+  the legend. Parts the picture voted in are quieter: `--picture` (blue) as a 3 px line along the
+  bottom of the block and a small eye, with what the picture saw in the tooltip and the title bar.
 - **Send to my phone** (`Movie/ShareSheet.vue`, from the export result card): a modal with the QR
   code of the link (240 px, white plate, `qrcode` drawn to a data URL), the address in `num` type
   with `Copy`, one line about what sharing means (on this computer, on your Wi-Fi, stops in N

@@ -16,7 +16,8 @@ const jobs = useJobsStore();
 </script>
 
 <template>
-  <div class="chip absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-0.5 p-1">
+  <!-- z-30: above the crop frame (z-20), which otherwise covers the buttons and swallows clicks -->
+  <div class="chip absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 p-1">
     <button
       class="chip-btn w-8 justify-center"
       title="Previous part ["

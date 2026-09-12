@@ -124,6 +124,8 @@ export interface ProjectInfo {
   loudness: boolean;
   /** the picture itself votes on which moments are kept */
   picture: boolean;
+  /** the rider's own marks (two fingers to the camera) are looked for */
+  gestures: boolean;
   /** vertical movies: the crop window leans into the corners while the movie is made */
   follow: boolean;
   /**
@@ -144,7 +146,7 @@ export interface TimelinePayload {
   durationS: number;
 }
 
-export type JobKind = 'analyze' | 'picture' | 'export' | 'extract';
+export type JobKind = 'analyze' | 'picture' | 'gesture' | 'export' | 'extract';
 export type JobStatus = 'running' | 'done' | 'error' | 'cancelled';
 
 export interface JobState {
@@ -169,6 +171,8 @@ export type JobResult =
   | { kind: 'analyze'; stems: string[]; failed?: ScanFailure[] }
   /** the videos the picture vote has looked at */
   | { kind: 'picture'; stems: string[] }
+  /** the videos looked through for the rider's own marks, and how many were found */
+  | { kind: 'gesture'; stems: string[]; marks: number }
   | { kind: 'export'; file: string; url: string; sizeMb: number }
   | { kind: 'extract'; folder: string; files: string[] };
 

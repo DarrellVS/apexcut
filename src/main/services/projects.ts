@@ -40,6 +40,8 @@ export interface ProjectRecord {
   pulls?: boolean;
   /** the picture itself votes on which moments are worth keeping (core/picture.ts) */
   picture?: boolean;
+  /** look for the rider's own marks: two fingers to the camera (core/gesture.ts) */
+  gestures?: boolean;
   /** out of the way on the projects screen; never the open project */
   archived?: boolean;
   /** how parts are joined in the movie (crossfade when absent) */
@@ -204,6 +206,7 @@ export class Projects {
       preset: p.preset ?? 'sporty',
       pulls: !!p.pulls,
       picture: !!p.picture,
+      gestures: !!p.gestures,
       archived: !!p.archived,
       transition: p.transition ?? 'crossfade',
       music: p.music ?? DEFAULT_MUSIC,
@@ -275,6 +278,10 @@ export class Projects {
 
   setPicture(picture: boolean): void {
     this.patchActive({ picture });
+  }
+
+  setGestures(gestures: boolean): void {
+    this.patchActive({ gestures });
   }
 
   setTransition(transition: Transition): void {

@@ -66,6 +66,11 @@ export interface ApexcutApi {
      * of the project first (a pass over the proxy), so this runs as a job.
      */
     setPicture(on: boolean): Promise<string | null>;
+    /**
+     * Look through every scanned video for the rider's own marks — two fingers held up to the
+     * camera. Runs as a job; switching it off takes the marks out again at once.
+     */
+    setGestures(on: boolean): Promise<string | null>;
     /** the order the parts play in (`"<video>:<part id>"` keys); empty goes back to the natural one */
     setOrder(order: string[]): Promise<void>;
     /** the numbers of the open project for the ride card */

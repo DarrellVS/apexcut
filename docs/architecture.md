@@ -104,6 +104,13 @@ src/
 5. Media: `apexcut://media/<stem>/proxy` streams the LRF with Range support for the `<video>` element;
    filmstrip sprite and thumbnails served the same way.
 
+### The rider's own marks
+
+`projects:setGestures` runs a job (kind `gesture`) that looks through every scanned video once —
+`GestureScanAction`, one ffmpeg pass piping grey frames into `core/gesture.ts` — writes
+`clips/<stem>/marks.json`, and puts the marks into each selection as manual parts (`marksToParts`).
+Switching it off takes those parts out again without a pass. See `docs/gestures.md`.
+
 ### The picture vote
 
 `projects:setPicture` runs a job (kind `picture`, so the editor does not switch to the scanning

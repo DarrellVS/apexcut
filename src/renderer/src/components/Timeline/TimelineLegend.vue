@@ -56,6 +56,14 @@ const zoomInput = computed({
         ><span class="mr-1.5 inline-block w-3 border-t border-dashed border-fg3 align-[2px]" />“fun
         enough” line</span
       >
+      <span v-if="editor.marked" title="The spots you marked yourself, two fingers to the camera"
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-mark align-[-1px]" />your own
+        marks</span
+      >
+      <span v-if="editor.picture" title="What the picture itself voted for, on top of the sensor"
+        ><span class="mr-1.5 inline-block h-2 w-2 rounded-[1px] bg-picture align-[-1px]" />the
+        picture</span
+      >
     </template>
     <span v-else class="text-fg3">Drag a part to move it in the movie</span>
     <span class="flex-1" />

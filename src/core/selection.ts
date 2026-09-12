@@ -4,6 +4,43 @@
  */
 import type { Part, Reason, Segment } from './types';
 
+/** how much of the ride a mark keeps: the seconds before the fingers went up, and after */
+export const MARK_BEFORE_S = 10;
+export const MARK_AFTER_S = 2;
+
+/**
+ * The parts the rider marked themselves. A mark is made *after* something worth keeping, so the
+ * part runs from ten seconds before the fingers went up to two after. They are manual parts, so
+ * rescoring and new presets leave them alone, and they replace the marks of an earlier look.
+ */
+export function marksToParts(
+  marks: { tS: number }[],
+  durationS: number,
+  before = MARK_BEFORE_S,
+  after = MARK_AFTER_S,
+): Part[] {
+  const round = (v: number): number => Math.round(v * 100) / 100;
+  const out: Part[] = [];
+  for (const [i, m] of [...marks].sort((a, b) => a.tS - b.tS).entries()) {
+    const end = round(Math.min(durationS || m.tS + after, m.tS + after));
+    // two marks close together do not turn into two overlapping parts
+    const floor = out.length ? out[out.length - 1].end_s : 0;
+    const start = round(Math.max(0, floor, m.tS - before));
+    if (end - start < 0.5) continue;
+    out.push({
+      id: `g${i}`,
+      start_s: start,
+      end_s: end,
+      reden: 'handmatig',
+      enabled: true,
+      manual: true,
+      marked: true,
+      marked_at: round(m.tS),
+    });
+  }
+  return out;
+}
+
 export function autoToParts(segments: Segment[]): Part[] {
   return segments.map((s, i) => ({ ...s, id: `a${i}`, enabled: true, manual: false }));
 }

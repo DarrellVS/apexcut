@@ -27,6 +27,8 @@
   --brake: #2f9d97;
   --both: #7f6bcf;
   --manual: #7c8089;
+  --picture: #4a7fd4; /* what the picture itself voted for */
+  --mark: #d6338a; /* the rider's own mark: two fingers to the camera */
   --play: #17181b; /* playhead */
   /* theme swatches in Settings → Appearance: fixed, whatever theme is active */
   --swatch-light: #f3f3f5;
@@ -62,6 +64,8 @@
   --brake: #4fb3ad;
   --both: #9d8ce0;
   --manual: #8b8f98;
+  --picture: #6f9ee8;
+  --mark: #ff5fae;
   --play: #e8e9ec;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   --block-mix: 40%;
@@ -88,6 +92,8 @@
   --color-brake: var(--brake);
   --color-both: var(--both);
   --color-manual: var(--manual);
+  --color-picture: var(--picture);
+  --color-mark: var(--mark);
   --color-play: var(--play);
   --color-swatch-light: var(--swatch-light);
   --color-swatch-dark: var(--swatch-dark);

@@ -24,21 +24,21 @@ const PRESETS: Preset[] = [
   {
     id: 'youtube',
     label: 'YouTube',
-    hint: 'Widescreen 16:9, even loudness',
+    hint: '16:9, equally loud',
     format: '16x9',
     loudness: true,
   },
   {
     id: 'phone',
     label: 'Reels, Shorts, TikTok',
-    hint: 'Vertical 9:16, even loudness',
+    hint: '9:16, equally loud',
     format: '9x16',
     loudness: true,
   },
   {
     id: 'keep',
     label: 'Keep it as recorded',
-    hint: 'Square, the sound as it came off the camera',
+    hint: 'Square, sound as recorded',
     format: 'original',
     loudness: false,
   },
@@ -80,8 +80,8 @@ async function apply(p: Preset): Promise<void> {
         :title="p.hint"
         @click="apply(p)"
       >
-        <span class="min-w-0 flex-1 truncate text-fg">{{ p.label }}</span>
-        <span class="flex-none text-[11px] text-fg3">{{ p.hint }}</span>
+        <span class="flex-none whitespace-nowrap text-fg">{{ p.label }}</span>
+        <span class="min-w-0 flex-1 truncate text-right text-[11px] text-fg3">{{ p.hint }}</span>
       </button>
     </div>
   </details>

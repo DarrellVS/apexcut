@@ -151,6 +151,13 @@ export const useProjectsStore = defineStore('projects', () => {
     await api.projects.setFollow(on);
   }
 
+  /** look for the rider's own marks (two fingers to the camera); a job when switching it on */
+  async function setGestures(on: boolean): Promise<string | null> {
+    const p = projects.value.find((x) => x.id === activeId.value);
+    if (p) p.gestures = on;
+    return api.projects.setGestures(on);
+  }
+
   /** the order the parts play in; optimistic so a drag lands at once */
   async function setOrder(order: string[]): Promise<void> {
     const p = active.value;
@@ -200,6 +207,7 @@ export const useProjectsStore = defineStore('projects', () => {
     archive,
     setPulls,
     setPicture,
+    setGestures,
     setTransition,
     setFormat,
     setFramePos,

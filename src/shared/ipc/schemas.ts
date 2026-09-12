@@ -3,6 +3,7 @@
  * truth for both sides; a handler that parses with these can trust what it gets.
  */
 import { z } from 'zod';
+import { PICTURE_REASONS } from '@core/picture';
 import { FORMATS, TRANSITIONS } from './movie';
 import { DEFAULT_MUSIC, musicSettingsSchema, overlaySpecSchema } from './dto';
 
@@ -61,6 +62,10 @@ export const partSchema = z.object({
   manual: z.boolean(),
   parts: z.array(z.tuple([z.number(), z.number()])).optional(),
   starred: z.boolean().optional(),
+  picture: z.boolean().optional(),
+  picture_why: z.enum(PICTURE_REASONS).optional(),
+  marked: z.boolean().optional(),
+  marked_at: z.number().optional(),
   grade: gradeSchema.optional(),
   score: z.number().nullable().optional(),
   peak: z.number().optional(),

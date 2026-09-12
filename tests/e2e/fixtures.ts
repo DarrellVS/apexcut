@@ -91,6 +91,22 @@ export function goproVideo(): string | null {
   return null;
 }
 
+/**
+ * A recording in which the rider holds two fingers up to the camera: `APEXCUT_E2E_GESTURE`, else a
+ * `.LRF` in `~/Videos/DJI-GESTURES`. Tests that need it skip when there is none.
+ */
+export function gestureVideo(): string | null {
+  const env = process.env.APEXCUT_E2E_GESTURE;
+  if (env && existsSync(env)) return env;
+  const dir = join(homedir(), 'Videos', 'DJI-GESTURES');
+  if (!existsSync(dir)) return null;
+  const files = readdirSync(dir)
+    .filter((f) => /\.lrf$/i.test(f))
+    .map((f) => join(dir, f))
+    .sort();
+  return files[0] ?? null;
+}
+
 /** one or more large recordings (`;`-separated) for the "stop scanning" test; [] when unset */
 export function bigDjiVideos(): string[] {
   return (process.env.APEXCUT_E2E_BIG_VIDEO ?? '')

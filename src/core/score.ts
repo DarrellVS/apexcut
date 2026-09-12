@@ -6,7 +6,7 @@
  * See docs/scoring.md for the rules and why they exist.
  */
 import type { ImuSignals } from './imu';
-import type { PictureSignal } from './picture';
+import { PICTURE_REASONS, type PictureSignal } from './picture';
 import {
   abs,
   clip01,
@@ -83,6 +83,12 @@ export interface ScoreSignals {
   nAccel: Float64Array;
   scoreRaw: Float64Array;
   score: Float64Array;
+  /** the score without the picture's vote — what the sensor alone made of it */
+  scoreMotion: Float64Array;
+  /** what the picture's vote added to the score (0 everywhere when it is off) */
+  picture: Float64Array;
+  /** which of `PICTURE_REASONS` the picture voted on, per moment */
+  pictureWhy: Float64Array;
   cornerPart: Float64Array;
   accelPart: Float64Array;
 }
@@ -188,12 +194,20 @@ export function compute(
   );
   // ... and what the picture had to say, if the rider asked for it. Also purely additive, and also
   // left out of the threshold below, so letting the picture vote can only add parts.
-  const pictureVote =
-    picture && picture.t.length && cfg.picture_weight > 0
-      ? interp(t, picture.t, picture.score)
-      : new Float64Array(nGrid);
+  const votes = picture && picture.t.length && cfg.picture_weight > 0 ? picture : null;
+  const pictureVote = votes ? interp(t, votes.t, votes.score) : new Float64Array(nGrid);
+  // the reason is a name, not a number: take the one from the nearest moment the picture judged
+  const pictureWhy = new Float64Array(nGrid);
+  if (votes) {
+    let j = 0;
+    for (let i = 0; i < nGrid; i++) {
+      while (j + 1 < votes.t.length && votes.t[j + 1] <= t[i]) j++;
+      pictureWhy[i] = votes.why[j] ?? 0;
+    }
+  }
   const scoreMotion = cfg.pulls ? scoreOf(nAccel) : scoreBase;
-  const score = scoreMotion.map((v, i) => v + cfg.picture_weight * pictureVote[i]);
+  const pictureAdds = pictureVote.map((v) => cfg.picture_weight * v);
+  const score = scoreMotion.map((v, i) => v + pictureAdds[i]);
   const cornerPart = roll(
     nLean.map((v, i) => (w.lean * v + w.yaw * nYaw[i]) / totalW),
     smooth,
@@ -226,10 +240,15 @@ export function compute(
     nAccel,
     scoreRaw,
     score,
+    scoreMotion,
+    picture: pictureAdds,
+    pictureWhy,
     cornerPart,
     accelPart,
   };
-  return { signals, segments: buildSegments(signals, threshold, cfg), threshold, config: cfg };
+  const segments = buildSegments(signals, threshold, cfg);
+  markPictureParts(segments, signals, threshold, cfg);
+  return { signals, segments, threshold, config: cfg };
 }
 
 /**
@@ -254,6 +273,39 @@ export function detectPulls(aLon: Float64Array, fs: number, cfg: ScoreConfig): F
     i = j;
   }
   return mask;
+}
+
+/**
+ * Which parts the picture put there. A part is the picture's doing when the sensor alone would not
+ * have made a part at that moment at all — the same segments built from the motion score only. The
+ * reason is what the picture saw where it voted hardest inside that part.
+ */
+export function markPictureParts(
+  segments: Segment[],
+  s: ScoreSignals,
+  thr: number,
+  cfg: ScoreConfig,
+): void {
+  if (!cfg.picture_weight || !s.picture.some((v) => v > 0)) return;
+  const motionOnly = buildSegments({ ...s, score: s.scoreMotion }, thr, cfg);
+  for (const seg of segments) {
+    const alsoWithout = motionOnly.some(
+      (m) =>
+        Math.min(m.core_end_s, seg.core_end_s) - Math.max(m.core_start_s, seg.core_start_s) > 0,
+    );
+    if (alsoWithout) continue;
+    let best = -Infinity;
+    let why = 0;
+    for (let i = 0; i < s.t.length; i++) {
+      if (s.t[i] < seg.core_start_s || s.t[i] > seg.core_end_s) continue;
+      if (s.picture[i] > best) {
+        best = s.picture[i];
+        why = s.pictureWhy[i] ?? 0;
+      }
+    }
+    seg.picture = true;
+    seg.picture_why = PICTURE_REASONS[why] ?? 'light';
+  }
 }
 
 export function buildSegments(s: ScoreSignals, thr: number, cfg: ScoreConfig): Segment[] {
@@ -289,6 +341,7 @@ export function buildSegments(s: ScoreSignals, thr: number, cfg: ScoreConfig): S
     for (let i = 0; i < n; i++) {
       if (t[i] < s0 || t[i] > s1) continue;
       cnt++;
+
       corner += s.cornerPart[i];
       accel += s.accelPart[i];
       sum += s.score[i];

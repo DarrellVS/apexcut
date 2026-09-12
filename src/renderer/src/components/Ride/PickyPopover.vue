@@ -8,7 +8,7 @@ import { AMOUNT_LEVELS, useEditorStore } from '@renderer/stores/editor';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { useLibraryStore } from '@renderer/stores/library';
 import { useProjectsStore } from '@renderer/stores/projects';
-import { fmtTime } from '@renderer/utils/format';
+import { fmtTime, plural } from '@renderer/utils/format';
 import { toast } from '@renderer/components/Base/ToastHost.vue';
 import { usePopover } from '@renderer/composables/usePopover';
 
@@ -88,6 +88,28 @@ async function togglePicture(on: boolean): Promise<void> {
     );
   } finally {
     looking.value = false;
+  }
+}
+const gestures = computed(() => projects.active?.gestures ?? false);
+const looking2 = ref(false);
+/** the rider's own marks: two fingers to the camera while riding */
+async function toggleGestures(on: boolean): Promise<void> {
+  if (looking2.value) return;
+  looking2.value = true;
+  try {
+    const jobId = await projects.setGestures(on);
+    if (jobId) {
+      toast('Looking through your videos for your marks…');
+      const job = await jobs.finished(jobId);
+      const found = job.result?.kind === 'gesture' ? job.result.marks : 0;
+      toast(found ? `${plural(found, 'mark')} found` : 'No marks found in these videos');
+    } else if (!on) {
+      toast('Your marks are out of the movie again');
+    }
+    if (editor.stem) await editor.open(editor.stem);
+    await Promise.all([library.refresh(), projects.refresh()]);
+  } finally {
+    looking2.value = false;
   }
 }
 function addHere(): void {
@@ -170,6 +192,22 @@ function addHere(): void {
             Looks at the recording as well as the sensor: tunnels and underpasses, light changing
             fast, evening sun, a road full of traffic. It only adds moments, never takes any away.
             Takes about ten seconds per video the first time.
+          </span>
+        </span>
+      </label>
+      <label class="mt-2 flex cursor-pointer items-start gap-2 text-xs">
+        <input
+          type="checkbox"
+          class="mt-0.5"
+          :checked="gestures"
+          :disabled="looking2"
+          @change="toggleGestures(($event.target as HTMLInputElement).checked)"
+        />
+        <span>
+          <b class="block font-semibold text-fg">Keep the bits I pointed at</b>
+          <span class="text-fg2">
+            Hold two fingers up to the camera for about a second while you ride, and that spot is
+            kept — the ten seconds before your hand went up. Your marks stand out on the timeline.
           </span>
         </span>
       </label>

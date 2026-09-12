@@ -29,7 +29,7 @@ prototype in `C:\Users\darre\dji-highlights` (the parity oracle — do not modif
 
 `src/core` pure TS (no Node/DOM) — `dji/` and `gopro/` parsing (both end as `frames.ts`), `imu.ts`,
 `numeric.ts` (the numpy/pandas behaviour the oracle needs), `score.ts`, `selection.ts`, `grade/`,
-`overlay/`, `framing/`, `edl.ts`. Unit-tested.
+`overlay/`, `framing/`, `picture.ts`, `gesture.ts`, `edl.ts`. Unit-tested.
 `src/main` Electron main — `ipc/` (one module per domain), `services/` (library, projects, analysis,
 jobs, media, protocol, storage, updater, windows), `actions/` (ffmpeg: `cut/` = quality rules, the
 pure argument plan, the run, joining and compiling), `workers/`, `startup.ts`.

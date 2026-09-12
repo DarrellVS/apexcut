@@ -125,6 +125,40 @@ export function registerProjectIpc(s: Services): void {
     );
   });
 
+  /**
+   * The rider's own marks: every scanned video is looked through once (cached), and the marks
+   * become parts. Switching it off takes them out of the selection again straight away.
+   */
+  ipcMain.handle('projects:setGestures', (_e, onRaw: unknown) => {
+    const on = z.boolean().parse(onRaw);
+    s.projects.setGestures(on);
+    const clips = s.projects.clipInfos().filter((c) => c.analyzed);
+    if (!on || !clips.length) {
+      for (const c of clips) s.analysis.applyMarks(c.stem, null);
+      log.info(`marks off for project ${s.projects.activeId}`);
+      return null;
+    }
+    return s.jobs.start(
+      'gesture',
+      clips.length === 1 ? 'Looking for your marks' : `Looking through ${clips.length} videos`,
+      async (ctx) => {
+        let found = 0;
+        for (let i = 0; i < clips.length; i++) {
+          if (ctx.signal.aborted) throw new Error('cancelled');
+          const marks = await s.analysis.lookForMarks(
+            clips[i].stem,
+            ctx,
+            i / clips.length,
+            1 / clips.length,
+          );
+          found += marks.length;
+        }
+        log.info(`marks on for project ${s.projects.activeId}: ${found} found`);
+        return { kind: 'gesture', stems: clips.map((c) => c.stem), marks: found };
+      },
+    );
+  });
+
   // ---- the `.apexcut` file: the videos' paths and the selections, never the video itself
   ipcMain.handle('projects:exportFile', async (e, idRaw: unknown) => {
     const id = z.string().parse(idRaw);

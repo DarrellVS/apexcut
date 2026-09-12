@@ -5,7 +5,8 @@
  * lines up with it exactly — unlike the parts lane, which runs in the open video's own time.
  */
 import { computed, ref } from 'vue';
-import { PhCircleHalf, PhStar } from '@phosphor-icons/vue';
+import { PhCircleHalf, PhEye, PhStar } from '@phosphor-icons/vue';
+import { PICTURE_REASON_LABEL } from '@core/picture';
 import { REASON_LABEL, reasonOf } from '@core/selection';
 import { useMovieOrder, type MoviePart } from '@renderer/composables/useMovieOrder';
 import { useMovieTime } from '@renderer/composables/useMovieTime';
@@ -70,7 +71,7 @@ function go(p: MoviePart): void {
     <div
       v-for="p in movie.parts.value"
       :key="p.key"
-      class="absolute top-2.5 bottom-2.5 z-[1] flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-block pr-2 pl-2 text-xs whitespace-nowrap text-fg [mask-image:linear-gradient(90deg,#000_calc(100%-10px),transparent)]"
+      class="absolute top-2.5 bottom-2.5 z-[1] flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-block pr-2 pl-2 text-xs whitespace-nowrap text-fg"
       :class="[
         cls(p),
         {
@@ -102,6 +103,17 @@ function go(p: MoviePart): void {
           {{ fmtDuration(p.lengthS) }}
         </span>
       </template>
+      <div
+        v-if="p.part.picture"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-picture"
+        :title="`In the movie for what it looks like: ${PICTURE_REASON_LABEL[p.part.picture_why ?? 'light']}`"
+      />
+      <PhEye
+        v-if="p.part.picture"
+        :size="9"
+        weight="fill"
+        class="absolute right-2 bottom-1 text-picture"
+      />
       <PhCircleHalf
         v-if="p.part.grade"
         :size="9"

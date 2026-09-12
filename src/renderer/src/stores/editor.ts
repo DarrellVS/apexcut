@@ -46,6 +46,12 @@ export const useEditorStore = defineStore('editor', () => {
   const suggestions = computed(() =>
     computeSuggestions(parts.value, (data.value.score ?? []) as number[], threshold.value),
   );
+  /** did the picture have a say in this video's parts? (the vote is 0 everywhere when it is off) */
+  const picture = computed(() =>
+    ((data.value.picture ?? []) as (number | null)[]).some((v) => (v ?? 0) > 0),
+  );
+  /** did the rider mark anything in this video themselves? */
+  const marked = computed(() => parts.value.some((p) => p.marked));
   const amountIndex = computed(() => {
     const i = AMOUNT_LEVELS.indexOf(config.value?.threshold_pct ?? 75);
     return i >= 0 ? i : 2;
@@ -288,6 +294,8 @@ export const useEditorStore = defineStore('editor', () => {
     activePart,
     suggestions,
     amountIndex,
+    picture,
+    marked,
     open,
     close,
     flush,

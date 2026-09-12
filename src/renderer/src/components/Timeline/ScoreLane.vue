@@ -52,6 +52,8 @@ function paint({ ctx, W, H, dpr }: Paint): void {
     ['nLean', token('--corner'), 1],
     ['nAccel', token('--brake'), 1],
   ];
+  // what the picture added to the score, when the rider let it vote: its own line under the rest
+  if (editor.picture) series.push(['picture', token('--picture'), 1.25]);
   for (const [key, color, w] of series) {
     const arr = editor.data[key];
     if (!arr) continue;
