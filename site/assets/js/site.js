@@ -221,13 +221,25 @@
           if (entry.isIntersecting) seen.add(entry.target.id);
           else seen.delete(entry.target.id);
         }
+        // sections are long, so several can touch the band at once: the one furthest
+        // down the page is the one being read
         let current = null;
-        for (const id of byId.keys()) if (seen.has(id) && !current) current = id;
+        for (const id of byId.keys()) if (seen.has(id)) current = id;
         byId.forEach((a, id) =>
           id === current
             ? a.setAttribute('aria-current', 'true')
             : a.removeAttribute('aria-current'),
         );
+        // keep the marked entry in view when the menu is taller than the column
+        const marked = current && byId.get(current);
+        const menu = marked?.closest('.docs-nav');
+        if (marked && menu && menu.scrollHeight > menu.clientHeight + 4) {
+          const item = marked.getBoundingClientRect();
+          const box = menu.getBoundingClientRect();
+          if (item.top < box.top + 8 || item.bottom > box.bottom - 8) {
+            marked.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+          }
+        }
       },
       { rootMargin: '-80px 0px -70% 0px' },
     );
