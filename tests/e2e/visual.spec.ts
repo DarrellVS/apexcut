@@ -110,15 +110,22 @@ test.describe('the editor', () => {
 
   test('the popovers', async () => {
     const { page } = launched;
+    // one at a time: `.popover` also matches the one that is still fading out, and a screenshot
+    // taken then catches two of them through each other
+    const closed = async (): Promise<void> => {
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.popover')).toHaveCount(0);
+    };
+    await closed();
     await page.getByRole('button', { name: 'Sporty' }).click();
     await expect(page.locator('.popover').first()).toHaveScreenshot('picky-popover.png');
-    await page.keyboard.press('Escape');
+    await closed();
     await page.getByRole('banner').getByRole('button', { name: 'My rides' }).click();
     await expect(page.locator('.popover').first()).toHaveScreenshot('project-menu.png');
-    await page.keyboard.press('Escape');
+    await closed();
     await page.getByRole('button', { name: 'More export options' }).click();
     await expect(page.locator('.popover').first()).toHaveScreenshot('make-menu.png');
-    await page.keyboard.press('Escape');
+    await closed();
   });
 
   test('the timeline in movie mode', async () => {

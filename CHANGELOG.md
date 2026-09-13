@@ -3,6 +3,14 @@
 All notable changes to ApexCut. The section of the version being released becomes the GitHub release
 notes (and the “What’s new” text in the update banner).
 
+## 1.4.1
+
+- **“Send to my phone” the moment a movie is done.** The card that appears when an export finishes
+  now offers the QR code too, so you no longer have to go back to the Movie panel to get the movie
+  onto your phone.
+- There is a website now, with all of the documentation on it:
+  [darrellvs.github.io/apexcut](https://darrellvs.github.io/apexcut/).
+
 ## 1.4.0
 
 - **Keep the bits you point at.** Hold two fingers up to the camera for about a second while you
