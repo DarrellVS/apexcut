@@ -125,6 +125,8 @@
         2,
         '0',
       )}</b> of ${Math.round(data.durationS / 60)} minutes kept`;
+      // a screen reader hears what the slider did, not the number behind it
+      range?.setAttribute('aria-valuetext', readout.textContent);
     }
   }
 

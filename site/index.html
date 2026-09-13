@@ -143,8 +143,16 @@
               aria-label="The score of a twenty-two minute ride, with the parts ApexCut would keep marked along it."
             ></canvas>
             <div class="demo-controls">
-              <label for="demo-range">Fewer parts</label>
-              <input id="demo-range" type="range" min="0" max="4" step="1" value="2" />
+              <span aria-hidden="true">Fewer parts</span>
+              <input
+                id="demo-range"
+                type="range"
+                min="0"
+                max="4"
+                step="1"
+                value="2"
+                aria-label="How picky: fewer or more parts"
+              />
               <span>More parts</span>
             </div>
             <div class="legend">
