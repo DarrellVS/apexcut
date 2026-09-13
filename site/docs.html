@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ApexCut — documentation</title>
+    <title>ApexCut: documentation</title>
     <meta
       name="description"
       content="How to use ApexCut: adding rides, how it picks the parts, editing the timeline, colours, music, making the movie, sending it to your phone, keyboard shortcuts and troubleshooting."
@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://darrellvs.github.io/apexcut/docs.html" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="ApexCut" />
-    <meta property="og:title" content="ApexCut — documentation" />
+    <meta property="og:title" content="ApexCut: documentation" />
     <meta
       property="og:description"
       content="How to use ApexCut: adding rides, how it picks the parts, the timeline, colours, music, making the movie, sending it to your phone, shortcuts and troubleshooting."
@@ -102,9 +102,9 @@
             build is a single <code>.exe</code> that leaves nothing behind.
           </p>
           <p>
-            Windows may warn that the app is from an unknown publisher — the builds are not signed
-            with a paid certificate. Choose <em>More info</em> → <em>Run anyway</em>, or check the
-            file against the release page if you would rather be careful.
+            Windows may warn that the app is from an unknown publisher, because the builds are not
+            signed with a paid certificate. Choose <em>More info</em> → <em>Run anyway</em>, or
+            check the file against the release page if you would rather be careful.
           </p>
           <p>
             On the first run ApexCut asks nothing and creates one project called “My rides”. Movies
@@ -115,7 +115,7 @@
         <section id="adding">
           <h2>Adding your rides</h2>
           <p>
-            Use <em>+ Videos</em> for single recordings or <em>+ Folder</em> for a whole card — the
+            Use <em>+ Videos</em> for single recordings or <em>+ Folder</em> for a whole card. The
             root of the memory card works, because folders are searched three levels deep (<code
               >DCIM › 100MEDIA</code
             >
@@ -123,8 +123,8 @@
           </p>
           <p>
             Copy <strong>whole folders</strong> off the card rather than single files. Cameras write
-            a small proxy next to every recording — <code>.LRF</code> on DJI, <code>.LRV</code> on
-            GoPro — and ApexCut uses it for scrubbing, the filmstrip and the scan. Without it
+            a small proxy next to every recording (<code>.LRF</code> on DJI, <code>.LRV</code> on
+            GoPro) and ApexCut uses it for scrubbing, the filmstrip and the scan. Without it
             everything still works, but the app has to read the full-size recording and scrubbing
             gets slower.
           </p>
@@ -137,8 +137,8 @@
         <section id="scan">
           <h2>What the scan does</h2>
           <p>
-            A scan never looks at your pictures. It copies the motion track out of the recording —
-            <code>djmd</code> on DJI, <code>gpmd</code> on GoPro — and works out, thirty times a
+            A scan never looks at your pictures. It copies the motion track out of the recording,
+            <code>djmd</code> on DJI and <code>gpmd</code> on GoPro, and works out, thirty times a
             second: how far the bike is leaning, how fast it is changing direction, and how hard it
             is accelerating or braking. That is scored over a two second window, smoothed, and
             everything above the “fun enough” line becomes a part.
@@ -152,7 +152,7 @@
             <p>
               <strong>Camera on your helmet, not the bike?</strong> That is what ApexCut is tuned
               for. Head movement pollutes the turn rate, so a corner needs both lean and a sustained
-              change of direction before it counts — a shoulder check at a junction does not.
+              change of direction before it counts. A shoulder check at a junction does not.
             </p>
           </div>
         </section>
@@ -212,7 +212,7 @@
             <li><strong>Click</strong> a block to select it, <kbd>Shift</kbd>+click for more.</li>
             <li><strong>Drag an edge</strong> to keep more or less; edges snap to the score.</li>
             <li>
-              <strong>Leave one out</strong> instead of deleting it — it stays on the timeline, out
+              <strong>Leave one out</strong> instead of deleting it. It stays on the timeline, out
               of the movie.
             </li>
             <li>
@@ -242,7 +242,7 @@
             <em>Keep the bits I pointed at</em> on and ApexCut looks through the recording for that
             gesture; every one it finds becomes a part covering the
             <strong>ten seconds before</strong>
-            your hand went up and two after — because you mark a moment once it has happened.
+            your hand went up and two after, because you mark a moment once it has happened.
           </p>
           <img
             src="assets/shots/marks.webp"
@@ -253,8 +253,8 @@
           />
           <p>
             Marked parts are pink, named “You marked this”, and carry a flag at the exact moment you
-            made the gesture — click it to jump there. They are manual parts, so no preset, slider
-            or rescan can push them out.
+            made the gesture; click it to jump there. They are manual parts, so no preset, slider or
+            rescan can push them out.
           </p>
           <div class="callout">
             <p>
@@ -283,8 +283,8 @@
           />
           <p>
             It can only ever <strong>add</strong> parts, never take one away, and each one says why
-            it was picked — hover it and the title bar reads “found in the picture: low evening
-            sun”. On the timeline those parts carry a blue line and an eye.
+            it was picked: hover it and the title bar reads “found in the picture: low evening sun”.
+            On the timeline those parts carry a blue line and an eye.
           </p>
           <p>
             The first look costs about ten seconds per recording and is remembered, so switching the
@@ -302,12 +302,12 @@
           </p>
           <ul>
             <li>
-              <strong>Square</strong> — as recorded, and a lossless copy (see
+              <strong>Square</strong>: as recorded, and a lossless copy (see
               <a href="#export">Making it</a>).
             </li>
-            <li><strong>Widescreen 16:9</strong> — YouTube, TV, everything landscape.</li>
-            <li><strong>Classic 4:3</strong> — a bit more sky and road.</li>
-            <li><strong>Vertical 9:16</strong> — Reels, Shorts, TikTok, a phone.</li>
+            <li><strong>Widescreen 16:9</strong>: YouTube, TV, everything landscape.</li>
+            <li><strong>Classic 4:3</strong>: a bit more sky and road.</li>
+            <li><strong>Vertical 9:16</strong>: Reels, Shorts, TikTok, a phone.</li>
           </ul>
           <img
             src="assets/shots/vertical.webp"
@@ -332,7 +332,7 @@
         <section id="colours">
           <h2>Colours</h2>
           <p>
-            Seven looks — as recorded, Moody, Punchy, Sunny, Golden hour, Film, Black &amp; white —
+            Seven looks (as recorded, Moody, Punchy, Sunny, Golden hour, Film, Black &amp; white),
             each drawn on a frame of your own ride. Fine-tune folds out nine sliders (brightness,
             contrast, highlights, shadows, saturation, warmth, tint, dark edges, sharpen).
           </p>
@@ -346,7 +346,7 @@
           <p>
             Press <em>Compare</em> over the video and drag the line: as recorded on one side, your
             colours on the other. Colours belong to the movie, but any single part can have its own
-            — useful when one corner was shot straight into the sun.
+            Useful when one corner was shot straight into the sun.
           </p>
         </section>
 
@@ -389,9 +389,9 @@
             </li>
             <li><strong>10-bit stays 10-bit</strong>, through the colour work and the export.</li>
             <li>
-              <strong>Square is copied, not re-encoded</strong> — the exported parts are the
-              original bytes, cut at the nearest keyframe. (A transition or colours force an encode,
-              because new pixels have to be made.)
+              <strong>Square is copied, not re-encoded.</strong> The exported parts are the original
+              bytes, cut at the nearest keyframe. (A transition or colours force an encode, because
+              new pixels have to be made.)
             </li>
             <li>
               <strong>Everything else is HEVC at CQ 18</strong> on your GPU (NVENC, QuickSync or
@@ -408,8 +408,8 @@
         <section id="share">
           <h2>Sending and sharing</h2>
           <p>
-            When a movie is ready — both on the card that appears and on the result in the Movie
-            panel — <em>Send to my phone</em> shows a QR code. Point your phone’s camera at it and
+            When a movie is ready, both on the card that appears and on the result in the Movie
+            panel, <em>Send to my phone</em> shows a QR code. Point your phone’s camera at it and
             the movie plays on the phone, served by your own computer over your own Wi-Fi. Save it
             from that page and it lands in your camera roll, ready to post.
           </p>
@@ -423,7 +423,7 @@
           <p>
             Nothing is uploaded anywhere. Only files ApexCut made can be shared, one at a time, and
             the link stops working after half an hour, when you press <em>Stop sharing</em>, or when
-            you close the app. Windows asks once for permission to accept connections — allow it on
+            you close the app. Windows asks once for permission to accept connections; allow it on
             private networks.
           </p>
           <p>
@@ -447,7 +447,7 @@
           </p>
           <p>
             <em>Export project</em> writes a small <code>.apexcut</code> file with the paths and
-            your picks — no video — which another machine can import as long as it can reach the
+            your picks and no video, which another machine can import as long as it can reach the
             same recordings.
           </p>
           <p>
@@ -516,7 +516,7 @@
               </tr>
               <tr>
                 <th><kbd>Ctrl</kbd> + <kbd>K</kbd></th>
-                <td>What do you want to do? — search everything</td>
+                <td>What do you want to do? Search everything</td>
               </tr>
               <tr>
                 <th><kbd>?</kbd></th>
@@ -606,7 +606,7 @@
           </p>
           <ul>
             <li>
-              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/scoring.md">Scoring</a> —
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/scoring.md">Scoring</a>:
               the features, the gates and the thresholds.
             </li>
             <li>
@@ -617,18 +617,18 @@
               <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/gopro-metadata.md"
                 >GoPro metadata</a
               >
-              — what is in the track, and how it is read.
+              tells you what is in the track, and how it is read.
             </li>
             <li>
               <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/gestures.md">Gestures</a>
-              — how the two-finger mark is found, and how well.
+              covers how the two-finger mark is found, and how well.
             </li>
             <li>
               <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/architecture.md"
                 >Architecture</a
               >
               and
-              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/design.md">design</a> —
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/design.md">design</a>:
               how the app is put together.
             </li>
           </ul>
@@ -638,7 +638,7 @@
 
     <footer class="site-footer">
       <div class="wrap">
-        <span>ApexCut — MIT licensed. Made for riders, by one.</span>
+        <span>ApexCut. MIT licensed. Made for riders, by one.</span>
         <nav aria-label="Elsewhere">
           <a href="index.html">Overview</a>
           <a href="https://github.com/DarrellVS/apexcut">Source</a>
