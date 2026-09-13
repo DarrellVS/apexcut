@@ -195,6 +195,17 @@ section {
   padding-block: var(--section);
 }
 
+/* a section that carries on from the one above it, without the gap counted twice */
+section.is-tight {
+  padding-top: 0;
+}
+
+/* the band the cameras sit in */
+section.is-sunken {
+  background: var(--bg-sunken);
+  border-block: 1px solid var(--line);
+}
+
 .lede {
   font-size: clamp(1.05rem, 1.6vw, 1.3rem);
   line-height: 1.55;
@@ -516,6 +527,12 @@ section {
   box-shadow: 0 20px 60px -34px rgba(0, 0, 0, 0.9);
 }
 
+/* a picture that is already a screenshot of a panel needs no frame around it */
+.feature-media.is-bare {
+  border: none;
+  background: none;
+}
+
 .feature-media img {
   width: 100%;
 }
@@ -538,6 +555,7 @@ section {
 
 /* -------------------------------------------------------------- step cards */
 .steps {
+  margin-top: clamp(40px, 6vw, 72px);
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -581,6 +599,10 @@ section {
   gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   align-items: start;
+}
+
+.cards.is-spaced {
+  margin-top: clamp(64px, 9vw, 130px);
 }
 
 .card {
@@ -958,6 +980,10 @@ input[type='range']:active {
   color: var(--fg-3);
 }
 
+.fig-centre {
+  justify-content: center;
+}
+
 .fig > span:first-child {
   flex: none;
   white-space: nowrap;
@@ -1218,6 +1244,15 @@ figure {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg-3);
+}
+
+/* the documentation opens quieter than the landing page does */
+.docs-body h1 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+}
+
+.docs-intro {
+  margin-bottom: 40px;
 }
 
 .docs-body h2 {
