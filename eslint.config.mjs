@@ -5,7 +5,9 @@ import eslintPluginVue from 'eslint-plugin-vue';
 import vueParser from 'vue-eslint-parser';
 
 export default defineConfig(
-  { ignores: ['**/node_modules', '**/dist', '**/out', 'test-results', 'playwright-report'] },
+  {
+    ignores: ['**/node_modules', '**/dist', '**/out', 'test-results', 'playwright-report', 'site'],
+  },
   tseslint.configs.recommended,
   eslintPluginVue.configs['flat/recommended'],
   {

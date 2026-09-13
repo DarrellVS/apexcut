@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ApexCut — your best corners, already found</title>
+    <meta
+      name="description"
+      content="ApexCut reads the motion sensor your helmet camera already records, finds the corners, braking and acceleration of a ride, and makes a movie of them. Windows, free, offline, open source."
+    />
+    <link rel="icon" href="assets/img/icon.png" />
+    <link rel="canonical" href="https://darrellvs.github.io/apexcut/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ApexCut — your best corners, already found" />
+    <meta
+      property="og:description"
+      content="Your helmet camera already records how the bike moved. ApexCut turns that into the good bits of your ride — on your own PC, without uploading anything."
+    />
+    <meta property="og:image" content="assets/shots/editor.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0b0c0e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header" id="top">
+      <div class="wrap">
+        <a class="brand" href="#top">
+          <img src="assets/img/icon.png" alt="" width="26" height="26" />
+          ApexCut
+        </a>
+        <nav class="site-nav" aria-label="Sections">
+          <a href="#how" data-small-hide>How it works</a>
+          <a href="#features" data-optional>What it does</a>
+          <a href="#cameras" data-optional>Cameras</a>
+          <a href="docs.html">Docs</a>
+          <a href="https://github.com/DarrellVS/apexcut">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ------------------------------------------------------------ hero -->
+      <section class="hero">
+        <img
+          class="hero-bg"
+          src="assets/img/hero-ride.jpg"
+          alt=""
+          width="2400"
+          height="1350"
+          fetchpriority="high"
+        />
+        <div class="wrap">
+          <p class="eyebrow">Free · Windows · open source</p>
+          <h1 class="hero-copy">Your best corners, already found.</h1>
+          <p class="lede">
+            Your helmet camera writes down how the bike moved, thirty times a second, in every
+            recording. ApexCut reads it, finds the corners, the braking and the hard acceleration,
+            and hands you a movie of the good bits. On your own computer, in about the time it takes
+            to make coffee.
+          </p>
+          <div class="btn-group">
+            <a class="btn btn-primary" href="https://github.com/DarrellVS/apexcut/releases/latest">
+              Download for Windows
+            </a>
+            <a class="btn" href="#how">See how it works</a>
+          </div>
+          <p class="note">
+            Version 1.4.0 · Windows 10 and 11, 64-bit · NVIDIA, Intel or AMD GPU for fast exports (a
+            CPU fallback is built in) · MIT licensed
+          </p>
+
+          <figure class="hero-shot reveal">
+            <img
+              src="assets/shots/editor.png"
+              alt="The ApexCut editor: a ride in the middle of the screen, the parts it found along the timeline underneath, and the movie panel on the right."
+              width="1500"
+              height="950"
+            />
+          </figure>
+          <p class="fig" style="justify-content: center">
+            <span>Fig 01</span>
+            <b>Three rides of one afternoon · 50 parts · a 14 minute movie</b>
+          </p>
+        </div>
+      </section>
+
+      <div class="facts">
+        <div class="wrap">
+          <ul>
+            <li><b>Nothing is uploaded.</b> No account, no cloud, no telemetry.</li>
+            <li><b>Your originals are never touched.</b> Read-only, always.</li>
+            <li><b>Full resolution out.</b> 10-bit stays 10-bit; nothing is scaled down.</li>
+            <li>
+              <b>A 22 minute ride scans in about a second.</b> It reads the sensor, not the pixels.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ------------------------------------------------------- the idea -->
+      <section id="how">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="eyebrow">The idea</p>
+            <h2>The ride already knows where the good bits are.</h2>
+            <p class="lede">
+              Scrubbing through two hours of footage to find the ten minutes worth keeping is the
+              reason most rides never become anything. But the camera on your helmet has been
+              recording lean, braking and acceleration the whole time — so the work is already done,
+              it just needs reading.
+            </p>
+          </div>
+
+          <div class="demo reveal">
+            <div class="demo-head">
+              <h3>A real ride, scored by ApexCut</h3>
+              <p class="demo-readout" id="demo-readout">—</p>
+            </div>
+            <canvas
+              class="demo-canvas"
+              id="demo-canvas"
+              role="img"
+              aria-label="The score of a twenty-two minute ride, with the parts ApexCut would keep marked along it."
+            ></canvas>
+            <div class="demo-controls">
+              <label for="demo-range">Fewer parts</label>
+              <input id="demo-range" type="range" min="0" max="4" step="1" value="2" />
+              <span>More parts</span>
+            </div>
+            <div class="legend">
+              <span class="is-corner">leaning</span>
+              <span class="is-brake">braking &amp; acceleration</span>
+              <span class="is-line">“fun enough” line</span>
+            </div>
+            <p class="note">
+              Drag the slider: this is the actual score of a 22 minute evening ride and the parts
+              the app would cut from it. The same slider sits in the app, under “How picky?”.
+            </p>
+          </div>
+
+          <div class="steps" style="margin-top: clamp(40px, 6vw, 72px)">
+            <article class="step reveal">
+              <h3>Drop the card in</h3>
+              <p>
+                Point ApexCut at a folder — the root of the memory card is fine. It finds the
+                recordings, pairs each one with the small proxy the camera wrote next to it, and
+                groups them by riding day.
+              </p>
+            </article>
+            <article class="step reveal">
+              <h3>It reads the sensor</h3>
+              <p>
+                No footage is decoded: the motion track is copied out and scored on lean, sustained
+                turning, and braking or acceleration near a corner. The 22 minute ride in the graph
+                above took 1.2 seconds.
+              </p>
+            </article>
+            <article class="step reveal">
+              <h3>You make the movie</h3>
+              <p>
+                The parts land on a timeline you can actually edit. Change your mind, join two,
+                leave one out, add music, then press one button and get an MP4 at full quality.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ----------------------------------------------------- the feature -->
+      <section id="features" style="padding-top: 0">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="eyebrow">In the app</p>
+            <h2>An editor that speaks rider, not video engineer.</h2>
+            <p class="lede">
+              Everything is named after what it does to your ride. No bins, no nodes, no render
+              queue — a timeline of the parts, a panel for the movie, and plain words on every
+              button.
+            </p>
+          </div>
+
+          <article class="feature reveal">
+            <div>
+              <h3>Every part, on one timeline</h3>
+              <p>
+                Blocks in the colour of what they are: leaning, braking and acceleration, or both.
+                Drag an edge to keep more, press a key to leave one out, join a chain of corners
+                into one long sweep. The curve above is the score; the dashed line is where “fun
+                enough” starts.
+              </p>
+              <p class="feature-note">
+                Undo and redo everywhere. A change to the picks is never a change to your files.
+              </p>
+            </div>
+            <div>
+              <figure class="feature-media">
+                <img
+                  src="assets/shots/timeline.png"
+                  alt="The timeline: score curves above, coloured blocks for each part, a filmstrip of the ride behind them."
+                  width="1500"
+                  height="300"
+                  loading="lazy"
+                />
+              </figure>
+              <p class="fig">
+                <span>Fig 02</span> <b>Four parts out of 3 minutes 40 of forest road</b>
+              </p>
+            </div>
+          </article>
+
+          <article class="feature reveal" data-flip="true">
+            <div>
+              <h3>Colours, without a colour grading degree</h3>
+              <p>
+                Seven looks, each drawn on a frame of your own ride so you can see what you are
+                picking. Fine-tune nine sliders if you want to. Drag the line across the picture to
+                see exactly what changed — the left is as recorded, the right is what the movie
+                gets.
+              </p>
+              <p class="feature-note">
+                The same maths runs in the preview and in the export, so what you see is what is
+                written.
+              </p>
+            </div>
+            <div class="feature-media" style="border: none; background: none">
+              <div class="compare" id="compare">
+                <img
+                  draggable="false"
+                  src="assets/img/colour-before.jpg"
+                  alt="An evening ride into low sun, as the camera recorded it."
+                  width="1600"
+                  height="900"
+                  loading="lazy"
+                />
+                <img
+                  class="after"
+                  draggable="false"
+                  src="assets/img/colour-after.jpg"
+                  alt="The same moment with ApexCut's Golden hour look applied."
+                  width="1600"
+                  height="900"
+                  loading="lazy"
+                />
+                <span class="compare-handle" aria-hidden="true"></span>
+                <span class="compare-tag is-left">As recorded</span>
+                <span class="compare-tag is-right">Golden hour</span>
+                <input
+                  class="compare-range"
+                  id="compare-range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="50"
+                  aria-label="Drag to compare the recording with the colours applied"
+                />
+              </div>
+              <p class="fig">
+                <span>Fig 03</span> <b>“Golden hour”, on a real evening ride · drag the line</b>
+              </p>
+            </div>
+          </article>
+
+          <article class="feature reveal">
+            <div>
+              <h3>One ride, every shape</h3>
+              <p>
+                The camera films a square; the internet wants everything else. Pick widescreen for
+                YouTube, vertical for Reels or a phone, 4:3 or the square as recorded — then drag
+                the frame to say what stays in view. Nothing is ever scaled up or down: the crop is
+                taken at full resolution.
+              </p>
+              <p class="feature-note">
+                Vertical can lean into the corners with you: the tall frame follows the turn and
+                comes back on the straights.
+              </p>
+            </div>
+            <div class="feature-media" style="border: none; background: none">
+              <div class="formats">
+                <div class="format-stage">
+                  <img
+                    src="assets/img/square-frame.jpg"
+                    alt="A square frame from a helmet camera, with the crop of the chosen format drawn on it."
+                    width="1400"
+                    height="1400"
+                    loading="lazy"
+                  />
+                  <div class="format-mask" id="format-mask"></div>
+                  <div class="format-frame" id="format-frame"></div>
+                </div>
+                <div class="format-buttons" role="group" aria-label="Movie shape">
+                  <button class="chip" data-w="100" data-h="100" aria-pressed="false">
+                    Square
+                  </button>
+                  <button class="chip" data-w="100" data-h="56.25" aria-pressed="true">
+                    Widescreen 16:9
+                  </button>
+                  <button class="chip" data-w="100" data-h="75" aria-pressed="false">
+                    Classic 4:3
+                  </button>
+                  <button class="chip" data-w="56.25" data-h="100" aria-pressed="false">
+                    Vertical 9:16
+                  </button>
+                </div>
+                <p class="fig">
+                  <span>Fig 05</span>
+                  <b>3840 × 3840 as recorded · every shape is a crop of it, never a rescale</b>
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature reveal" data-flip="true">
+            <div>
+              <h3>Keep the bits you point at</h3>
+              <p>
+                Hold two fingers up to the camera while you ride and ApexCut keeps that spot: the
+                ten seconds before your hand went up become a part of their own. Your marks are
+                unmistakable, and nothing the app decides can push them out.
+              </p>
+              <p class="feature-note">
+                No hand model, no cloud: it looks for the shape a gloved hand makes in front of a
+                wide-angle lens. Hold it up for about a second.
+              </p>
+            </div>
+            <div>
+              <figure class="feature-media">
+                <img
+                  src="assets/shots/marks.png"
+                  alt="A timeline with four parts marked by the rider, in pink, each with a flag at the moment the fingers went up."
+                  width="1400"
+                  height="260"
+                  loading="lazy"
+                />
+              </figure>
+              <p class="fig"><span>Fig 04</span> <b>Four gestures, found and kept</b></p>
+            </div>
+          </article>
+
+          <div class="cards" style="margin-top: clamp(64px, 9vw, 130px)">
+            <article class="card card-media reveal">
+              <img
+                src="assets/shots/picture-crop.png"
+                alt="A part found by the picture: low evening sun through trees, with “found in the picture: a busy road” written in the title bar."
+                width="1140"
+                height="990"
+                loading="lazy"
+              />
+              <div>
+                <h3>Let the picture vote</h3>
+                <p>
+                  Switch it on and the recording gets a say as well as the sensor: tunnels and
+                  underpasses, light changing fast, low evening sun, a road full of traffic. It only
+                  ever adds moments, and it says why it picked each one.
+                </p>
+              </div>
+            </article>
+
+            <article class="card card-media reveal">
+              <img
+                data-fit="contain"
+                src="assets/shots/ride-card-art.png"
+                alt="A ride card: three frames from the ride and the numbers of the day — sharpest lean, hardest braking, corners, minutes of riding."
+                width="1080"
+                height="1350"
+                loading="lazy"
+              />
+              <div>
+                <h3>The numbers of the day</h3>
+                <p>
+                  One click makes a ride card: your sharpest lean, hardest braking, how many corners
+                  and how long you were actually riding, with three frames from the day. Straight to
+                  the clipboard, ready to post.
+                </p>
+              </div>
+            </article>
+
+            <article class="card card-media reveal">
+              <img
+                data-fit="contain"
+                src="assets/shots/share-qr.png"
+                alt="Send to my phone: a QR code that opens the finished movie on a phone over the same Wi-Fi."
+                width="420"
+                height="345"
+                loading="lazy"
+              />
+              <div>
+                <h3>Straight to your phone</h3>
+                <p>
+                  When the movie is ready, “Send to my phone” shows a QR code. Point your camera at
+                  it and the movie plays on the phone, served by your own computer over your own
+                  Wi-Fi. Nothing is uploaded, and the link stops working after half an hour.
+                </p>
+              </div>
+            </article>
+
+            <article class="card card-media reveal">
+              <img
+                src="assets/shots/movie-lane-crop.png"
+                alt="The movie lane: parts of several rides laid out back to back in the order they will play."
+                width="1640"
+                height="400"
+                loading="lazy"
+              />
+              <div>
+                <h3>The whole movie on one lane</h3>
+                <p>
+                  Switch the timeline to “The movie” and every part of every ride sits back to back
+                  in the order it will play, with the music lined up underneath. Drag one to move it
+                  in the movie.
+                </p>
+              </div>
+            </article>
+
+            <article class="card card-media reveal">
+              <img
+                data-fit="contain"
+                src="assets/shots/palette-crop.png"
+                alt="The command palette, opened with Ctrl+K, listing projects, settings, formats and the make-movie commands."
+                width="600"
+                height="860"
+                loading="lazy"
+              />
+              <div>
+                <h3><kbd>Ctrl</kbd> + <kbd>K</kbd> for everything</h3>
+                <p>
+                  Type what you want: open a ride, set a shape, pick a look, jump to a part, make
+                  the movie. The same things the buttons do, without hunting for them.
+                </p>
+              </div>
+            </article>
+
+            <article class="card card-media reveal">
+              <img
+                data-fit="contain"
+                src="assets/shots/picky.png"
+                alt="The How picky panel: presets, a fewer-or-more-parts slider and the optional switches."
+                width="300"
+                height="420"
+                loading="lazy"
+              />
+              <div>
+                <h3>As picky as you like</h3>
+                <p>
+                  Relaxed, Sporty or Track, then a slider for fewer or more parts. Straight-line
+                  pulls, the picture's vote and your own marks are switches — off until you want
+                  them.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- cameras -->
+      <section
+        id="cameras"
+        style="background: var(--bg-sunken); border-block: 1px solid var(--line)"
+      >
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="eyebrow">Cameras</p>
+            <h2>If your camera writes its sensor down, ApexCut can read it.</h2>
+          </div>
+          <div class="cards">
+            <article class="card reveal">
+              <h3>DJI Osmo Action</h3>
+              <p>
+                The camera stores its own attitude thirty times a second, next to the picture.
+                ApexCut reads it straight out — lean, turn rate, braking and acceleration — and uses
+                the small <code>.LRF</code> copy for smooth scrubbing.
+              </p>
+            </article>
+            <article class="card reveal">
+              <h3>GoPro Hero5 and newer</h3>
+              <p>
+                GoPro writes an accelerometer and a gyroscope instead of an attitude, so ApexCut
+                works the attitude out itself. On a Hero8, which stores its own, the two agree
+                within a few degrees. Copy the <code>.LRV</code> file along for smooth scrubbing.
+              </p>
+            </article>
+            <article class="card reveal">
+              <h3>Anything else</h3>
+              <p>
+                A recording with no motion track — a screen recording, an edited copy, a camera
+                without sensors — says so plainly instead of pretending. You can still cut it by
+                hand, but nothing will be found for you.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- quality -->
+      <section id="quality">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="eyebrow">What comes out</p>
+            <h2>The export rules, in full.</h2>
+            <p class="lede">
+              A highlight tool that quietly ruins your footage is worth nothing. These are the rules
+              ApexCut holds itself to, and they are tested on every release.
+            </p>
+          </div>
+          <table class="specs reveal">
+            <tbody>
+              <tr>
+                <th>Resolution</th>
+                <td>
+                  Never scaled. A format crops the recording at full resolution — 3840 × 2160 out of
+                  the square for widescreen, 2160 × 3840 for vertical.
+                </td>
+              </tr>
+              <tr>
+                <th>Colour depth</th>
+                <td>10-bit recordings stay 10-bit, all the way through the colour work.</td>
+              </tr>
+              <tr>
+                <th>The square format</th>
+                <td>
+                  Copied, not re-encoded: the exported parts are the original bytes, cut at the
+                  nearest keyframe.
+                </td>
+              </tr>
+              <tr>
+                <th>Everything else</th>
+                <td>
+                  HEVC at CQ 18 on your GPU (NVENC, QuickSync or AMF), with libx265 as the fallback,
+                  and a bitrate cap that follows the pixels you kept.
+                </td>
+              </tr>
+              <tr>
+                <th>Sound</th>
+                <td>
+                  The ride's own sound, music under it if you added any, and an optional pass that
+                  makes every movie equally loud (−14 LUFS).
+                </td>
+              </tr>
+              <tr>
+                <th>Your files</th>
+                <td>
+                  Read-only. Movies and clips land in a folder you choose; the recordings on the
+                  card are never written to.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------- faq -->
+      <section id="faq" style="padding-top: 0">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="eyebrow">Questions</p>
+            <h2>Before you download.</h2>
+          </div>
+          <div class="faq reveal">
+            <details>
+              <summary>Is it really free?</summary>
+              <p>
+                Yes. MIT licensed, source on GitHub, no account, no subscription, no telemetry. If
+                it saves you an evening of scrubbing, tell another rider.
+              </p>
+            </details>
+            <details>
+              <summary>Does anything leave my computer?</summary>
+              <p>
+                No. Scanning, editing and exporting all happen locally. The one thing that uses the
+                network is “Send to my phone”, and that is your own computer serving one file to
+                your own Wi-Fi for half an hour — nothing is uploaded anywhere.
+              </p>
+            </details>
+            <details>
+              <summary>How long does a ride take?</summary>
+              <p>
+                Scanning reads the sensor track, not the pictures, so a twenty minute recording is
+                done in seconds. Making the movie is the part that takes real time: a few minutes
+                for a ten minute movie on a modern GPU, and the square format is a lossless copy,
+                which is faster still.
+              </p>
+            </details>
+            <details>
+              <summary>What if it picks the wrong bits?</summary>
+              <p>
+                Then you change them. Every part can be trimmed, joined, left out or deleted, and
+                you can add your own anywhere. The presets and the fewer-or-more slider change how
+                picky it is; two fingers to the camera marks a spot while you are still riding.
+              </p>
+            </details>
+            <details>
+              <summary>Which cameras work?</summary>
+              <p>
+                DJI Osmo Action, and GoPro Hero5 or newer. Both write the motion data ApexCut needs
+                into every recording. Copy whole folders off the card so the small proxy files come
+                with them.
+              </p>
+            </details>
+            <details>
+              <summary>Mac or Linux?</summary>
+              <p>
+                Not yet. The app is built with Electron and nothing in it is Windows-only, so a
+                build for other platforms is possible — it just has not been made and tested. The
+                source is there if you want to try.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------- cta -->
+      <section style="padding-top: 0">
+        <div class="wrap">
+          <div class="cta reveal">
+            <h2>Your next ride is already worth watching.</h2>
+            <p class="lede">
+              Download it, point it at a memory card, and see what your camera has been writing down
+              all this time.
+            </p>
+            <div class="btn-group">
+              <a
+                class="btn btn-primary"
+                href="https://github.com/DarrellVS/apexcut/releases/latest"
+              >
+                Download for Windows
+              </a>
+              <a class="btn" href="docs.html">Read the docs</a>
+            </div>
+            <p class="note">
+              Installer or portable build · Windows 10 and 11 · updates itself when a new version
+              lands
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>ApexCut — MIT licensed. Made for riders, by one.</span>
+        <nav aria-label="Elsewhere">
+          <a href="docs.html">Documentation</a>
+          <a href="https://github.com/DarrellVS/apexcut">Source</a>
+          <a href="https://github.com/DarrellVS/apexcut/releases">Releases</a>
+          <a href="https://github.com/DarrellVS/apexcut/issues">Report a problem</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="assets/js/site.js" defer></script>
+  </body>
+</html>

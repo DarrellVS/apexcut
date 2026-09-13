@@ -218,6 +218,8 @@ test('making the movie writes a real file', async () => {
   const dialog = page.getByRole('dialog', { name: /Making your movie/ });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('Your movie is ready')).toBeVisible({ timeout: 240_000 });
+  // the finished movie can go straight to a phone from here
+  await expect(dialog.getByRole('button', { name: /Send to my phone/ })).toBeVisible();
   await dialog.getByRole('button', { name: 'Done' }).click();
 
   const movies = join(outputDir, 'movies');

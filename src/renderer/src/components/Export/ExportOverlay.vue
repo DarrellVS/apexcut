@@ -6,13 +6,23 @@
  */
 import { api } from '@renderer/api';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { PhCheckCircle, PhFolderOpen, PhPlay, PhX } from '@phosphor-icons/vue';
+import { PhCheckCircle, PhDeviceMobile, PhFolderOpen, PhPlay, PhX } from '@phosphor-icons/vue';
+import { useShare } from '@renderer/composables/useShare';
 import { useJobsStore } from '@renderer/stores/jobs';
 import { friendlyError } from '@renderer/utils/errors';
 import { fmtClock } from '@shared/format';
+import ShareSheet from '@renderer/components/Movie/ShareSheet.vue';
 
 const emit = defineEmits<{ watch: [url: string] }>();
 const jobs = useJobsStore();
+const share = useShare();
+const sharing = ref(false);
+
+/** hand the finished movie to a phone on the same network, straight from here */
+async function sendToPhone(file: string): Promise<void> {
+  sharing.value = true;
+  await share.start(file);
+}
 
 /** the job the user dismissed (so a finished card can be closed) */
 const dismissed = ref<string | null>(null);
@@ -155,12 +165,22 @@ onUnmounted(() => window.removeEventListener('keydown', onKey, true));
             >
               <PhPlay :size="14" weight="fill" /> Watch it
             </button>
+            <button
+              v-if="job.result.kind === 'export'"
+              class="btn flex items-center gap-1.5"
+              title="Watch it on your phone over your own Wi-Fi — nothing is uploaded"
+              @click="sendToPhone(job.result.file)"
+            >
+              <PhDeviceMobile :size="14" /> Send to my phone
+            </button>
             <button class="btn flex items-center gap-1.5" @click="openFolder">
               <PhFolderOpen :size="14" /> Open folder
             </button>
             <button class="btn btn-ghost ml-auto" @click="dismissed = job.id">Done</button>
           </div>
         </template>
+
+        <ShareSheet v-if="sharing" :share="share" @close="sharing = false" />
 
         <!-- error / cancelled -->
         <template v-else>

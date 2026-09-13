@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ApexCut — documentation</title>
+    <meta
+      name="description"
+      content="How to use ApexCut: adding rides, how it picks the parts, editing the timeline, colours, music, making the movie, sending it to your phone, keyboard shortcuts and troubleshooting."
+    />
+    <link rel="icon" href="assets/img/icon.png" />
+    <meta name="theme-color" content="#0b0c0e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <img src="assets/img/icon.png" alt="" width="26" height="26" />
+          ApexCut
+        </a>
+        <nav class="site-nav" aria-label="Sections">
+          <a href="index.html">Overview</a>
+          <a href="https://github.com/DarrellVS/apexcut/releases/latest">Download</a>
+          <a href="https://github.com/DarrellVS/apexcut">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <nav class="docs-nav" aria-label="Documentation">
+        <details class="docs-toc" open>
+          <summary>On this page</summary>
+          <ol>
+            <li class="group">Start</li>
+            <li><a href="#install">Install and first run</a></li>
+            <li><a href="#adding">Adding your rides</a></li>
+            <li><a href="#scan">What the scan does</a></li>
+            <li class="group">Choosing</li>
+            <li><a href="#picky">How picky?</a></li>
+            <li><a href="#timeline">The timeline</a></li>
+            <li><a href="#marks">Your own marks</a></li>
+            <li><a href="#picture">The picture's vote</a></li>
+            <li class="group">Making the movie</li>
+            <li><a href="#shape">Shape and framing</a></li>
+            <li><a href="#colours">Colours</a></li>
+            <li><a href="#music">Music and sound</a></li>
+            <li><a href="#overlay">Riding data on the picture</a></li>
+            <li><a href="#export">Making it</a></li>
+            <li><a href="#share">Sending and sharing</a></li>
+            <li class="group">Reference</li>
+            <li><a href="#projects">Projects and files</a></li>
+            <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+            <li><a href="#cameras">Cameras and formats</a></li>
+            <li><a href="#privacy">Privacy</a></li>
+            <li><a href="#trouble">When something goes wrong</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <main class="docs-body" id="main">
+        <p class="eyebrow">Documentation</p>
+        <h1 style="font-size: clamp(2rem, 4vw, 2.8rem)">Everything ApexCut does</h1>
+        <p class="lede" style="margin-bottom: 40px">
+          Short version: add your rides, look at what it found, press <em>Make my movie</em>. The
+          rest of this page is for when you want more than that.
+        </p>
+
+        <!-- ------------------------------------------------------- start -->
+        <section id="install">
+          <h2>Install and first run</h2>
+          <p>
+            Download the installer or the portable build from the
+            <a href="https://github.com/DarrellVS/apexcut/releases/latest">latest release</a>. The
+            installer puts ApexCut in your Start menu and keeps itself up to date; the portable
+            build is a single <code>.exe</code> that leaves nothing behind.
+          </p>
+          <p>
+            Windows may warn that the app is from an unknown publisher — the builds are not signed
+            with a paid certificate. Choose <em>More info</em> → <em>Run anyway</em>, or check the
+            file against the release page if you would rather be careful.
+          </p>
+          <p>
+            On the first run ApexCut asks nothing and creates one project called “My rides”. Movies
+            land in <code>Videos\ApexCut</code> until you point it somewhere else under Settings.
+          </p>
+        </section>
+
+        <section id="adding">
+          <h2>Adding your rides</h2>
+          <p>
+            Use <em>+ Videos</em> for single recordings or <em>+ Folder</em> for a whole card — the
+            root of the memory card works, because folders are searched three levels deep (<code
+              >DCIM › 100MEDIA</code
+            >
+            and the like). You can also drag files onto the window.
+          </p>
+          <p>
+            Copy <strong>whole folders</strong> off the card rather than single files. Cameras write
+            a small proxy next to every recording — <code>.LRF</code> on DJI, <code>.LRV</code> on
+            GoPro — and ApexCut uses it for scrubbing, the filmstrip and the scan. Without it
+            everything still works, but the app has to read the full-size recording and scrubbing
+            gets slower.
+          </p>
+          <p>
+            When a pick holds more than one riding day, ApexCut offers to split it into a project
+            per day. Recordings you already added are recognised and never scanned twice.
+          </p>
+        </section>
+
+        <section id="scan">
+          <h2>What the scan does</h2>
+          <p>
+            A scan never looks at your pictures. It copies the motion track out of the recording —
+            <code>djmd</code> on DJI, <code>gpmd</code> on GoPro — and works out, thirty times a
+            second: how far the bike is leaning, how fast it is changing direction, and how hard it
+            is accelerating or braking. That is scored over a two second window, smoothed, and
+            everything above the “fun enough” line becomes a part.
+          </p>
+          <p>
+            Because no video is decoded, a twenty minute recording is scanned in a few seconds. The
+            result is cached per recording and shared between projects, so adding the same ride to a
+            second project costs nothing.
+          </p>
+          <div class="callout">
+            <p>
+              <strong>Camera on your helmet, not the bike?</strong> That is what ApexCut is tuned
+              for. Head movement pollutes the turn rate, so a corner needs both lean and a sustained
+              change of direction before it counts — a shoulder check at a junction does not.
+            </p>
+          </div>
+        </section>
+
+        <!-- ---------------------------------------------------- choosing -->
+        <section id="picky">
+          <h2>How picky?</h2>
+          <p>
+            The button at the top of the Ride panel opens everything about <em>what</em> gets
+            picked.
+          </p>
+          <img
+            src="assets/shots/picky.png"
+            alt="The How picky panel: three presets, a fewer-or-more slider, and three switches."
+            width="300"
+            height="420"
+            loading="lazy"
+          />
+          <ul>
+            <li>
+              <strong>Relaxed, Sporty, Track.</strong> Presets for the kind of riding: a relaxed
+              tour keeps gentler corners, Track only counts what is genuinely quick.
+            </li>
+            <li>
+              <strong>Fewer or more parts.</strong> Moves the “fun enough” line. Everything is
+              rescored at once, without touching the video.
+            </li>
+            <li>
+              <strong>Count acceleration pulls too.</strong> Off by default. With it on, opening up
+              on a straight for a few seconds counts as well, not only braking and acceleration near
+              a corner.
+            </li>
+            <li><strong>Let the picture vote too.</strong> See <a href="#picture">below</a>.</li>
+            <li><strong>Keep the bits I pointed at.</strong> See <a href="#marks">below</a>.</li>
+          </ul>
+          <p>
+            Changing any of these never loses your own edits: parts you added, joined or trimmed by
+            hand survive every rescore.
+          </p>
+        </section>
+
+        <section id="timeline">
+          <h2>The timeline</h2>
+          <img
+            src="assets/shots/timeline.png"
+            alt="The timeline: the score curves, then the parts as coloured blocks over a filmstrip of the ride."
+            width="1500"
+            height="300"
+            loading="lazy"
+          />
+          <p>
+            The curves at the top are the score, leaning, and braking and acceleration; the dashed
+            line is where “fun enough” starts. Underneath, every part is a block over a filmstrip of
+            the ride.
+          </p>
+          <ul>
+            <li><strong>Click</strong> a block to select it, <kbd>Shift</kbd>+click for more.</li>
+            <li><strong>Drag an edge</strong> to keep more or less; edges snap to the score.</li>
+            <li>
+              <strong>Leave one out</strong> instead of deleting it — it stays on the timeline, out
+              of the movie.
+            </li>
+            <li>
+              <strong>Join</strong> a chain of corners into one long sweep. ApexCut suggests chains
+              that belong together with a dashed bar above them.
+            </li>
+            <li><strong>Star</strong> the ones you love; the movie panel can use only those.</li>
+          </ul>
+          <p>
+            The switch at the bottom left changes what the lane shows: <em>This video</em> is the
+            open recording in its own time, <em>The movie</em> is every part of every ride back to
+            back, in the order it will play. Drag a part there to move it in the movie.
+          </p>
+          <img
+            src="assets/shots/movie-lane.png"
+            alt="The movie lane: parts of several rides laid out back to back in the order they will play."
+            width="1500"
+            height="300"
+            loading="lazy"
+          />
+        </section>
+
+        <section id="marks">
+          <h2>Your own marks</h2>
+          <p>
+            Hold two fingers up to the camera for about a second while you ride. Switch
+            <em>Keep the bits I pointed at</em> on and ApexCut looks through the recording for that
+            gesture; every one it finds becomes a part covering the
+            <strong>ten seconds before</strong>
+            your hand went up and two after — because you mark a moment once it has happened.
+          </p>
+          <img
+            src="assets/shots/marks.png"
+            alt="Four parts marked by the rider, in pink, each with a flag at the moment the fingers went up."
+            width="1400"
+            height="260"
+            loading="lazy"
+          />
+          <p>
+            Marked parts are pink, named “You marked this”, and carry a flag at the exact moment you
+            made the gesture — click it to jump there. They are manual parts, so no preset, slider
+            or rescan can push them out.
+          </p>
+          <div class="callout">
+            <p>
+              There is no hand model in this: it looks for the shape a gloved hand makes in front of
+              a wide-angle lens. Hold the gesture up for about a second; a flash of half a second
+              may be missed. In the dark it marks something wrong about once every twenty minutes,
+              and a wrong mark is one part to delete.
+            </p>
+          </div>
+        </section>
+
+        <section id="picture">
+          <h2>The picture's vote</h2>
+          <p>
+            The sensor knows how the bike moved, not what the ride looked like. Switch
+            <em>Let the picture vote too</em> on and ApexCut looks at the recording as well: light
+            changing fast (a tunnel, an underpass, coming out of the trees), warm and saturated
+            light (low evening sun), and a picture full of detail (a town, traffic, other riders).
+          </p>
+          <img
+            src="assets/shots/picture-part.png"
+            alt="A part the picture found: low evening sun through trees, with the reason in the title bar."
+            width="1500"
+            height="950"
+            loading="lazy"
+          />
+          <p>
+            It can only ever <strong>add</strong> parts, never take one away, and each one says why
+            it was picked — hover it and the title bar reads “found in the picture: low evening
+            sun”. On the timeline those parts carry a blue line and an eye.
+          </p>
+          <p>
+            The first look costs about ten seconds per recording and is remembered, so switching the
+            option off and on again is free. It judges light, colour and detail; it does not know
+            what is in the picture.
+          </p>
+        </section>
+
+        <!-- ------------------------------------------------------- movie -->
+        <section id="shape">
+          <h2>Shape and framing</h2>
+          <p>
+            The camera films a square. Pick the shape your movie needs and drag the frame on the
+            video to say what stays in view:
+          </p>
+          <ul>
+            <li>
+              <strong>Square</strong> — as recorded, and a lossless copy (see
+              <a href="#export">Making it</a>).
+            </li>
+            <li><strong>Widescreen 16:9</strong> — YouTube, TV, everything landscape.</li>
+            <li><strong>Classic 4:3</strong> — a bit more sky and road.</li>
+            <li><strong>Vertical 9:16</strong> — Reels, Shorts, TikTok, a phone.</li>
+          </ul>
+          <img
+            src="assets/shots/vertical.png"
+            alt="The vertical format, with the crop frame drawn on the video and the follow-the-corners switch."
+            width="1500"
+            height="950"
+            loading="lazy"
+          />
+          <p>
+            With vertical chosen there is one extra switch:
+            <strong>Let the frame follow the corners</strong>. The tall frame then leans into the
+            turn and comes back on the straights, so the road stays in view instead of sliding out
+            of the picture. The frame you drag is where it rests, and the window on the video shows
+            exactly what the movie will do.
+          </p>
+          <p>
+            <em>Made for</em>, folded under the tiles, sets shape and sound together for YouTube,
+            for Reels and Shorts, or leaves everything as recorded.
+          </p>
+        </section>
+
+        <section id="colours">
+          <h2>Colours</h2>
+          <p>
+            Seven looks — as recorded, Moody, Punchy, Sunny, Golden hour, Film, Black &amp; white —
+            each drawn on a frame of your own ride. Fine-tune folds out nine sliders (brightness,
+            contrast, highlights, shadows, saturation, warmth, tint, dark edges, sharpen).
+          </p>
+          <img
+            src="assets/shots/colour.png"
+            alt="The colour section: seven looks as tiles, each previewed on a frame of the open ride."
+            width="300"
+            height="560"
+            loading="lazy"
+          />
+          <p>
+            Press <em>Compare</em> over the video and drag the line: as recorded on one side, your
+            colours on the other. Colours belong to the movie, but any single part can have its own
+            — useful when one corner was shot straight into the sun.
+          </p>
+        </section>
+
+        <section id="music">
+          <h2>Music and sound</h2>
+          <p>
+            Drop songs onto the music lane under the timeline, or use <em>Add music…</em>. They play
+            back to back under the movie; drag the ends of a song to trim it, and use the toolbar
+            over it for fade in, fade out and volume.
+          </p>
+          <p>
+            Two sliders in the lane header set the balance between the music and the ride's own
+            sound. Under Sound in the Movie panel, <em>Make every movie equally loud</em> evens the
+            finished movie out to the level phones and websites play at, so one ride is not twice as
+            loud as the last one you made.
+          </p>
+        </section>
+
+        <section id="overlay">
+          <h2>Riding data on the picture</h2>
+          <p>
+            Optional, and off by default. <em>Lean angle</em> draws a small bike that leans with you
+            and the angle in degrees; <em>Dashboard</em> adds a dial and a bar for braking and
+            acceleration. Pick the corner it sits in. It is drawn into the movie itself, from the
+            same numbers the timeline uses.
+          </p>
+        </section>
+
+        <section id="export">
+          <h2>Making it</h2>
+          <p>
+            <em>Make my movie</em> cuts every part, joins them with your chosen transition
+            (crossfade, a straight cut, or a dip to black), lays the music under it and writes one
+            MP4. <em>Separate clips</em> writes one file per part instead.
+          </p>
+          <p>The rules it holds itself to:</p>
+          <ul>
+            <li>
+              <strong>Nothing is scaled.</strong> A format crops the recording at full resolution.
+            </li>
+            <li><strong>10-bit stays 10-bit</strong>, through the colour work and the export.</li>
+            <li>
+              <strong>Square is copied, not re-encoded</strong> — the exported parts are the
+              original bytes, cut at the nearest keyframe. (A transition or colours force an encode,
+              because new pixels have to be made.)
+            </li>
+            <li>
+              <strong>Everything else is HEVC at CQ 18</strong> on your GPU (NVENC, QuickSync or
+              AMF), with libx265 as a fallback, and a bitrate cap that follows the pixels you kept.
+            </li>
+            <li><strong>Your recordings are read-only.</strong> Always.</li>
+          </ul>
+          <p>
+            The card shows progress, elapsed time and an estimate. You can keep working while it
+            runs; the movie is made from the parts as they were when you pressed the button.
+          </p>
+        </section>
+
+        <section id="share">
+          <h2>Sending and sharing</h2>
+          <p>
+            When a movie is ready — both on the card that appears and on the result in the Movie
+            panel — <em>Send to my phone</em> shows a QR code. Point your phone's camera at it and
+            the movie plays on the phone, served by your own computer over your own Wi-Fi. Save it
+            from that page and it lands in your camera roll, ready to post.
+          </p>
+          <img
+            src="assets/shots/share-qr.png"
+            alt="Send to my phone: a QR code for the finished movie."
+            width="420"
+            height="345"
+            loading="lazy"
+          />
+          <p>
+            Nothing is uploaded anywhere. Only files ApexCut made can be shared, one at a time, and
+            the link stops working after half an hour, when you press <em>Stop sharing</em>, or when
+            you close the app. Windows asks once for permission to accept connections — allow it on
+            private networks.
+          </p>
+          <p>
+            <strong>The ride card</strong> (in the project menu) makes a picture of the day: three
+            frames, your sharpest lean, hardest braking, how many corners and how long you were
+            actually riding. It goes straight to your clipboard.
+          </p>
+          <p>
+            <strong>An EDL</strong> can be written for DaVinci Resolve or Premiere if you would
+            rather finish the edit there.
+          </p>
+        </section>
+
+        <!-- --------------------------------------------------- reference -->
+        <section id="projects">
+          <h2>Projects and files</h2>
+          <p>
+            A project is one movie: a set of rides, the parts you picked, the colours, the music and
+            the shape. A recording can be in several projects without being scanned twice, because
+            the scan belongs to the recording and the picks belong to the project.
+          </p>
+          <p>
+            <em>Export project</em> writes a small <code>.apexcut</code> file with the paths and
+            your picks — no video — which another machine can import as long as it can reach the
+            same recordings.
+          </p>
+          <p>
+            Everything ApexCut keeps lives in
+            <code>%APPDATA%\ApexCut\data</code>: the library, the projects, and one folder per
+            recording with its scan. Settings → Storage shows what that costs and can clean up scans
+            of recordings no project uses any more.
+          </p>
+        </section>
+
+        <section id="shortcuts">
+          <h2>Keyboard shortcuts</h2>
+          <table class="specs">
+            <tbody>
+              <tr>
+                <th><kbd>Space</kbd></th>
+                <td>Play or pause</td>
+              </tr>
+              <tr>
+                <th><kbd>L</kbd> / <kbd>K</kbd> / <kbd>J</kbd></th>
+                <td>Play faster · pause · jump back ten seconds</td>
+              </tr>
+              <tr>
+                <th><kbd>,</kbd> / <kbd>.</kbd></th>
+                <td>One frame back or forward</td>
+              </tr>
+              <tr>
+                <th><kbd>←</kbd> / <kbd>→</kbd></th>
+                <td>Five seconds; with <kbd>Shift</kbd>, one second</td>
+              </tr>
+              <tr>
+                <th><kbd>[</kbd> / <kbd>]</kbd></th>
+                <td>Previous or next part</td>
+              </tr>
+              <tr>
+                <th><kbd>I</kbd> / <kbd>O</kbd></th>
+                <td>Set the start or the end of the selected part here</td>
+              </tr>
+              <tr>
+                <th><kbd>N</kbd></th>
+                <td>New part at the playhead</td>
+              </tr>
+              <tr>
+                <th><kbd>M</kbd></th>
+                <td>Join the selected parts</td>
+              </tr>
+              <tr>
+                <th><kbd>F</kbd></th>
+                <td>Star or unstar</td>
+              </tr>
+              <tr>
+                <th><kbd>Delete</kbd></th>
+                <td>Delete the selected parts</td>
+              </tr>
+              <tr>
+                <th><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd></th>
+                <td>Undo · redo</td>
+              </tr>
+              <tr>
+                <th><kbd>Ctrl</kbd> + <kbd>K</kbd></th>
+                <td>What do you want to do? — search everything</td>
+              </tr>
+              <tr>
+                <th><kbd>?</kbd></th>
+                <td>The full list, inside the app</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="cameras">
+          <h2>Cameras and formats</h2>
+          <p>
+            <strong>DJI Osmo Action.</strong> The camera writes its own attitude thirty times a
+            second next to the picture, which is exactly what the scoring wants. The
+            <code>.LRF</code> proxy is used for scrubbing and the filmstrip.
+          </p>
+          <p>
+            <strong>GoPro Hero5 and newer.</strong> GoPro writes an accelerometer and a gyroscope
+            rather than an attitude, so ApexCut fuses the two itself and writes the result at a
+            steady 30 Hz. Measured against a Hero8, which does store its own attitude, the two never
+            differ by more than a few degrees. Copy the <code>.LRV</code> file along for smooth
+            scrubbing.
+          </p>
+          <p>
+            <strong>Anything else.</strong> A recording with no motion track says so plainly. You
+            can still cut it by hand, but nothing is found for you. GPS, where a camera records it,
+            is read but not used yet.
+          </p>
+        </section>
+
+        <section id="privacy">
+          <h2>Privacy</h2>
+          <p>
+            ApexCut has no account, no analytics and no telemetry. Scanning, editing and exporting
+            happen on your computer. It reaches the network for exactly two things:
+          </p>
+          <ul>
+            <li>
+              <strong>Updates.</strong> It asks GitHub whether a newer release exists, and downloads
+              it if you say yes.
+            </li>
+            <li>
+              <strong>Send to my phone.</strong> Your own computer serves one finished movie to your
+              own network behind a random address, for half an hour.
+            </li>
+          </ul>
+          <p>Your recordings are opened read-only and never leave the machine.</p>
+        </section>
+
+        <section id="trouble">
+          <h2>When something goes wrong</h2>
+          <h3>“This video has no motion data”</h3>
+          <p>
+            The recording has no sensor track: a screen recording, a file already edited elsewhere,
+            or a camera that does not write one. Copy the original from the card and scan that.
+          </p>
+          <h3>Scrubbing is slow, or the filmstrip takes a while</h3>
+          <p>
+            The small proxy file is missing, so the app is reading the full-size recording. Copy the
+            <code>.LRF</code> (DJI) or <code>.LRV</code> (GoPro) file next to it off the card.
+          </p>
+          <h3>A video went missing</h3>
+          <p>
+            Moved the files? The Ride panel offers <em>Find it again</em>: point ApexCut at the new
+            place and everything you picked comes back, untouched.
+          </p>
+          <h3>The phone cannot open the QR link</h3>
+          <p>
+            Phone and computer must be on the same network, and Windows has to allow ApexCut to
+            accept connections (allow it on private networks when asked). Guest or client-isolated
+            Wi-Fi blocks this by design.
+          </p>
+          <h3>Something else</h3>
+          <p>
+            Settings → About has <em>Make a problem report</em>: a zip with the logs and what the
+            app knows about your setup, saved to your Documents. Attach it to an
+            <a href="https://github.com/DarrellVS/apexcut/issues">issue on GitHub</a> and it can be
+            fixed.
+          </p>
+        </section>
+
+        <section>
+          <h2>Under the hood</h2>
+          <p>
+            For how the scoring works, what exactly is read out of each camera, and the design rules
+            the app follows, the repository carries the technical documentation:
+          </p>
+          <ul>
+            <li>
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/scoring.md">Scoring</a> —
+              the features, the gates and the thresholds.
+            </li>
+            <li>
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/dji-metadata.md"
+                >DJI metadata</a
+              >
+              and
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/gopro-metadata.md"
+                >GoPro metadata</a
+              >
+              — what is in the track, and how it is read.
+            </li>
+            <li>
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/gestures.md">Gestures</a>
+              — how the two-finger mark is found, and how well.
+            </li>
+            <li>
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/architecture.md"
+                >Architecture</a
+              >
+              and
+              <a href="https://github.com/DarrellVS/apexcut/blob/main/docs/design.md">design</a> —
+              how the app is put together.
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>ApexCut — MIT licensed. Made for riders, by one.</span>
+        <nav aria-label="Elsewhere">
+          <a href="index.html">Overview</a>
+          <a href="https://github.com/DarrellVS/apexcut">Source</a>
+          <a href="https://github.com/DarrellVS/apexcut/releases">Releases</a>
+          <a href="https://github.com/DarrellVS/apexcut/issues">Report a problem</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="assets/js/site.js" defer></script>
+  </body>
+</html>
