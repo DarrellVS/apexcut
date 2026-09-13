@@ -17,7 +17,7 @@ the good bits — on your own computer, without uploading anything.
 
 **[Download](https://github.com/DarrellVS/apexcut/releases/latest) · [Website](https://darrellvs.github.io/apexcut/) · [Documentation](https://darrellvs.github.io/apexcut/docs.html)**
 
-<img src="site/assets/shots/editor.png" alt="The ApexCut editor: a ride on screen, the parts it found on the timeline underneath, and the movie panel on the right." width="900" />
+<img src="site/assets/shots/editor.webp" alt="The ApexCut editor: a ride on screen, the parts it found on the timeline underneath, and the movie panel on the right." width="900" />
 
 </div>
 
