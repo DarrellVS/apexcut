@@ -234,11 +234,12 @@
         const marked = current && byId.get(current);
         const menu = marked?.closest('.docs-nav');
         if (marked && menu && menu.scrollHeight > menu.clientHeight + 4) {
+          // move the menu's own scrollport only: scrollIntoView would scroll the page too,
+          // which cancels a jump to #a-section on load
           const item = marked.getBoundingClientRect();
           const box = menu.getBoundingClientRect();
-          if (item.top < box.top + 8 || item.bottom > box.bottom - 8) {
-            marked.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
-          }
+          if (item.top < box.top + 8) menu.scrollTop -= box.top + 8 - item.top;
+          else if (item.bottom > box.bottom - 8) menu.scrollTop += item.bottom - (box.bottom - 8);
         }
       },
       { rootMargin: '-80px 0px -70% 0px' },

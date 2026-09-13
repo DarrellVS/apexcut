@@ -152,6 +152,11 @@ strong {
   font-weight: 600;
 }
 
+/* the header floats over the page, so anything a link jumps to stops below it */
+:where(section, article, h2, h3)[id] {
+  scroll-margin-top: 90px;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
