@@ -202,9 +202,22 @@
     const sync = () => (wide.matches ? toc.setAttribute('open', '') : toc.removeAttribute('open'));
     sync();
     wide.addEventListener('change', sync);
+    // on a phone the list folds away again, which moves the page under the jump the browser
+    // was about to make — so fold first, then go there
     toc.querySelectorAll('a').forEach((a) =>
-      a.addEventListener('click', () => {
-        if (!wide.matches) toc.removeAttribute('open');
+      a.addEventListener('click', (event) => {
+        if (wide.matches) return;
+        const target = document.getElementById(a.getAttribute('href').slice(1));
+        if (!target) return;
+        event.preventDefault();
+        toc.removeAttribute('open');
+        // pushed, not replaced, so Back still walks out of the section like a plain link
+        if (location.hash !== a.getAttribute('href')) {
+          history.pushState(null, '', a.getAttribute('href'));
+        }
+        requestAnimationFrame(() =>
+          target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }),
+        );
       }),
     );
   }
